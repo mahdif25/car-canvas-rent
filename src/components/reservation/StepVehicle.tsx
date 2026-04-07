@@ -1,7 +1,7 @@
 import { ReservationFormData } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { mockVehicles, getDailyRate } from "@/lib/mock-data";
 import { Users, Fuel, Settings2 } from "lucide-react";
+import { Vehicle, PricingTier, getDailyRateFromTiers } from "@/hooks/useVehicles";
 
 interface Props {
   formData: ReservationFormData;
@@ -9,10 +9,12 @@ interface Props {
   rentalDays: number;
   onNext: () => void;
   onBack: () => void;
+  vehicles: Vehicle[];
+  pricingTiers: PricingTier[];
 }
 
-const StepVehicle = ({ formData, updateForm, rentalDays, onNext, onBack }: Props) => {
-  const available = mockVehicles.filter((v) => v.is_available);
+const StepVehicle = ({ formData, updateForm, rentalDays, onNext, onBack, vehicles, pricingTiers }: Props) => {
+  const available = vehicles.filter((v) => v.is_available);
 
   const selectVehicle = (id: string) => {
     updateForm({ vehicle_id: id });
@@ -27,7 +29,8 @@ const StepVehicle = ({ formData, updateForm, rentalDays, onNext, onBack }: Props
 
       <div className="space-y-4">
         {available.map((v) => {
-          const rate = getDailyRate(v.id, rentalDays);
+          const tiers = pricingTiers.filter((t) => t.vehicle_id === v.id);
+          const rate = getDailyRateFromTiers(tiers, rentalDays);
           const isSelected = formData.vehicle_id === v.id;
 
           return (
@@ -38,7 +41,7 @@ const StepVehicle = ({ formData, updateForm, rentalDays, onNext, onBack }: Props
                 isSelected ? "border-primary bg-primary/5 shadow-sm" : "border-border hover:border-primary/50"
               }`}
             >
-              <img src={v.image_url} alt={v.name} className="w-full md:w-48 h-32 object-cover rounded-md" />
+              <img src={v.image_url || "/placeholder.svg"} alt={v.name} className="w-full md:w-48 h-32 object-cover rounded-md" />
               <div className="flex-1 flex flex-col justify-between">
                 <div>
                   <div className="flex justify-between items-start">

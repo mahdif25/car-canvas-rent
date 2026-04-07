@@ -1,20 +1,24 @@
 import { ReservationFormData } from "@/lib/types";
-import { mockVehicles, getDailyRate, mockAddons } from "@/lib/mock-data";
+import { Vehicle, PricingTier, AddonOption, getDailyRateFromTiers } from "@/hooks/useVehicles";
 import { CalendarDays, MapPin, Car } from "lucide-react";
 
 interface Props {
   formData: ReservationFormData;
   rentalDays: number;
+  vehicles: Vehicle[];
+  pricingTiers: PricingTier[];
+  addons: AddonOption[];
 }
 
-const ReservationSidebar = ({ formData, rentalDays }: Props) => {
-  const vehicle = mockVehicles.find((v) => v.id === formData.vehicle_id);
-  const dailyRate = vehicle ? getDailyRate(vehicle.id, rentalDays) : 0;
+const ReservationSidebar = ({ formData, rentalDays, vehicles, pricingTiers, addons }: Props) => {
+  const vehicle = vehicles.find((v) => v.id === formData.vehicle_id);
+  const tiers = pricingTiers.filter((t) => t.vehicle_id === formData.vehicle_id);
+  const dailyRate = vehicle ? getDailyRateFromTiers(tiers, rentalDays) : 0;
   const vehicleTotal = dailyRate * rentalDays;
 
   const addonsTotal = formData.selected_addons.reduce((sum, id) => {
-    const addon = mockAddons.find((a) => a.id === id);
-    return sum + (addon ? addon.price_per_day * rentalDays : 0);
+    const addon = addons.find((a) => a.id === id);
+    return sum + (addon ? Number(addon.price_per_day) * rentalDays : 0);
   }, 0);
 
   const total = vehicleTotal + addonsTotal;
@@ -57,12 +61,12 @@ const ReservationSidebar = ({ formData, rentalDays }: Props) => {
             </div>
 
             {formData.selected_addons.map((id) => {
-              const addon = mockAddons.find((a) => a.id === id);
+              const addon = addons.find((a) => a.id === id);
               if (!addon) return null;
               return (
                 <div key={id} className="flex justify-between">
                   <span>{addon.name}</span>
-                  <span>{(addon.price_per_day * rentalDays).toLocaleString()} MAD</span>
+                  <span>{(Number(addon.price_per_day) * rentalDays).toLocaleString()} MAD</span>
                 </div>
               );
             })}
@@ -72,9 +76,9 @@ const ReservationSidebar = ({ formData, rentalDays }: Props) => {
               <span className="text-primary">{total.toLocaleString()} MAD</span>
             </div>
 
-            {vehicle.security_deposit > 0 && (
+            {Number(vehicle.security_deposit) > 0 && (
               <p className="text-xs text-muted-foreground">
-                + Caution de {vehicle.security_deposit.toLocaleString()} MAD (remboursable)
+                + Caution de {Number(vehicle.security_deposit).toLocaleString()} MAD (remboursable)
               </p>
             )}
           </div>

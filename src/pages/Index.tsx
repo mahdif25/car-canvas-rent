@@ -3,15 +3,20 @@ import { Link, useNavigate } from "react-router-dom";
 import { Calendar, Car, Shield, Clock, MapPin, ChevronRight } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
-import { mockVehicles, getStartingPrice, locations } from "@/lib/mock-data";
+import { locations } from "@/lib/mock-data";
+import { useVehicles, usePricingTiers, getStartingPriceFromTiers } from "@/hooks/useVehicles";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Index = () => {
   const navigate = useNavigate();
   const [pickupLocation, setPickupLocation] = useState("");
   const [pickupDate, setPickupDate] = useState("");
   const [returnDate, setReturnDate] = useState("");
+
+  const { data: vehicles = [], isLoading: loadingVehicles } = useVehicles();
+  const { data: allTiers = [], isLoading: loadingTiers } = usePricingTiers();
 
   const handleSearch = () => {
     const params = new URLSearchParams();
@@ -21,7 +26,8 @@ const Index = () => {
     navigate(`/reservation?${params.toString()}`);
   };
 
-  const featured = mockVehicles.slice(0, 3);
+  const featured = vehicles.filter((v) => v.is_available).slice(0, 3);
+  const isLoading = loadingVehicles || loadingTiers;
 
   return (
     <Layout>
@@ -109,42 +115,61 @@ const Index = () => {
               Voir tout <ChevronRight size={18} />
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {featured.map((v) => (
-              <Link
-                key={v.id}
-                to={`/fleet/${v.id}`}
-                className="group border border-border rounded-pill overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-              >
-                <div className="aspect-video overflow-hidden">
-                  <img
-                    src={v.image_url}
-                    alt={v.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-                <div className="p-5 space-y-3">
-                  <h3 className="font-semibold text-lg">{v.name}</h3>
-                  <div className="flex gap-3 text-sm text-muted-foreground">
-                    <span>{v.transmission}</span>
-                    <span>•</span>
-                    <span>{v.fuel}</span>
-                    <span>•</span>
-                    <span>{v.seats} places</span>
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="border border-border rounded-pill overflow-hidden">
+                  <Skeleton className="aspect-video w-full" />
+                  <div className="p-5 space-y-3">
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                    <Skeleton className="h-8 w-1/3" />
                   </div>
-                  <div className="flex justify-between items-center pt-2 border-t border-border">
-                    <div>
-                      <span className="text-2xl font-bold text-primary">{getStartingPrice(v.id)}</span>
-                      <span className="text-sm text-muted-foreground"> MAD/jour</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {featured.map((v) => {
+                const vehicleTiers = allTiers.filter((t) => t.vehicle_id === v.id);
+                const startingPrice = getStartingPriceFromTiers(vehicleTiers);
+                return (
+                  <Link
+                    key={v.id}
+                    to={`/fleet/${v.id}`}
+                    className="group border border-border rounded-pill overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <div className="aspect-video overflow-hidden">
+                      <img
+                        src={v.image_url || "/placeholder.svg"}
+                        alt={v.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
                     </div>
-                    <span className="text-sm text-primary font-medium group-hover:underline">
-                      Détails →
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
+                    <div className="p-5 space-y-3">
+                      <h3 className="font-semibold text-lg">{v.name}</h3>
+                      <div className="flex gap-3 text-sm text-muted-foreground">
+                        <span>{v.transmission}</span>
+                        <span>•</span>
+                        <span>{v.fuel}</span>
+                        <span>•</span>
+                        <span>{v.seats} places</span>
+                      </div>
+                      <div className="flex justify-between items-center pt-2 border-t border-border">
+                        <div>
+                          <span className="text-2xl font-bold text-primary">{startingPrice}</span>
+                          <span className="text-sm text-muted-foreground"> MAD/jour</span>
+                        </div>
+                        <span className="text-sm text-primary font-medium group-hover:underline">
+                          Détails →
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
     </Layout>
