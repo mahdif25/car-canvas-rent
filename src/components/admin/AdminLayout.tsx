@@ -18,6 +18,7 @@ const navItems = [
 const AdminLayout = ({ children }: Props) => {
   const { user, isAdmin, loading, signOut } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Chargement...</div>;
