@@ -41,9 +41,10 @@ const AdminReservations = () => {
   const { data: reservations, isLoading } = useQuery({
     queryKey: ["admin-reservations", statusFilter],
     queryFn: async () => {
-      let query = supabase.from("reservations").select("*, vehicles(name)").order("created_at", { ascending: false });
+      const query = supabase.from("reservations").select("*, vehicles(name)").order("created_at", { ascending: false });
       if (statusFilter !== "all") {
-        query = query.eq("status", statusFilter);
+        const { data } = await query.eq("status", statusFilter as ReservationStatus);
+        return data ?? [];
       }
       const { data } = await query;
       return data ?? [];
