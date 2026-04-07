@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -13,8 +13,16 @@ const AdminLogin = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
-  const { signIn } = useAuth();
+  const { user, loading: authLoading, signIn } = useAuth();
   const navigate = useNavigate();
+
+  if (authLoading) {
+    return <div className="min-h-screen bg-dark flex items-center justify-center"><p className="text-foreground">Chargement...</p></div>;
+  }
+
+  if (user) {
+    return <Navigate to="/admin" replace />;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
