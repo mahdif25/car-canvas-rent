@@ -1,0 +1,91 @@
+import { ReservationFormData } from "@/lib/types";
+import { mockVehicles, getDailyRate, mockAddons } from "@/lib/mock-data";
+import { CalendarDays, MapPin, Car } from "lucide-react";
+
+interface Props {
+  formData: ReservationFormData;
+  rentalDays: number;
+}
+
+const ReservationSidebar = ({ formData, rentalDays }: Props) => {
+  const vehicle = mockVehicles.find((v) => v.id === formData.vehicle_id);
+  const dailyRate = vehicle ? getDailyRate(vehicle.id, rentalDays) : 0;
+  const vehicleTotal = dailyRate * rentalDays;
+
+  const addonsTotal = formData.selected_addons.reduce((sum, id) => {
+    const addon = mockAddons.find((a) => a.id === id);
+    return sum + (addon ? addon.price_per_day * rentalDays : 0);
+  }, 0);
+
+  const total = vehicleTotal + addonsTotal;
+
+  return (
+    <div className="bg-secondary p-6 rounded-pill sticky top-24 space-y-5">
+      <h3 className="font-semibold text-lg">Résumé</h3>
+
+      {formData.pickup_location && (
+        <div className="flex items-start gap-2 text-sm">
+          <MapPin size={16} className="text-primary mt-0.5 shrink-0" />
+          <span>{formData.pickup_location}</span>
+        </div>
+      )}
+
+      {formData.pickup_date && formData.return_date && (
+        <div className="flex items-start gap-2 text-sm">
+          <CalendarDays size={16} className="text-primary mt-0.5 shrink-0" />
+          <div>
+            <p>{formData.pickup_date} → {formData.return_date}</p>
+            <p className="text-muted-foreground">{rentalDays} jour{rentalDays > 1 ? "s" : ""}</p>
+          </div>
+        </div>
+      )}
+
+      {vehicle && (
+        <>
+          <div className="flex items-start gap-2 text-sm">
+            <Car size={16} className="text-primary mt-0.5 shrink-0" />
+            <div>
+              <p className="font-medium">{vehicle.name}</p>
+              <p className="text-muted-foreground">{dailyRate} MAD/jour</p>
+            </div>
+          </div>
+
+          <div className="border-t border-border pt-4 space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span>Véhicule</span>
+              <span>{vehicleTotal.toLocaleString()} MAD</span>
+            </div>
+
+            {formData.selected_addons.map((id) => {
+              const addon = mockAddons.find((a) => a.id === id);
+              if (!addon) return null;
+              return (
+                <div key={id} className="flex justify-between">
+                  <span>{addon.name}</span>
+                  <span>{(addon.price_per_day * rentalDays).toLocaleString()} MAD</span>
+                </div>
+              );
+            })}
+
+            <div className="flex justify-between font-bold text-lg pt-2 border-t border-border">
+              <span>Total</span>
+              <span className="text-primary">{total.toLocaleString()} MAD</span>
+            </div>
+
+            {vehicle.security_deposit > 0 && (
+              <p className="text-xs text-muted-foreground">
+                + Caution de {vehicle.security_deposit.toLocaleString()} MAD (remboursable)
+              </p>
+            )}
+          </div>
+        </>
+      )}
+
+      {!vehicle && !formData.pickup_date && (
+        <p className="text-sm text-muted-foreground">Commencez par remplir les dates et le lieu.</p>
+      )}
+    </div>
+  );
+};
+
+export default ReservationSidebar;
