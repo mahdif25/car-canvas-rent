@@ -1,35 +1,29 @@
 
 
-# Auto-redirect logged-in users from /admin/login to /admin
+# Fix: "Se déconnecter" button on Accès refusé screen
 
-## Changes
+## Problem
+The `signOut` function logs out but doesn't redirect. The user stays on `/admin` showing a stale state.
 
-### `src/pages/admin/AdminLogin.tsx`
+## Fix — `src/components/admin/AdminLayout.tsx`
 
-Add redirect logic at the top of the component using `useAuth`:
-
-- If `loading` is true, show a loading spinner/message
-- If `user` is already logged in, use `<Navigate to="/admin" replace />` to redirect to the admin dashboard
-- Otherwise, show the login form as normal
-
-The admin dashboard (`AdminLayout`) already handles the admin vs non-admin check — it shows "Accès refusé" for non-admins and the dashboard for admins. So we just need to redirect any authenticated user to `/admin` and let the existing logic handle the rest.
-
-### Implementation detail
+Replace the plain `signOut` call with a function that signs out AND redirects to home:
 
 ```tsx
-// At top of AdminLogin component
-const { user, loading } = useAuth();
+// Add useNavigate import
+import { Link, useLocation, Navigate, useNavigate } from "react-router-dom";
 
-if (loading) {
-  return <div className="min-h-screen flex items-center justify-center">Chargement...</div>;
-}
+// Inside component
+const navigate = useNavigate();
 
-if (user) {
-  return <Navigate to="/admin" replace />;
-}
-
-// ... rest of login form
+// In the Accès refusé block, replace the button onClick:
+<button
+  onClick={async () => { await signOut(); navigate("/"); }}
+  className="text-primary hover:underline"
+>
+  Se déconnecter
+</button>
 ```
 
-Single file change: `src/pages/admin/AdminLogin.tsx`
+Single file change, no migrations needed.
 
