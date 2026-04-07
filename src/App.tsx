@@ -3,10 +3,16 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Fleet from "./pages/Fleet";
 import VehicleDetail from "./pages/VehicleDetail";
 import Reservation from "./pages/Reservation";
+import AdminLogin from "./pages/admin/AdminLogin";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminFleet from "./pages/admin/AdminFleet";
+import AdminAddons from "./pages/admin/AdminAddons";
+import AdminReservations from "./pages/admin/AdminReservations";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -17,14 +23,20 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/fleet" element={<Fleet />} />
-          <Route path="/fleet/:id" element={<VehicleDetail />} />
-          <Route path="/reservation" element={<Reservation />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/fleet" element={<Fleet />} />
+            <Route path="/fleet/:id" element={<VehicleDetail />} />
+            <Route path="/reservation" element={<Reservation />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/fleet" element={<AdminFleet />} />
+            <Route path="/admin/addons" element={<AdminAddons />} />
+            <Route path="/admin/reservations" element={<AdminReservations />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
