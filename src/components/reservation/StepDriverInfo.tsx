@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Shield } from "lucide-react";
-import { mockVehicles } from "@/lib/mock-data";
+import { Vehicle } from "@/hooks/useVehicles";
 
 interface Props {
   formData: ReservationFormData;
@@ -11,11 +11,10 @@ interface Props {
   onConfirm: () => void;
   onBack: () => void;
   rentalDays: number;
+  vehicle: Vehicle | undefined;
 }
 
-const StepDriverInfo = ({ formData, updateForm, onConfirm, onBack }: Props) => {
-  const vehicle = mockVehicles.find((v) => v.id === formData.vehicle_id);
-
+const StepDriverInfo = ({ formData, updateForm, onConfirm, onBack, vehicle }: Props) => {
   const isValid =
     formData.first_name &&
     formData.last_name &&
@@ -59,21 +58,19 @@ const StepDriverInfo = ({ formData, updateForm, onConfirm, onBack }: Props) => {
         </div>
       </div>
 
-      {/* Security Deposit Notice */}
       {vehicle && (
         <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-lg">
           <Shield className="text-primary shrink-0 mt-0.5" size={24} />
           <div>
-            <p className="font-medium">Caution : {vehicle.security_deposit.toLocaleString()} MAD</p>
+            <p className="font-medium">Caution : {Number(vehicle.security_deposit).toLocaleString()} MAD</p>
             <p className="text-sm text-muted-foreground mt-1">
-              Un dépôt de garantie de {vehicle.security_deposit.toLocaleString()} MAD sera demandé lors de la prise en charge du véhicule. 
+              Un dépôt de garantie de {Number(vehicle.security_deposit).toLocaleString()} MAD sera demandé lors de la prise en charge du véhicule. 
               Ce montant vous sera intégralement restitué après inspection du véhicule lors de la restitution.
             </p>
           </div>
         </div>
       )}
 
-      {/* Terms */}
       <div className="flex items-start gap-3">
         <Checkbox
           checked={formData.terms_accepted}

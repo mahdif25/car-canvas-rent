@@ -1,18 +1,17 @@
 import { ReservationFormData } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { mockAddons } from "@/lib/mock-data";
 import { Check } from "lucide-react";
+import { AddonOption } from "@/hooks/useVehicles";
 
 interface Props {
   formData: ReservationFormData;
   updateForm: (u: Partial<ReservationFormData>) => void;
   onNext: () => void;
   onBack: () => void;
+  addons: AddonOption[];
 }
 
-const StepAddons = ({ formData, updateForm, onNext, onBack }: Props) => {
-  const enabledAddons = mockAddons.filter((a) => a.is_enabled);
-
+const StepAddons = ({ formData, updateForm, onNext, onBack, addons }: Props) => {
   const toggleAddon = (id: string) => {
     const current = formData.selected_addons;
     const updated = current.includes(id) ? current.filter((a) => a !== id) : [...current, id];
@@ -24,11 +23,11 @@ const StepAddons = ({ formData, updateForm, onNext, onBack }: Props) => {
       <h2 className="text-xl font-semibold">Options supplémentaires</h2>
       <p className="text-sm text-muted-foreground">Sélectionnez les options souhaitées (facultatif)</p>
 
-      {enabledAddons.length === 0 ? (
+      {addons.length === 0 ? (
         <p className="text-muted-foreground py-8 text-center">Aucune option disponible pour le moment.</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {enabledAddons.map((addon) => {
+          {addons.map((addon) => {
             const isSelected = formData.selected_addons.includes(addon.id);
             return (
               <div

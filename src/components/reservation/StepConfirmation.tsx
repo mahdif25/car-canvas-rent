@@ -1,22 +1,25 @@
 import { ReservationFormData } from "@/lib/types";
-import { mockVehicles, getDailyRate, mockAddons } from "@/lib/mock-data";
 import { CheckCircle, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { Vehicle, PricingTier, AddonOption, getDailyRateFromTiers } from "@/hooks/useVehicles";
 
 interface Props {
   formData: ReservationFormData;
   confirmationId: string;
   rentalDays: number;
+  vehicle: Vehicle | undefined;
+  pricingTiers: PricingTier[];
+  addons: AddonOption[];
 }
 
-const StepConfirmation = ({ formData, confirmationId, rentalDays }: Props) => {
-  const vehicle = mockVehicles.find((v) => v.id === formData.vehicle_id);
-  const dailyRate = vehicle ? getDailyRate(vehicle.id, rentalDays) : 0;
+const StepConfirmation = ({ formData, confirmationId, rentalDays, vehicle, pricingTiers, addons }: Props) => {
+  const tiers = pricingTiers.filter((t) => t.vehicle_id === formData.vehicle_id);
+  const dailyRate = getDailyRateFromTiers(tiers, rentalDays);
   const vehicleTotal = dailyRate * rentalDays;
   const addonsTotal = formData.selected_addons.reduce((sum, id) => {
-    const addon = mockAddons.find((a) => a.id === id);
-    return sum + (addon ? addon.price_per_day * rentalDays : 0);
+    const addon = addons.find((a) => a.id === id);
+    return sum + (addon ? Number(addon.price_per_day) * rentalDays : 0);
   }, 0);
   const total = vehicleTotal + addonsTotal;
 
@@ -68,12 +71,12 @@ const StepConfirmation = ({ formData, confirmationId, rentalDays }: Props) => {
               <span>{vehicleTotal.toLocaleString()} MAD</span>
             </div>
             {formData.selected_addons.map((id) => {
-              const addon = mockAddons.find((a) => a.id === id);
+              const addon = addons.find((a) => a.id === id);
               if (!addon) return null;
               return (
                 <div key={id} className="flex justify-between">
                   <span>{addon.name} ({addon.price_per_day} MAD × {rentalDays} j)</span>
-                  <span>{(addon.price_per_day * rentalDays).toLocaleString()} MAD</span>
+                  <span>{(Number(addon.price_per_day) * rentalDays).toLocaleString()} MAD</span>
                 </div>
               );
             })}
@@ -83,7 +86,7 @@ const StepConfirmation = ({ formData, confirmationId, rentalDays }: Props) => {
             </div>
             <div className="flex justify-between text-muted-foreground">
               <span>Caution (remboursable)</span>
-              <span>{vehicle?.security_deposit.toLocaleString()} MAD</span>
+              <span>{vehicle ? Number(vehicle.security_deposit).toLocaleString() : 0} MAD</span>
             </div>
           </div>
         </div>
