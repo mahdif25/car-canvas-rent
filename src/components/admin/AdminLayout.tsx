@@ -34,7 +34,7 @@ const AdminLayout = ({ children }: Props) => {
         <div className="text-center space-y-4">
           <p className="text-lg font-medium">Accès refusé</p>
           <p className="text-muted-foreground">Vous n'avez pas les droits administrateur.</p>
-          <button onClick={signOut} className="text-primary hover:underline">Se déconnecter</button>
+          <button onClick={async () => { await signOut(); navigate("/"); }} className="text-primary hover:underline">Se déconnecter</button>
         </div>
       </div>
     );
