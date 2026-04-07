@@ -1,40 +1,64 @@
 
 
-# Fix: Admin Auth Flow — Timeout, Logout, and Login Redirect
+# Connect Public Pages to Real Database
 
-## Problems Found (confirmed via browser testing and database inspection)
+## Overview
+Replace all mock data imports with live queries to the database using the Supabase client. The database already has tables for `vehicles`, `vehicle_pricing_tiers`, `addon_options`, and `reservations` with proper RLS policies (public SELECT on vehicles, pricing, and addons).
 
-1. **Race condition**: The 5-second safety timeout in `useAuth.tsx` fires before `onAuthStateChange` + `has_role` RPC completes. The user `mahdif25@gmail.com` IS an admin in the database, but `isAdmin` stays `false` when the timeout wins.
-2. **Logout stuck**: The "Se déconnecter" button on the "Accès refusé" screen calls `signOut()` then `navigate("/")`, but the page doesn't redirect — likely because the auth state change re-triggers rendering before navigation completes.
-3. **Redirect loop potential**: Login page redirects authenticated users to `/admin`, which shows "Accès refusé" again.
+## Files to Change
 
-## Fix — `src/hooks/useAuth.tsx`
+### 1. Create `src/hooks/useVehicles.ts` — shared data hooks
+New file with React Query (or `useEffect`-based) hooks:
+- `useVehicles()` — fetches all vehicles from `vehicles` table
+- `useVehicle(id)` — fetches single vehicle by ID
+- `usePricingTiers(vehicleId?)` — fetches pricing tiers (optionally filtered)
+- `useAddons()` — fetches enabled addons from `addon_options`
+- `getDailyRateFromTiers(tiers, days)` — pure function to compute rate from fetched tiers
+- `getStartingPriceFromTiers(tiers)` — pure function for min price
 
-Refactor the auth initialization to use `getSession()` for the initial load instead of relying solely on `onAuthStateChange`:
+### 2. Update `src/pages/Fleet.tsx`
+- Replace `mockVehicles` / `getStartingPrice` with `useVehicles()` and `usePricingTiers()`
+- Add loading skeleton while data loads
+- Categories derived from fetched data
 
-- Call `supabase.auth.getSession()` immediately on mount to get the current session
-- If session exists, call `checkAdmin()` then set `loading = false`
-- If no session, set `loading = false` immediately
-- Keep `onAuthStateChange` for subsequent auth events (login, logout, token refresh)
-- Remove the 5-second timeout entirely (it's the root cause)
-- Add error handling to `checkAdmin` with `console.error` logging
-- In `signOut`, also clear `user` and `session` state immediately (don't wait for `onAuthStateChange`)
+### 3. Update `src/pages/VehicleDetail.tsx`
+- Replace `mockVehicles` / `mockPricingTiers` with `useVehicle(id)` and `usePricingTiers(id)`
+- Add loading state
 
-Revised flow:
-```text
-Mount:
-  1. getSession() → session found → checkAdmin() → setLoading(false)
-                  → no session   → setLoading(false)
-  2. onAuthStateChange → handles login/logout/refresh events after mount
-```
+### 4. Update `src/pages/Index.tsx`
+- Replace `mockVehicles.slice(0,3)` with `useVehicles()` (take first 3)
+- Keep `locations` array as-is (no locations table exists)
 
-## Fix — `src/components/admin/AdminLayout.tsx`
+### 5. Update `src/components/reservation/StepVehicle.tsx`
+- Replace `mockVehicles` / `getDailyRate` with hooks
+- Pass vehicles + pricing data via props or use hooks directly
 
-Update the "Se déconnecter" handler to use `window.location.href = "/"` instead of `navigate("/")` as a fallback — this ensures a full page reload which clears all React state and avoids the race with `onAuthStateChange` re-rendering.
+### 6. Update `src/components/reservation/StepAddons.tsx`
+- Replace `mockAddons` with `useAddons()`
 
-## Files Changed
-- `src/hooks/useAuth.tsx` — refactor initial load + signOut
-- `src/components/admin/AdminLayout.tsx` — fix logout redirect
+### 7. Update `src/components/reservation/ReservationSidebar.tsx`
+- Replace `mockVehicles` / `mockAddons` lookups with data passed as props or fetched via hooks
 
-No database changes needed. The user `mahdif25@gmail.com` already has the admin role.
+### 8. Update `src/components/reservation/StepDriverInfo.tsx`
+- Replace `mockVehicles.find()` with data from props or hook
+
+### 9. Update `src/components/reservation/StepConfirmation.tsx`
+- Replace mock lookups with real data from props or hooks
+
+### 10. Update `src/pages/Reservation.tsx`
+- Fetch vehicles, pricing tiers, and addons at the top level
+- Pass them down to child step components as props (avoids redundant fetches)
+- On confirmation, INSERT the reservation into the `reservations` table + `reservation_addons`
+- Use the returned row ID as the confirmation ID
+
+### 11. Keep `src/lib/mock-data.ts`
+- Keep `locations` array export (no DB table for this)
+- Remove or leave other exports (they'll be unused)
+
+## Key Technical Details
+- All public tables have `SELECT` with `USING (true)` for `public` role — no auth needed for reads
+- Reservation INSERT is also open (`WITH CHECK (true)`) — guests can create reservations without login
+- The `reservation_addons` INSERT is also open
+- Vehicle IDs in the DB are UUIDs, not "1", "2" etc. — the reservation form's `vehicle_id` field already uses string type so this is compatible
+- Loading states should show skeletons/spinners to avoid layout shift
 
