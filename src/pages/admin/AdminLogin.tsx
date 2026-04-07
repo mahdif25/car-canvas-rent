@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,18 +12,31 @@ const AdminLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
   const { signIn } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await signIn(email, password);
-    setLoading(false);
-    if (error) {
-      toast({ title: "Erreur de connexion", description: error.message, variant: "destructive" });
+
+    if (isSignUp) {
+      const { error } = await supabase.auth.signUp({ email, password });
+      setLoading(false);
+      if (error) {
+        toast({ title: "Erreur d'inscription", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: "Inscription réussie", description: "Vérifiez votre email pour confirmer votre compte." });
+        setIsSignUp(false);
+      }
     } else {
-      navigate("/admin");
+      const { error } = await signIn(email, password);
+      setLoading(false);
+      if (error) {
+        toast({ title: "Erreur de connexion", description: error.message, variant: "destructive" });
+      } else {
+        navigate("/admin");
+      }
     }
   };
 
@@ -31,7 +45,7 @@ const AdminLogin = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <img src={logo} alt="Centre Lux Car" className="h-16 mx-auto mb-4" />
-          <CardTitle>Administration</CardTitle>
+          <CardTitle>{isSignUp ? "Créer un compte" : "Administration"}</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -44,9 +58,14 @@ const AdminLogin = () => {
               <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
             </div>
             <Button type="submit" disabled={loading} className="w-full bg-primary text-primary-foreground hover:bg-accent rounded-pill">
-              {loading ? "Connexion..." : "Se connecter"}
+              {loading ? (isSignUp ? "Inscription..." : "Connexion...") : (isSignUp ? "S'inscrire" : "Se connecter")}
             </Button>
           </form>
+          <div className="mt-4 text-center">
+            <button type="button" onClick={() => setIsSignUp(!isSignUp)} className="text-sm text-primary hover:underline">
+              {isSignUp ? "Déjà un compte ? Se connecter" : "Pas de compte ? S'inscrire"}
+            </button>
+          </div>
         </CardContent>
       </Card>
     </div>
