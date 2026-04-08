@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
-import { useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useVehicles, usePricingTiers, getDailyRateFromTiers } from "@/hooks/useVehicles";
 import { useLocations, getDeliveryFee } from "@/hooks/useLocations";
-import { Printer, RefreshCw } from "lucide-react";
+import { Printer, Save } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 
 type ReservationStatus = Database["public"]["Enums"]["reservation_status"];
@@ -37,12 +38,20 @@ const statusColors: Record<ReservationStatus, string> = {
   cancelled: "bg-red-100 text-red-700",
 };
 
+interface EditState {
+  vehicle_id: string;
+  pickup_date: string;
+  return_date: string;
+  pickup_location: string;
+  return_location: string;
+  addons: string[];
+}
+
 const AdminReservations = () => {
   const qc = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [editState, setEditState] = useState<Record<string, any>>({});
-  const printRef = useRef<HTMLDivElement>(null);
+  const [editState, setEditState] = useState<Record<string, EditState>>({});
 
   const { data: reservations, isLoading } = useQuery({
     queryKey: ["admin-reservations", statusFilter],
@@ -77,6 +86,40 @@ const AdminReservations = () => {
     },
   });
 
+  const initEdit = (r: any): EditState => {
+    const currentAddons = reservationAddons.filter((ra) => ra.reservation_id === r.id).map((ra) => ra.addon_id);
+    return {
+      vehicle_id: r.vehicle_id,
+      pickup_date: r.pickup_date,
+      return_date: r.return_date,
+      pickup_location: r.pickup_location,
+      return_location: r.return_location || r.pickup_location,
+      addons: currentAddons,
+    };
+  };
+
+  const getEdit = (id: string, r: any): EditState => {
+    return editState[id] || initEdit(r);
+  };
+
+  const setEdit = (id: string, r: any, updates: Partial<EditState>) => {
+    setEditState((prev) => ({
+      ...prev,
+      [id]: { ...getEdit(id, r), ...updates },
+    }));
+  };
+
+  const handleExpand = (id: string, r: any) => {
+    if (expandedId === id) {
+      setExpandedId(null);
+      return;
+    }
+    setExpandedId(id);
+    if (!editState[id]) {
+      setEditState((prev) => ({ ...prev, [id]: initEdit(r) }));
+    }
+  };
+
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: ReservationStatus }) => {
       const { error } = await supabase.from("reservations").update({ status }).eq("id", id);
@@ -99,61 +142,41 @@ const AdminReservations = () => {
     },
   });
 
-  const getEdit = (id: string, r: any) => {
-    if (editState[id]) return editState[id];
-    return {
-      vehicle_id: r.vehicle_id,
-      pickup_date: r.pickup_date,
-      return_date: r.return_date,
-      pickup_location: r.pickup_location,
-      return_location: r.return_location || r.pickup_location,
-    };
-  };
-
-  const setEdit = (id: string, updates: any) => {
-    setEditState((prev) => ({ ...prev, [id]: { ...getEdit(id, {}), ...prev[id], ...updates } }));
-  };
-
-  const recalculate = useMutation({
-    mutationFn: async ({ id, edit }: { id: string; edit: any }) => {
-      const days = Math.max(1, Math.ceil((new Date(edit.return_date).getTime() - new Date(edit.pickup_date).getTime()) / 86400000));
-      const tiers = pricingTiers.filter((t) => t.vehicle_id === edit.vehicle_id);
-      const dailyRate = getDailyRateFromTiers(tiers, days);
-      const vehicleTotal = dailyRate * days;
-
-      const rAddons = reservationAddons.filter((ra) => ra.reservation_id === id);
-      const addonsTotal = rAddons.reduce((sum, ra) => {
-        const addon = allAddons.find((a) => a.id === ra.addon_id);
-        return sum + (addon ? Number(addon.price_per_day) * days : 0);
-      }, 0);
-
-      const deliveryFee = getDeliveryFee(locations, edit.pickup_location, edit.return_location || edit.pickup_location);
-      const vehicle = vehicles.find((v) => v.id === edit.vehicle_id);
-      const depositAmount = vehicle ? Number(vehicle.security_deposit) : 0;
-      const totalPrice = vehicleTotal + addonsTotal + deliveryFee;
-
+  const saveReservation = useMutation({
+    mutationFn: async ({ id, edit, calc }: { id: string; edit: EditState; calc: { totalPrice: number; deliveryFee: number; depositAmount: number } }) => {
       const { error } = await supabase.from("reservations").update({
         vehicle_id: edit.vehicle_id,
         pickup_date: edit.pickup_date,
         return_date: edit.return_date,
         pickup_location: edit.pickup_location,
         return_location: edit.return_location,
-        total_price: totalPrice,
-        delivery_fee: deliveryFee,
-        deposit_amount: depositAmount,
+        total_price: calc.totalPrice,
+        delivery_fee: calc.deliveryFee,
+        deposit_amount: calc.depositAmount,
       }).eq("id", id);
       if (error) throw error;
+
+      // Sync addons: delete all then insert new
+      const { error: delErr } = await supabase.from("reservation_addons").delete().eq("reservation_id", id);
+      if (delErr) throw delErr;
+
+      if (edit.addons.length > 0) {
+        const { error: insErr } = await supabase.from("reservation_addons").insert(
+          edit.addons.map((addon_id) => ({ reservation_id: id, addon_id }))
+        );
+        if (insErr) throw insErr;
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-reservations"] });
-      toast({ title: "Réservation recalculée et mise à jour" });
+      qc.invalidateQueries({ queryKey: ["reservation-addons-all"] });
+      toast({ title: "Réservation mise à jour" });
     },
   });
 
-  const handlePrint = (r: any) => {
-    const vehicle = vehicles.find((v) => v.id === r.vehicle_id);
-    const rAddons = reservationAddons.filter((ra) => ra.reservation_id === r.id);
-    const addonNames = rAddons.map((ra) => allAddons.find((a) => a.id === ra.addon_id)?.name).filter(Boolean);
+  const handlePrint = (r: any, edit: EditState, calc: ReturnType<typeof useCalc>) => {
+    const vehicle = vehicles.find((v) => v.id === edit.vehicle_id);
+    const addonNames = edit.addons.map((aid) => allAddons.find((a) => a.id === aid)?.name).filter(Boolean);
 
     const w = window.open("", "_blank", "width=800,height=600");
     if (!w) return;
@@ -184,17 +207,19 @@ const AdminReservations = () => {
       <div class="section">Réservation</div>
       <table>
         <tr><td class="label">Véhicule</td><td>${vehicle?.name || "—"}</td></tr>
-        <tr><td class="label">Dates</td><td>${r.pickup_date} → ${r.return_date}</td></tr>
-        <tr><td class="label">Lieu prise en charge</td><td>${r.pickup_location}</td></tr>
-        <tr><td class="label">Lieu de retour</td><td>${r.return_location || r.pickup_location}</td></tr>
+        <tr><td class="label">Dates</td><td>${edit.pickup_date} → ${edit.return_date}</td></tr>
+        <tr><td class="label">Lieu prise en charge</td><td>${edit.pickup_location}</td></tr>
+        <tr><td class="label">Lieu de retour</td><td>${edit.return_location || edit.pickup_location}</td></tr>
         ${addonNames.length ? `<tr><td class="label">Options</td><td>${addonNames.join(", ")}</td></tr>` : ""}
       </table>
 
       <div class="section">Tarification</div>
       <table>
-        ${Number(r.delivery_fee) > 0 ? `<tr><td class="label">Frais de livraison</td><td>${Number(r.delivery_fee).toLocaleString()} MAD</td></tr>` : ""}
-        <tr><td class="label">Caution</td><td>${Number(r.deposit_amount).toLocaleString()} MAD</td></tr>
-        <tr class="total-row"><td>Total</td><td>${Number(r.total_price).toLocaleString()} MAD</td></tr>
+        <tr><td class="label">Véhicule (${calc.days}j × ${calc.dailyRate.toLocaleString()} MAD)</td><td>${calc.vehicleTotal.toLocaleString()} MAD</td></tr>
+        ${calc.addonsTotal > 0 ? `<tr><td class="label">Options</td><td>${calc.addonsTotal.toLocaleString()} MAD</td></tr>` : ""}
+        ${calc.deliveryFee > 0 ? `<tr><td class="label">Frais de livraison</td><td>${calc.deliveryFee.toLocaleString()} MAD</td></tr>` : ""}
+        <tr><td class="label">Caution</td><td>${calc.depositAmount.toLocaleString()} MAD</td></tr>
+        <tr class="total-row"><td>Total</td><td>${calc.totalPrice.toLocaleString()} MAD</td></tr>
       </table>
       </body></html>
     `);
@@ -225,122 +250,25 @@ const AdminReservations = () => {
             <p className="text-center py-8 text-muted-foreground">Chargement...</p>
           ) : reservations && reservations.length > 0 ? (
             <div className="space-y-3">
-              {reservations.map((r) => {
-                const edit = getEdit(r.id, r);
-                return (
-                  <div key={r.id} className="border rounded-lg">
-                    <div
-                      className="flex flex-wrap items-center justify-between p-4 cursor-pointer hover:bg-secondary/50 gap-2"
-                      onClick={() => setExpandedId(expandedId === r.id ? null : r.id)}
-                    >
-                      <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[r.status as ReservationStatus]}`}>
-                          {statusLabels[r.status as ReservationStatus]}
-                        </span>
-                        <span className="font-medium text-sm">{r.customer_first_name} {r.customer_last_name}</span>
-                        <span className="text-sm text-muted-foreground">{(r as any).vehicles?.name}</span>
-                      </div>
-                      <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
-                        <span className="text-xs sm:text-sm">{r.pickup_date} → {r.return_date}</span>
-                        <span className="font-semibold text-primary text-sm">{Number(r.total_price).toLocaleString()} MAD</span>
-                      </div>
-                    </div>
-
-                    {expandedId === r.id && (
-                      <div className="border-t p-4 bg-secondary/30 space-y-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                          <div><p className="text-muted-foreground">Email</p><p className="break-all">{r.customer_email}</p></div>
-                          <div><p className="text-muted-foreground">Téléphone</p><p>{r.customer_phone}</p></div>
-                          <div><p className="text-muted-foreground">Permis</p><p>{r.customer_license}</p></div>
-                          <div><p className="text-muted-foreground">Frais livraison</p><p>{Number(r.delivery_fee).toLocaleString()} MAD</p></div>
-                        </div>
-
-                        {/* Editable fields */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                          <div className="space-y-1">
-                            <label className="text-sm font-medium">Véhicule</label>
-                            <Select value={editState[r.id]?.vehicle_id || r.vehicle_id} onValueChange={(v) => setEdit(r.id, { vehicle_id: v })}>
-                              <SelectTrigger><SelectValue /></SelectTrigger>
-                              <SelectContent>
-                                {vehicles.map((v) => (
-                                  <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="space-y-1">
-                            <label className="text-sm font-medium">Date départ</label>
-                            <Input type="date" value={editState[r.id]?.pickup_date || r.pickup_date} onChange={(e) => setEdit(r.id, { pickup_date: e.target.value })} />
-                          </div>
-                          <div className="space-y-1">
-                            <label className="text-sm font-medium">Date retour</label>
-                            <Input type="date" value={editState[r.id]?.return_date || r.return_date} onChange={(e) => setEdit(r.id, { return_date: e.target.value })} />
-                          </div>
-                          <div className="space-y-1">
-                            <label className="text-sm font-medium">Lieu prise en charge</label>
-                            <Select value={editState[r.id]?.pickup_location || r.pickup_location} onValueChange={(v) => setEdit(r.id, { pickup_location: v })}>
-                              <SelectTrigger><SelectValue /></SelectTrigger>
-                              <SelectContent>
-                                {locations.map((l) => (
-                                  <SelectItem key={l.id} value={l.name}>{l.name}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="space-y-1">
-                            <label className="text-sm font-medium">Lieu retour</label>
-                            <Select value={editState[r.id]?.return_location || r.return_location || r.pickup_location} onValueChange={(v) => setEdit(r.id, { return_location: v })}>
-                              <SelectTrigger><SelectValue /></SelectTrigger>
-                              <SelectContent>
-                                {locations.map((l) => (
-                                  <SelectItem key={l.id} value={l.name}>{l.name}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-wrap gap-4 items-end">
-                          <div className="space-y-1">
-                            <label className="text-sm font-medium">Statut réservation</label>
-                            <Select value={r.status} onValueChange={(v) => updateStatus.mutate({ id: r.id, status: v as ReservationStatus })}>
-                              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-                              <SelectContent>
-                                {(Object.keys(statusLabels) as ReservationStatus[]).map((s) => (
-                                  <SelectItem key={s} value={s}>{statusLabels[s]}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="space-y-1">
-                            <label className="text-sm font-medium">Caution ({Number(r.deposit_amount).toLocaleString()} MAD)</label>
-                            <Select value={r.deposit_status} onValueChange={(v) => updateDeposit.mutate({ id: r.id, deposit_status: v as DepositStatus })}>
-                              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-                              <SelectContent>
-                                {(Object.keys(depositLabels) as DepositStatus[]).map((s) => (
-                                  <SelectItem key={s} value={s}>{depositLabels[s]}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <Button
-                            size="sm"
-                            onClick={() => recalculate.mutate({ id: r.id, edit: { ...getEdit(r.id, r), ...editState[r.id] } })}
-                            disabled={!editState[r.id]}
-                            className="gap-1"
-                          >
-                            <RefreshCw size={14} /> Recalculer
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={() => handlePrint(r)} className="gap-1">
-                            <Printer size={14} /> Imprimer
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              {reservations.map((r) => (
+                <ReservationRow
+                  key={r.id}
+                  r={r}
+                  isExpanded={expandedId === r.id}
+                  onToggle={() => handleExpand(r.id, r)}
+                  edit={getEdit(r.id, r)}
+                  onEdit={(updates) => setEdit(r.id, r, updates)}
+                  vehicles={vehicles}
+                  pricingTiers={pricingTiers}
+                  locations={locations}
+                  allAddons={allAddons}
+                  onUpdateStatus={(status) => updateStatus.mutate({ id: r.id, status })}
+                  onUpdateDeposit={(deposit_status) => updateDeposit.mutate({ id: r.id, deposit_status })}
+                  onSave={(calc) => saveReservation.mutate({ id: r.id, edit: getEdit(r.id, r), calc })}
+                  onPrint={(calc) => handlePrint(r, getEdit(r.id, r), calc)}
+                  isSaving={saveReservation.isPending}
+                />
+              ))}
             </div>
           ) : (
             <p className="text-center py-8 text-muted-foreground">Aucune réservation.</p>
@@ -348,6 +276,202 @@ const AdminReservations = () => {
         </CardContent>
       </Card>
     </AdminLayout>
+  );
+};
+
+// --- Calc helper used by the row ---
+function useCalc(edit: EditState, vehicles: any[], pricingTiers: any[], locations: any[], allAddons: any[]) {
+  return useMemo(() => {
+    const days = Math.max(1, Math.ceil((new Date(edit.return_date).getTime() - new Date(edit.pickup_date).getTime()) / 86400000));
+    const tiers = pricingTiers.filter((t: any) => t.vehicle_id === edit.vehicle_id);
+    const dailyRate = getDailyRateFromTiers(tiers, days);
+    const vehicleTotal = dailyRate * days;
+
+    const addonsTotal = edit.addons.reduce((sum, aid) => {
+      const addon = allAddons.find((a: any) => a.id === aid);
+      return sum + (addon ? Number(addon.price_per_day) * days : 0);
+    }, 0);
+
+    const deliveryFee = getDeliveryFee(locations, edit.pickup_location, edit.return_location || edit.pickup_location);
+    const vehicle = vehicles.find((v: any) => v.id === edit.vehicle_id);
+    const depositAmount = vehicle ? Number(vehicle.security_deposit) : 0;
+    const totalPrice = vehicleTotal + addonsTotal + deliveryFee;
+
+    return { days, dailyRate, vehicleTotal, addonsTotal, deliveryFee, depositAmount, totalPrice };
+  }, [edit, vehicles, pricingTiers, locations, allAddons]);
+}
+
+// --- Row component ---
+interface RowProps {
+  r: any;
+  isExpanded: boolean;
+  onToggle: () => void;
+  edit: EditState;
+  onEdit: (updates: Partial<EditState>) => void;
+  vehicles: any[];
+  pricingTiers: any[];
+  locations: any[];
+  allAddons: any[];
+  onUpdateStatus: (s: ReservationStatus) => void;
+  onUpdateDeposit: (s: DepositStatus) => void;
+  onSave: (calc: { totalPrice: number; deliveryFee: number; depositAmount: number }) => void;
+  onPrint: (calc: ReturnType<typeof useCalc>) => void;
+  isSaving: boolean;
+}
+
+const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, pricingTiers, locations, allAddons, onUpdateStatus, onUpdateDeposit, onSave, onPrint, isSaving }: RowProps) => {
+  const calc = useCalc(edit, vehicles, pricingTiers, locations, allAddons);
+
+  const toggleAddon = (addonId: string) => {
+    const current = edit.addons;
+    onEdit({
+      addons: current.includes(addonId) ? current.filter((id) => id !== addonId) : [...current, addonId],
+    });
+  };
+
+  return (
+    <div className="border rounded-lg">
+      <div
+        className="flex flex-wrap items-center justify-between p-4 cursor-pointer hover:bg-secondary/50 gap-2"
+        onClick={onToggle}
+      >
+        <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[r.status as ReservationStatus]}`}>
+            {statusLabels[r.status as ReservationStatus]}
+          </span>
+          <span className="font-medium text-sm">{r.customer_first_name} {r.customer_last_name}</span>
+          <span className="text-sm text-muted-foreground">{(r as any).vehicles?.name}</span>
+        </div>
+        <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
+          <span className="text-xs sm:text-sm">{r.pickup_date} → {r.return_date}</span>
+          <span className="font-semibold text-primary text-sm">{Number(r.total_price).toLocaleString()} MAD</span>
+        </div>
+      </div>
+
+      {isExpanded && (
+        <div className="border-t p-4 bg-secondary/30 space-y-4">
+          {/* Client info */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div><p className="text-muted-foreground">Email</p><p className="break-all">{r.customer_email}</p></div>
+            <div><p className="text-muted-foreground">Téléphone</p><p>{r.customer_phone}</p></div>
+            <div><p className="text-muted-foreground">Permis</p><p>{r.customer_license}</p></div>
+            <div><p className="text-muted-foreground">Créée le</p><p>{new Date(r.created_at).toLocaleDateString("fr-FR")}</p></div>
+          </div>
+
+          {/* Editable fields */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Véhicule</label>
+              <Select value={edit.vehicle_id} onValueChange={(v) => onEdit({ vehicle_id: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {vehicles.map((v) => (
+                    <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Date départ</label>
+              <Input type="date" value={edit.pickup_date} onChange={(e) => onEdit({ pickup_date: e.target.value })} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Date retour</label>
+              <Input type="date" value={edit.return_date} onChange={(e) => onEdit({ return_date: e.target.value })} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Lieu prise en charge</label>
+              <Select value={edit.pickup_location} onValueChange={(v) => onEdit({ pickup_location: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {locations.map((l) => (
+                    <SelectItem key={l.id} value={l.name}>{l.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Lieu retour</label>
+              <Select value={edit.return_location} onValueChange={(v) => onEdit({ return_location: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {locations.map((l) => (
+                    <SelectItem key={l.id} value={l.name}>{l.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Addon checkboxes */}
+          {allAddons.length > 0 && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Options</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                {allAddons.map((addon) => (
+                  <label key={addon.id} className="flex items-center gap-2 p-2 border rounded-md cursor-pointer hover:bg-secondary/50">
+                    <Checkbox
+                      checked={edit.addons.includes(addon.id)}
+                      onCheckedChange={() => toggleAddon(addon.id)}
+                    />
+                    <span className="text-sm">{addon.name}</span>
+                    <span className="text-xs text-muted-foreground ml-auto">{Number(addon.price_per_day).toLocaleString()} MAD/j</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Live price preview */}
+          <div className="bg-background border rounded-lg p-4 space-y-1 text-sm">
+            <p className="font-medium text-base mb-2">Aperçu tarif</p>
+            <div className="flex justify-between"><span className="text-muted-foreground">Véhicule ({calc.days}j × {calc.dailyRate.toLocaleString()} MAD)</span><span>{calc.vehicleTotal.toLocaleString()} MAD</span></div>
+            {calc.addonsTotal > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Options</span><span>{calc.addonsTotal.toLocaleString()} MAD</span></div>}
+            {calc.deliveryFee > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Frais de livraison</span><span>{calc.deliveryFee.toLocaleString()} MAD</span></div>}
+            <div className="flex justify-between"><span className="text-muted-foreground">Caution</span><span>{calc.depositAmount.toLocaleString()} MAD</span></div>
+            <div className="flex justify-between font-bold text-base pt-2 border-t"><span>Total</span><span className="text-primary">{calc.totalPrice.toLocaleString()} MAD</span></div>
+          </div>
+
+          {/* Status + deposit + actions */}
+          <div className="flex flex-wrap gap-4 items-end">
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Statut réservation</label>
+              <Select value={r.status} onValueChange={(v) => onUpdateStatus(v as ReservationStatus)}>
+                <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(statusLabels) as ReservationStatus[]).map((s) => (
+                    <SelectItem key={s} value={s}>{statusLabels[s]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Caution ({calc.depositAmount.toLocaleString()} MAD)</label>
+              <Select value={r.deposit_status} onValueChange={(v) => onUpdateDeposit(v as DepositStatus)}>
+                <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(depositLabels) as DepositStatus[]).map((s) => (
+                    <SelectItem key={s} value={s}>{depositLabels[s]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button
+              size="sm"
+              onClick={() => onSave(calc)}
+              disabled={isSaving}
+              className="gap-1"
+            >
+              <Save size={14} /> Sauvegarder
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => onPrint(calc)} className="gap-1">
+              <Printer size={14} /> Imprimer
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
