@@ -1,52 +1,46 @@
 
 
-# Three Features: Hide Fees in Dropdown, Admin Reservation Editing + Print, Mobile Admin Layout
+# Auto-Recalculate + Addon Editing for Admin Reservations
 
-## 1. Remove delivery fee labels from location dropdowns
+## Overview
+When any field (vehicle, dates, locations, addons) changes in the admin reservation editor, the price recalculates automatically and displays a live preview. No manual "Recalculer" button needed — it becomes a "Sauvegarder" (save) button.
 
-**File: `src/components/reservation/StepDates.tsx`**
-- Remove the `(XXX MAD)` and `(Gratuit)` text from both pickup and dropoff `SelectItem` labels
-- Show only `{l.name}` — fees are already visible in the sidebar summary
+## Database Migration
+Add DELETE policy on `reservation_addons` for admins (currently missing):
+```sql
+CREATE POLICY "Admins can delete reservation addons"
+  ON public.reservation_addons FOR DELETE TO authenticated
+  USING (has_role(auth.uid(), 'admin'));
+```
 
-## 2. Admin reservation editing (vehicle, dates, recalculate) + print receipt
+## File: `src/pages/admin/AdminReservations.tsx`
 
-**File: `src/pages/admin/AdminReservations.tsx`**
-- In the expanded reservation detail, add editable fields:
-  - **Vehicle selector**: dropdown of all vehicles (fetched via `useVehicles`)
-  - **Pickup/return date**: date inputs pre-filled with current values
-  - **Pickup/return location**: dropdowns from `useLocations`
-- Add a "Recalculer" button that:
-  - Computes new rental days from updated dates
-  - Looks up pricing tiers for the new vehicle
-  - Recalculates delivery fees from locations
-  - Fetches reservation_addons for addon costs
-  - Updates `vehicle_id`, `pickup_date`, `return_date`, `pickup_location`, `return_location`, `total_price`, `delivery_fee`, `deposit_amount` on the reservation row
-- Add a "Imprimer" (Print) button that opens a printable receipt view:
-  - Create a hidden print-optimized div or use `window.print()` with a print-specific layout
-  - Receipt shows: client info, vehicle, dates, locations, price breakdown (vehicle cost, addons, delivery fee, total), deposit amount, reservation ID
-  - Use `@media print` CSS to hide admin chrome and show only the receipt
+### Changes:
+1. **Add addon editing** — checkbox grid of all available addons, pre-checked from existing `reservation_addons` for that reservation. Selected addon IDs stored in `editState[id].addons`.
 
-**Files:**
-- `src/pages/admin/AdminReservations.tsx` — add edit fields, recalculate logic, print button
-- `src/index.css` — add `@media print` styles to hide sidebar/nav
+2. **Auto-recalculate with `useMemo`-style logic** — every time `editState[id]` changes (vehicle, dates, locations, addons), compute and display:
+   - Vehicle daily rate × days
+   - Addons total (each addon's `price_per_day` × days)
+   - Delivery fee (from locations)
+   - New deposit amount (from selected vehicle)
+   - Grand total = vehicle + addons + delivery fee
+   - Show this as a live "Nouveau total" preview section
 
-## 3. Mobile-optimized admin layout
+3. **Replace "Recalculer" with "Sauvegarder"** — always enabled when any edit exists. On click:
+   - Update reservation row (vehicle_id, dates, locations, total_price, delivery_fee, deposit_amount)
+   - Delete all existing `reservation_addons` for this reservation
+   - Insert the new set of selected addon IDs
+   - Clear edit state and refresh
 
-**File: `src/components/admin/AdminLayout.tsx`**
-- On mobile (use `useIsMobile` hook), replace the fixed sidebar with:
-  - A top header bar with logo + hamburger menu button
-  - A Sheet (slide-in drawer from left) containing the nav items
-  - Bottom navigation bar with icon-only nav items for quick access (Dashboard, Flotte, Réservations, Lieux, Plus)
-- Desktop remains unchanged (sidebar layout)
+4. **Initialize edit state on expand** — when a reservation is expanded, auto-populate `editState[id].addons` from `reservationAddons` data.
 
-**Files:**
-- `src/components/admin/AdminLayout.tsx` — conditional mobile/desktop layout using `useIsMobile`
+### UI in expanded detail:
+- Existing fields: vehicle selector, date inputs, location dropdowns (unchanged)
+- New "Options" section: checkbox grid showing addon name + price/day
+- New "Aperçu tarif" box: shows breakdown (vehicle cost, addons, delivery, total) — updates live
+- "Sauvegarder" button replaces "Recalculer"
 
-## Summary of all files changed
-1. `src/components/reservation/StepDates.tsx` — remove fee labels from dropdowns
-2. `src/pages/admin/AdminReservations.tsx` — add vehicle/date editing, recalculate, print receipt
-3. `src/components/admin/AdminLayout.tsx` — responsive mobile layout with bottom nav + hamburger drawer
-4. `src/index.css` — print media styles
-
-No database migrations needed — all fields already exist on the reservations table.
+## Files Changed
+1. `src/pages/admin/AdminReservations.tsx` — addon checkboxes, live price preview, save with addon sync
+2. Migration — DELETE policy on `reservation_addons`
 
