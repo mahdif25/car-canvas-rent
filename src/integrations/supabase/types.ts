@@ -44,6 +44,33 @@ export type Database = {
         }
         Relationships: []
       }
+      locations: {
+        Row: {
+          created_at: string
+          delivery_fee: number
+          id: string
+          is_enabled: boolean
+          is_free: boolean
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_fee?: number
+          id?: string
+          is_enabled?: boolean
+          is_free?: boolean
+          name: string
+        }
+        Update: {
+          created_at?: string
+          delivery_fee?: number
+          id?: string
+          is_enabled?: boolean
+          is_free?: boolean
+          name?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -111,6 +138,7 @@ export type Database = {
           customer_license: string
           customer_nationality: string | null
           customer_phone: string
+          delivery_fee: number
           deposit_amount: number
           deposit_status: Database["public"]["Enums"]["deposit_status"]
           id: string
@@ -134,6 +162,7 @@ export type Database = {
           customer_license: string
           customer_nationality?: string | null
           customer_phone: string
+          delivery_fee?: number
           deposit_amount?: number
           deposit_status?: Database["public"]["Enums"]["deposit_status"]
           id?: string
@@ -157,6 +186,7 @@ export type Database = {
           customer_license?: string
           customer_nationality?: string | null
           customer_phone?: string
+          delivery_fee?: number
           deposit_amount?: number
           deposit_status?: Database["public"]["Enums"]["deposit_status"]
           id?: string
