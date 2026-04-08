@@ -1,64 +1,102 @@
 
 
-# Connect Public Pages to Real Database
+# Location-Based Delivery Fees System
 
 ## Overview
-Replace all mock data imports with live queries to the database using the Supabase client. The database already has tables for `vehicles`, `vehicle_pricing_tiers`, `addon_options`, and `reservations` with proper RLS policies (public SELECT on vehicles, pricing, and addons).
+Create a `locations` table in the database to replace the hardcoded locations array. Each location has a configurable delivery fee (pickup/dropoff) that can be marked as free or paid. The reservation flow shows a "different dropoff?" toggle, and delivery fees appear as a single combined line item in checkout.
 
-## Files to Change
+## Database Migration
 
-### 1. Create `src/hooks/useVehicles.ts` — shared data hooks
-New file with React Query (or `useEffect`-based) hooks:
-- `useVehicles()` — fetches all vehicles from `vehicles` table
-- `useVehicle(id)` — fetches single vehicle by ID
-- `usePricingTiers(vehicleId?)` — fetches pricing tiers (optionally filtered)
-- `useAddons()` — fetches enabled addons from `addon_options`
-- `getDailyRateFromTiers(tiers, days)` — pure function to compute rate from fetched tiers
-- `getStartingPriceFromTiers(tiers)` — pure function for min price
+### New table: `locations`
+```sql
+CREATE TABLE public.locations (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL UNIQUE,
+  delivery_fee numeric NOT NULL DEFAULT 0,
+  is_free boolean NOT NULL DEFAULT false,
+  is_enabled boolean NOT NULL DEFAULT true,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
 
-### 2. Update `src/pages/Fleet.tsx`
-- Replace `mockVehicles` / `getStartingPrice` with `useVehicles()` and `usePricingTiers()`
-- Add loading skeleton while data loads
-- Categories derived from fetched data
+ALTER TABLE public.locations ENABLE ROW LEVEL SECURITY;
 
-### 3. Update `src/pages/VehicleDetail.tsx`
-- Replace `mockVehicles` / `mockPricingTiers` with `useVehicle(id)` and `usePricingTiers(id)`
-- Add loading state
+-- Public can read
+CREATE POLICY "Anyone can view locations" ON public.locations FOR SELECT TO public USING (true);
+-- Admin CRUD
+CREATE POLICY "Admins can insert locations" ON public.locations FOR INSERT TO authenticated WITH CHECK (has_role(auth.uid(), 'admin'));
+CREATE POLICY "Admins can update locations" ON public.locations FOR UPDATE TO authenticated USING (has_role(auth.uid(), 'admin'));
+CREATE POLICY "Admins can delete locations" ON public.locations FOR DELETE TO authenticated USING (has_role(auth.uid(), 'admin'));
+```
 
-### 4. Update `src/pages/Index.tsx`
-- Replace `mockVehicles.slice(0,3)` with `useVehicles()` (take first 3)
-- Keep `locations` array as-is (no locations table exists)
+### Add delivery_fee column to reservations
+```sql
+ALTER TABLE public.reservations ADD COLUMN delivery_fee numeric NOT NULL DEFAULT 0;
+```
 
-### 5. Update `src/components/reservation/StepVehicle.tsx`
-- Replace `mockVehicles` / `getDailyRate` with hooks
-- Pass vehicles + pricing data via props or use hooks directly
+## Frontend Changes
 
-### 6. Update `src/components/reservation/StepAddons.tsx`
-- Replace `mockAddons` with `useAddons()`
+### 1. New hook: `src/hooks/useLocations.ts`
+- `useLocations()` — fetches enabled locations from `locations` table
+- Export a `Location` type
 
-### 7. Update `src/components/reservation/ReservationSidebar.tsx`
-- Replace `mockVehicles` / `mockAddons` lookups with data passed as props or fetched via hooks
+### 2. Update `src/components/reservation/StepDates.tsx`
+- Fetch locations from DB instead of mock data
+- Show pickup location dropdown
+- Add a checkbox/toggle: "Retour dans un lieu different ?"
+- When toggled ON, show a second dropdown for dropoff location
+- When toggled OFF, dropoff = pickup (default behavior)
+- Reference image layout: pickup location, dates, then optional dropoff
 
-### 8. Update `src/components/reservation/StepDriverInfo.tsx`
-- Replace `mockVehicles.find()` with data from props or hook
+### 3. Update `src/pages/Index.tsx`
+- Replace `locations` import from mock-data with `useLocations()` hook
 
-### 9. Update `src/components/reservation/StepConfirmation.tsx`
-- Replace mock lookups with real data from props or hooks
+### 4. Update `src/components/reservation/ReservationSidebar.tsx`
+- Accept `locations` data as prop (from DB)
+- Calculate delivery fee: `pickupFee + dropoffFee` (use 0 if `is_free` is true)
+- Show "Frais de livraison" line item (or "Gratuit" if both are free)
+- Add delivery fee to total
 
-### 10. Update `src/pages/Reservation.tsx`
-- Fetch vehicles, pricing tiers, and addons at the top level
-- Pass them down to child step components as props (avoids redundant fetches)
-- On confirmation, INSERT the reservation into the `reservations` table + `reservation_addons`
-- Use the returned row ID as the confirmation ID
+### 5. Update `src/components/reservation/StepConfirmation.tsx`
+- Show delivery fee line in the pricing breakdown
+- Accept locations data to compute/display fee
 
-### 11. Keep `src/lib/mock-data.ts`
-- Keep `locations` array export (no DB table for this)
-- Remove or leave other exports (they'll be unused)
+### 6. Update `src/pages/Reservation.tsx`
+- Fetch locations via `useLocations()`
+- Pass locations to StepDates, ReservationSidebar, StepConfirmation
+- Calculate delivery fee in `handleConfirm` and include in `total_price`
+- Save `delivery_fee` to the reservation row
 
-## Key Technical Details
-- All public tables have `SELECT` with `USING (true)` for `public` role — no auth needed for reads
-- Reservation INSERT is also open (`WITH CHECK (true)`) — guests can create reservations without login
-- The `reservation_addons` INSERT is also open
-- Vehicle IDs in the DB are UUIDs, not "1", "2" etc. — the reservation form's `vehicle_id` field already uses string type so this is compatible
-- Loading states should show skeletons/spinners to avoid layout shift
+### 7. New admin page: `src/pages/admin/AdminLocations.tsx`
+- CRUD for locations: name, delivery fee (MAD), free/paid toggle, enabled/disabled
+- Table listing all locations with inline edit or modal
+- Add/delete locations
+
+### 8. Update `src/App.tsx`
+- Add route `/admin/locations` -> `AdminLocations`
+
+### 9. Update `src/components/admin/AdminLayout.tsx`
+- Add "Lieux" nav link in sidebar
+
+### 10. Update `src/lib/types.ts`
+- Add `delivery_fee` to `ReservationFormData` (not needed — we compute it from selected locations)
+- No form field changes needed since locations are selected by name and fees are looked up
+
+## Delivery Fee Calculation Logic
+```
+pickupFee = location.is_free ? 0 : location.delivery_fee
+dropoffFee = (same location as pickup) ? 0 : returnLocation.is_free ? 0 : returnLocation.delivery_fee
+totalDeliveryFee = pickupFee + dropoffFee
+```
+
+## Files Changed
+- **Migration**: new `locations` table + `delivery_fee` column on `reservations`
+- `src/hooks/useLocations.ts` (new)
+- `src/pages/admin/AdminLocations.tsx` (new)
+- `src/components/reservation/StepDates.tsx`
+- `src/components/reservation/ReservationSidebar.tsx`
+- `src/components/reservation/StepConfirmation.tsx`
+- `src/pages/Reservation.tsx`
+- `src/pages/Index.tsx`
+- `src/App.tsx`
+- `src/components/admin/AdminLayout.tsx`
 
