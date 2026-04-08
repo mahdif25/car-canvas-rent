@@ -1,46 +1,92 @@
 
 
-# Auto-Recalculate + Addon Editing for Admin Reservations
+# Enhanced Receipt Design — Sketch & Plan
 
-## Overview
-When any field (vehicle, dates, locations, addons) changes in the admin reservation editor, the price recalculates automatically and displays a live preview. No manual "Recalculer" button needed — it becomes a "Sauvegarder" (save) button.
+## Receipt Layout Sketch
 
-## Database Migration
-Add DELETE policy on `reservation_addons` for admins (currently missing):
-```sql
-CREATE POLICY "Admins can delete reservation addons"
-  ON public.reservation_addons FOR DELETE TO authenticated
-  USING (has_role(auth.uid(), 'admin'));
+```text
+┌──────────────────────────────────────────────────┐
+│                                                  │
+│         [LOGO: Centre Lux Car]                   │
+│                                                  │
+│         REÇU DE RÉSERVATION                      │
+│         N° A3F8B2C1 • 08/04/2026                 │
+│                                                  │
+│  ─────────────────────────────────────────────── │
+│                                                  │
+│  ┌─────────────────────────────────────────────┐ │
+│  │  INFORMATIONS CLIENT                        │ │
+│  │                                             │ │
+│  │  Nom          Mohamed El Amrani             │ │
+│  │  Email        m.elamrani@email.com          │ │
+│  │  Téléphone    +212 6 12 34 56 78            │ │
+│  │  Permis       AB-123456                     │ │
+│  └─────────────────────────────────────────────┘ │
+│                                                  │
+│  ┌─────────────────────────────────────────────┐ │
+│  │  DÉTAILS DE LA RÉSERVATION                  │ │
+│  │                                             │ │
+│  │  Véhicule     Dacia Duster 2024             │ │
+│  │  Durée        5 jours                       │ │
+│  │  Du           08/04/2026                    │ │
+│  │  Au           13/04/2026                    │ │
+│  │  Prise en     Aéroport Marrakech            │ │
+│  │  charge                                     │ │
+│  │  Retour       Gare Marrakech                │ │
+│  │  Options      GPS, Siège bébé               │ │
+│  └─────────────────────────────────────────────┘ │
+│                                                  │
+│  ┌─────────────────────────────────────────────┐ │
+│  │  TARIFICATION                               │ │
+│  │                                             │ │
+│  │  Véhicule (5j × 350 MAD)       1,750 MAD   │ │
+│  │  Options (5j)                     250 MAD   │ │
+│  │  Frais de livraison               100 MAD   │ │
+│  │  ─────────────────────────────────────────  │ │
+│  │  Caution                        3,000 MAD   │ │
+│  │  ═════════════════════════════════════════  │ │
+│  │  TOTAL                          2,100 MAD   │ │
+│  │                       (green, bold, large)  │ │
+│  └─────────────────────────────────────────────┘ │
+│                                                  │
+│  ─────────────────────────────────────────────── │
+│                                                  │
+│  Statut: ██ Confirmée    Caution: ██ Collectée   │
+│                                                  │
+│  ─────────────────────────────────────────────── │
+│  Merci pour votre confiance !                    │
+│  Centre Lux Car • centreluxcar.com               │
+│  ─────────────────────────────────────────────── │
+│                                                  │
+└──────────────────────────────────────────────────┘
 ```
 
-## File: `src/pages/admin/AdminReservations.tsx`
+## Design Matching Website Brand
 
-### Changes:
-1. **Add addon editing** — checkbox grid of all available addons, pre-checked from existing `reservation_addons` for that reservation. Selected addon IDs stored in `editState[id].addons`.
+- **Font**: Poppins (imported via Google Fonts in the receipt HTML)
+- **Primary green**: `#00C853` — used for the total amount, status badges, and accent lines
+- **Dark**: `#1A1A1A` — body text color
+- **Logo**: Embedded as a base64 data URI from `src/assets/logo.png` (loaded at build time)
+- **Card-style sections**: Light gray background (`#f8f8f8`) with subtle border radius for Client, Reservation, and Pricing blocks
+- **Status badges**: Colored pill badges matching the admin UI (yellow/blue/green/gray/red)
+- **Footer**: Company name, website, and a thank-you message
+- **Separator lines**: Thin green accent lines between sections
 
-2. **Auto-recalculate with `useMemo`-style logic** — every time `editState[id]` changes (vehicle, dates, locations, addons), compute and display:
-   - Vehicle daily rate × days
-   - Addons total (each addon's `price_per_day` × days)
-   - Delivery fee (from locations)
-   - New deposit amount (from selected vehicle)
-   - Grand total = vehicle + addons + delivery fee
-   - Show this as a live "Nouveau total" preview section
+## Technical Approach
 
-3. **Replace "Recalculer" with "Sauvegarder"** — always enabled when any edit exists. On click:
-   - Update reservation row (vehicle_id, dates, locations, total_price, delivery_fee, deposit_amount)
-   - Delete all existing `reservation_addons` for this reservation
-   - Insert the new set of selected addon IDs
-   - Clear edit state and refresh
+### File: `src/pages/admin/AdminReservations.tsx`
 
-4. **Initialize edit state on expand** — when a reservation is expanded, auto-populate `editState[id].addons` from `reservationAddons` data.
+Replace the `handlePrint` function's HTML template with the enhanced receipt:
 
-### UI in expanded detail:
-- Existing fields: vehicle selector, date inputs, location dropdowns (unchanged)
-- New "Options" section: checkbox grid showing addon name + price/day
-- New "Aperçu tarif" box: shows breakdown (vehicle cost, addons, delivery, total) — updates live
-- "Sauvegarder" button replaces "Recalculer"
+1. **Convert logo to base64** at component level using a canvas trick or import it as a URL and reference it directly in the print window
+2. **Poppins font**: Add Google Fonts `@import` in the receipt `<head>`
+3. **Structured sections** with card-like containers for Client, Reservation, and Pricing
+4. **Status + deposit badges** shown with colored backgrounds
+5. **Dates formatted** in `fr-FR` locale (e.g., "08 avril 2026") instead of raw ISO
+6. **Duration** shown explicitly ("5 jours")
+7. **Addon breakdown** listed individually with per-day pricing
+8. **Caution** separated from the subtotal with its own line
+9. **Footer** with company branding
 
-## Files Changed
-1. `src/pages/admin/AdminReservations.tsx` — addon checkboxes, live price preview, save with addon sync
-2. Migration — DELETE policy on `reservation_addons`
+No database changes needed. Single file edit to `AdminReservations.tsx`.
 
