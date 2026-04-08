@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Calendar, Car, Shield, Clock, MapPin, ChevronRight } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
-import { locations } from "@/lib/mock-data";
+import { useLocations } from "@/hooks/useLocations";
 import { useVehicles, usePricingTiers, getStartingPriceFromTiers } from "@/hooks/useVehicles";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";

@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { ReservationFormData } from "@/lib/types";
 import { useVehicles, usePricingTiers, useAddons, getDailyRateFromTiers } from "@/hooks/useVehicles";
+import { useLocations, getDeliveryFee } from "@/hooks/useLocations";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import StepDates from "@/components/reservation/StepDates";
@@ -51,6 +52,7 @@ const Reservation = () => {
   const { data: vehicles = [], isLoading: loadingVehicles } = useVehicles();
   const { data: pricingTiers = [], isLoading: loadingTiers } = usePricingTiers();
   const { data: addons = [], isLoading: loadingAddons } = useAddons();
+  const { data: locations = [], isLoading: loadingLocations } = useLocations();
 
   const updateForm = (updates: Partial<ReservationFormData>) => {
     setFormData((prev) => ({ ...prev, ...updates }));
@@ -79,7 +81,12 @@ const Reservation = () => {
         const addon = addons.find((a) => a.id === id);
         return sum + (addon ? Number(addon.price_per_day) * rentalDays : 0);
       }, 0);
-      const totalPrice = vehicleTotal + addonsTotal;
+      const deliveryFee = getDeliveryFee(
+        locations,
+        formData.pickup_location,
+        formData.return_location || formData.pickup_location
+      );
+      const totalPrice = vehicleTotal + addonsTotal + deliveryFee;
       const depositAmount = selectedVehicle ? Number(selectedVehicle.security_deposit) : 0;
 
       const { data: reservation, error } = await supabase
@@ -101,13 +108,13 @@ const Reservation = () => {
           customer_dob: formData.dob || null,
           total_price: totalPrice,
           deposit_amount: depositAmount,
+          delivery_fee: deliveryFee,
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      // Insert reservation addons
       if (formData.selected_addons.length > 0) {
         const addonRows = formData.selected_addons.map((addon_id) => ({
           reservation_id: reservation.id,
@@ -127,7 +134,7 @@ const Reservation = () => {
     }
   };
 
-  const isLoading = loadingVehicles || loadingTiers || loadingAddons;
+  const isLoading = loadingVehicles || loadingTiers || loadingAddons || loadingLocations;
 
   if (isLoading) {
     return (
@@ -157,7 +164,6 @@ const Reservation = () => {
             <span className="text-primary">Réservation</span>
           </h1>
 
-          {/* Step indicator */}
           {currentStep < 5 && (
             <div className="flex items-center gap-2 mb-8 overflow-x-auto">
               {steps.slice(0, 4).map((step) => (
@@ -189,7 +195,7 @@ const Reservation = () => {
           <div className={currentStep < 5 ? "grid grid-cols-1 lg:grid-cols-3 gap-8" : ""}>
             <div className={currentStep < 5 ? "lg:col-span-2" : ""}>
               {currentStep === 1 && (
-                <StepDates formData={formData} updateForm={updateForm} onNext={nextStep} />
+                <StepDates formData={formData} updateForm={updateForm} onNext={nextStep} locations={locations} />
               )}
               {currentStep === 2 && (
                 <StepVehicle formData={formData} updateForm={updateForm} rentalDays={rentalDays} onNext={nextStep} onBack={prevStep} vehicles={vehicles} pricingTiers={pricingTiers} />
@@ -201,13 +207,13 @@ const Reservation = () => {
                 <StepDriverInfo formData={formData} updateForm={updateForm} onConfirm={handleConfirm} onBack={prevStep} rentalDays={rentalDays} vehicle={selectedVehicle} />
               )}
               {currentStep === 5 && (
-                <StepConfirmation formData={formData} confirmationId={confirmationId} rentalDays={rentalDays} vehicle={selectedVehicle} pricingTiers={pricingTiers} addons={addons} />
+                <StepConfirmation formData={formData} confirmationId={confirmationId} rentalDays={rentalDays} vehicle={selectedVehicle} pricingTiers={pricingTiers} addons={addons} locations={locations} />
               )}
             </div>
 
             {currentStep < 5 && (
               <div className="lg:col-span-1">
-                <ReservationSidebar formData={formData} rentalDays={rentalDays} vehicles={vehicles} pricingTiers={pricingTiers} addons={addons} />
+                <ReservationSidebar formData={formData} rentalDays={rentalDays} vehicles={vehicles} pricingTiers={pricingTiers} addons={addons} locations={locations} />
               </div>
             )}
           </div>
