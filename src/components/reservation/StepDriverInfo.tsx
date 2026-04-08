@@ -12,9 +12,25 @@ interface Props {
   onBack: () => void;
   rentalDays: number;
   vehicle: Vehicle | undefined;
+  analytics?: {
+    captureLeadField: (fields: Record<string, string>, step: number) => void;
+    trackFieldCapture: (fields: Record<string, string>) => void;
+  };
 }
 
-const StepDriverInfo = ({ formData, updateForm, onConfirm, onBack, vehicle }: Props) => {
+const StepDriverInfo = ({ formData, updateForm, onConfirm, onBack, vehicle, analytics }: Props) => {
+  const handleBlur = (field: string, value: string) => {
+    if (!value || !analytics) return;
+    const fields: Record<string, string> = { [field]: value };
+    if (formData.first_name) fields.first_name = formData.first_name;
+    if (formData.last_name) fields.last_name = formData.last_name;
+    if (formData.email) fields.email = formData.email;
+    if (formData.phone) fields.phone = formData.phone;
+    if (formData.license_number) fields.license_number = formData.license_number;
+    analytics.captureLeadField(fields, 4);
+    analytics.trackFieldCapture(fields);
+  };
+
   const isValid =
     formData.first_name &&
     formData.last_name &&

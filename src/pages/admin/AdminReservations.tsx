@@ -313,6 +313,21 @@ const AdminReservations = () => {
                   onSave={(calc) => saveReservation.mutate({ id: r.id, edit: getEdit(r.id, r), calc })}
                   onPrint={(calc) => handlePrint(r, getEdit(r.id, r), calc)}
                   isSaving={saveReservation.isPending}
+                  clientEdit={clientEdits[r.id] || null}
+                  onStartClientEdit={(field, value) => setClientEdits((prev) => ({ ...prev, [r.id]: { field, value } }))}
+                  onCancelClientEdit={() => setClientEdits((prev) => ({ ...prev, [r.id]: null }))}
+                  onSaveClientEdit={async (id, field, value) => {
+                    const updateObj: any = {};
+                    if (field === "email") updateObj.customer_email = value;
+                    if (field === "phone") updateObj.customer_phone = value;
+                    if (field === "license") updateObj.customer_license = value;
+                    const { error } = await supabase.from("reservations").update(updateObj).eq("id", id);
+                    if (!error) {
+                      qc.invalidateQueries({ queryKey: ["admin-reservations"] });
+                      toast({ title: "Information mise à jour" });
+                    }
+                    setClientEdits((prev) => ({ ...prev, [id]: null }));
+                  }}
                 />
               ))}
             </div>
@@ -363,9 +378,13 @@ interface RowProps {
   onSave: (calc: { totalPrice: number; deliveryFee: number; depositAmount: number }) => void;
   onPrint: (calc: ReturnType<typeof useCalc>) => void;
   isSaving: boolean;
+  clientEdit: { field: string; value: string } | null;
+  onStartClientEdit: (field: string, value: string) => void;
+  onCancelClientEdit: () => void;
+  onSaveClientEdit: (id: string, field: string, value: string) => void;
 }
 
-const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, pricingTiers, locations, allAddons, onUpdateStatus, onUpdateDeposit, onSave, onPrint, isSaving }: RowProps) => {
+const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, pricingTiers, locations, allAddons, onUpdateStatus, onUpdateDeposit, onSave, onPrint, isSaving, clientEdit, onStartClientEdit, onCancelClientEdit, onSaveClientEdit }: RowProps) => {
   const calc = useCalc(edit, vehicles, pricingTiers, locations, allAddons);
 
   const toggleAddon = (addonId: string) => {

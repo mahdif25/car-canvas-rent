@@ -135,7 +135,9 @@ const Reservation = () => {
       }
 
       setConfirmationId(reservation.id.slice(0, 8).toUpperCase());
+      analytics.markLeadCompleted(reservation.id);
       nextStep();
+
     } catch (err: any) {
       console.error("Reservation error:", err);
       toast.error("Erreur lors de la réservation. Veuillez réessayer.");
@@ -214,7 +216,7 @@ const Reservation = () => {
                 <StepAddons formData={formData} updateForm={updateForm} onNext={nextStep} onBack={prevStep} addons={addons} />
               )}
               {currentStep === 4 && (
-                <StepDriverInfo formData={formData} updateForm={updateForm} onConfirm={handleConfirm} onBack={prevStep} rentalDays={rentalDays} vehicle={selectedVehicle} />
+                <StepDriverInfo formData={formData} updateForm={updateForm} onConfirm={handleConfirm} onBack={prevStep} rentalDays={rentalDays} vehicle={selectedVehicle} analytics={analytics} />
               )}
               {currentStep === 5 && (
                 <StepConfirmation formData={formData} confirmationId={confirmationId} rentalDays={rentalDays} vehicle={selectedVehicle} pricingTiers={pricingTiers} addons={addons} locations={locations} />
