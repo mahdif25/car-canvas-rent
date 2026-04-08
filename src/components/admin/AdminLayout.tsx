@@ -13,6 +13,7 @@ const navItems = [
   { label: "Flotte", path: "/admin/fleet", icon: Car },
   { label: "Options", path: "/admin/addons", icon: Settings },
   { label: "Réservations", path: "/admin/reservations", icon: CalendarDays },
+  { label: "Lieux", path: "/admin/locations", icon: MapPin },
 ];
 
 const AdminLayout = ({ children }: Props) => {
