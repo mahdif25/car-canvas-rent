@@ -176,53 +176,98 @@ const AdminReservations = () => {
 
   const handlePrint = (r: any, edit: EditState, calc: ReturnType<typeof useCalc>) => {
     const vehicle = vehicles.find((v) => v.id === edit.vehicle_id);
-    const addonNames = edit.addons.map((aid) => allAddons.find((a) => a.id === aid)?.name).filter(Boolean);
+    const addonItems = edit.addons.map((aid) => allAddons.find((a) => a.id === aid)).filter(Boolean);
+    const fmtDate = (d: string) => new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
 
-    const w = window.open("", "_blank", "width=800,height=600");
+    const statusBadgeColors: Record<string, string> = {
+      pending: "#fef3c7;color:#b45309", confirmed: "#dbeafe;color:#1d4ed8", active: "#d1fae5;color:#047857",
+      completed: "#f3f4f6;color:#374151", cancelled: "#fee2e2;color:#b91c1c",
+    };
+    const depositBadgeColors: Record<string, string> = {
+      pending: "#fef3c7;color:#b45309", collected: "#d1fae5;color:#047857", returned: "#dbeafe;color:#1d4ed8",
+    };
+
+    const w = window.open("", "_blank", "width=800,height=700");
     if (!w) return;
-    w.document.write(`
-      <html><head><title>Reçu - ${r.id.slice(0, 8).toUpperCase()}</title>
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
+      <title>Reçu - ${r.id.slice(0, 8).toUpperCase()}</title>
+      <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
       <style>
-        body { font-family: 'Segoe UI', sans-serif; padding: 40px; color: #1a1a1a; max-width: 700px; margin: auto; }
-        h1 { font-size: 22px; margin-bottom: 4px; }
-        .sub { color: #666; font-size: 13px; margin-bottom: 24px; }
-        table { width: 100%; border-collapse: collapse; margin: 16px 0; }
-        td { padding: 6px 0; font-size: 14px; }
-        .label { color: #666; width: 40%; }
-        .section { font-weight: 600; font-size: 15px; margin: 20px 0 8px; padding-bottom: 4px; border-bottom: 1px solid #ddd; }
-        .total-row td { font-weight: 700; font-size: 16px; border-top: 2px solid #333; padding-top: 10px; }
-        @media print { body { padding: 20px; } }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; color: #1A1A1A; padding: 40px; max-width: 700px; margin: auto; }
+        .header { text-align: center; margin-bottom: 28px; }
+        .header h1 { font-size: 20px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+        .header .ref { font-size: 13px; color: #666; }
+        .accent-line { height: 3px; background: linear-gradient(90deg, #00C853, #00C853 40%, #e0e0e0 40%); border-radius: 2px; margin: 20px 0; }
+        .section { background: #f8f8f8; border-radius: 10px; padding: 20px 24px; margin-bottom: 16px; }
+        .section-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: #00C853; margin-bottom: 14px; }
+        .row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 13px; }
+        .row .label { color: #666; min-width: 160px; }
+        .row .value { font-weight: 500; text-align: right; }
+        .pricing .row { padding: 6px 0; }
+        .divider { border: none; border-top: 1px solid #ddd; margin: 8px 0; }
+        .divider-bold { border: none; border-top: 2px solid #1A1A1A; margin: 8px 0; }
+        .total-row { display: flex; justify-content: space-between; padding: 10px 0 0; }
+        .total-row .label { font-size: 16px; font-weight: 700; }
+        .total-row .value { font-size: 20px; font-weight: 700; color: #00C853; }
+        .badges { display: flex; gap: 16px; justify-content: center; margin: 20px 0; flex-wrap: wrap; }
+        .badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .footer { text-align: center; margin-top: 24px; font-size: 12px; color: #999; }
+        .footer .thanks { font-size: 14px; font-weight: 500; color: #1A1A1A; margin-bottom: 4px; }
+        @media print { body { padding: 20px; } .section { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
       </style></head><body>
-      <h1>Reçu de Réservation</h1>
-      <p class="sub">N° ${r.id.slice(0, 8).toUpperCase()} • ${new Date(r.created_at).toLocaleDateString("fr-FR")}</p>
 
-      <div class="section">Client</div>
-      <table>
-        <tr><td class="label">Nom</td><td>${r.customer_first_name} ${r.customer_last_name}</td></tr>
-        <tr><td class="label">Email</td><td>${r.customer_email}</td></tr>
-        <tr><td class="label">Téléphone</td><td>${r.customer_phone}</td></tr>
-        <tr><td class="label">Permis</td><td>${r.customer_license}</td></tr>
-      </table>
+      <div class="header">
+        <h1>Centre Lux Car</h1>
+        <p style="font-size:14px;font-weight:600;margin-top:2px;">REÇU DE RÉSERVATION</p>
+        <p class="ref">N° ${r.id.slice(0, 8).toUpperCase()} • ${fmtDate(r.created_at)}</p>
+      </div>
 
-      <div class="section">Réservation</div>
-      <table>
-        <tr><td class="label">Véhicule</td><td>${vehicle?.name || "—"}</td></tr>
-        <tr><td class="label">Dates</td><td>${edit.pickup_date} → ${edit.return_date}</td></tr>
-        <tr><td class="label">Lieu prise en charge</td><td>${edit.pickup_location}</td></tr>
-        <tr><td class="label">Lieu de retour</td><td>${edit.return_location || edit.pickup_location}</td></tr>
-        ${addonNames.length ? `<tr><td class="label">Options</td><td>${addonNames.join(", ")}</td></tr>` : ""}
-      </table>
+      <div class="accent-line"></div>
 
-      <div class="section">Tarification</div>
-      <table>
-        <tr><td class="label">Véhicule (${calc.days}j × ${calc.dailyRate.toLocaleString()} MAD)</td><td>${calc.vehicleTotal.toLocaleString()} MAD</td></tr>
-        ${calc.addonsTotal > 0 ? `<tr><td class="label">Options</td><td>${calc.addonsTotal.toLocaleString()} MAD</td></tr>` : ""}
-        ${calc.deliveryFee > 0 ? `<tr><td class="label">Frais de livraison</td><td>${calc.deliveryFee.toLocaleString()} MAD</td></tr>` : ""}
-        <tr><td class="label">Caution</td><td>${calc.depositAmount.toLocaleString()} MAD</td></tr>
-        <tr class="total-row"><td>Total</td><td>${calc.totalPrice.toLocaleString()} MAD</td></tr>
-      </table>
-      </body></html>
-    `);
+      <div class="section">
+        <div class="section-title">Informations Client</div>
+        <div class="row"><span class="label">Nom</span><span class="value">${r.customer_first_name} ${r.customer_last_name}</span></div>
+        <div class="row"><span class="label">Email</span><span class="value">${r.customer_email}</span></div>
+        <div class="row"><span class="label">Téléphone</span><span class="value">${r.customer_phone}</span></div>
+        <div class="row"><span class="label">Permis</span><span class="value">${r.customer_license}</span></div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Détails de la Réservation</div>
+        <div class="row"><span class="label">Véhicule</span><span class="value">${vehicle?.name || "—"}</span></div>
+        <div class="row"><span class="label">Durée</span><span class="value">${calc.days} jour${calc.days > 1 ? "s" : ""}</span></div>
+        <div class="row"><span class="label">Du</span><span class="value">${fmtDate(edit.pickup_date)}</span></div>
+        <div class="row"><span class="label">Au</span><span class="value">${fmtDate(edit.return_date)}</span></div>
+        <div class="row"><span class="label">Prise en charge</span><span class="value">${edit.pickup_location}</span></div>
+        <div class="row"><span class="label">Retour</span><span class="value">${edit.return_location || edit.pickup_location}</span></div>
+        ${addonItems.length ? `<div class="row"><span class="label">Options</span><span class="value">${addonItems.map((a: any) => a.name).join(", ")}</span></div>` : ""}
+      </div>
+
+      <div class="section pricing">
+        <div class="section-title">Tarification</div>
+        <div class="row"><span class="label">Véhicule (${calc.days}j × ${calc.dailyRate.toLocaleString("fr-FR")} MAD)</span><span class="value">${calc.vehicleTotal.toLocaleString("fr-FR")} MAD</span></div>
+        ${addonItems.map((a: any) => `<div class="row"><span class="label">${a.name} (${calc.days}j × ${Number(a.price_per_day).toLocaleString("fr-FR")} MAD)</span><span class="value">${(Number(a.price_per_day) * calc.days).toLocaleString("fr-FR")} MAD</span></div>`).join("")}
+        ${calc.deliveryFee > 0 ? `<div class="row"><span class="label">Frais de livraison</span><span class="value">${calc.deliveryFee.toLocaleString("fr-FR")} MAD</span></div>` : ""}
+        <hr class="divider">
+        <div class="row"><span class="label">Caution</span><span class="value">${calc.depositAmount.toLocaleString("fr-FR")} MAD</span></div>
+        <hr class="divider-bold">
+        <div class="total-row"><span class="label">TOTAL</span><span class="value">${calc.totalPrice.toLocaleString("fr-FR")} MAD</span></div>
+      </div>
+
+      <div class="badges">
+        <span class="badge" style="background:${statusBadgeColors[r.status] || "#f3f4f6;color:#374151"}">Statut: ${statusLabels[r.status as ReservationStatus]}</span>
+        <span class="badge" style="background:${depositBadgeColors[r.deposit_status] || "#f3f4f6;color:#374151"}">Caution: ${depositLabels[r.deposit_status as DepositStatus]}</span>
+      </div>
+
+      <div class="accent-line"></div>
+
+      <div class="footer">
+        <p class="thanks">Merci pour votre confiance !</p>
+        <p>Centre Lux Car • centreluxcar.com</p>
+      </div>
+
+      </body></html>`);
     w.document.close();
     w.print();
   };
