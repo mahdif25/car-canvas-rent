@@ -38,7 +38,7 @@ const StepDates = ({ formData, updateForm, onNext, locations }: Props) => {
           <SelectContent>
             {locations.map((l) => (
               <SelectItem key={l.id} value={l.name}>
-                {l.name} {!l.is_free && Number(l.delivery_fee) > 0 ? `(${Number(l.delivery_fee)} MAD)` : l.is_free ? "(Gratuit)" : ""}
+                {l.name}
               </SelectItem>
             ))}
           </SelectContent>
@@ -60,7 +60,7 @@ const StepDates = ({ formData, updateForm, onNext, locations }: Props) => {
             <SelectContent>
               {locations.map((l) => (
                 <SelectItem key={l.id} value={l.name}>
-                  {l.name} {!l.is_free && Number(l.delivery_fee) > 0 ? `(${Number(l.delivery_fee)} MAD)` : l.is_free ? "(Gratuit)" : ""}
+                  {l.name}
                 </SelectItem>
               ))}
             </SelectContent>
