@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { Link, useLocation, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { Car, Settings, CalendarDays, LayoutDashboard, LogOut } from "lucide-react";
+import { Car, Settings, CalendarDays, LayoutDashboard, LogOut, MapPin } from "lucide-react";
 import logo from "@/assets/logo.png";
 
 interface Props {
@@ -13,6 +13,7 @@ const navItems = [
   { label: "Flotte", path: "/admin/fleet", icon: Car },
   { label: "Options", path: "/admin/addons", icon: Settings },
   { label: "Réservations", path: "/admin/reservations", icon: CalendarDays },
+  { label: "Lieux", path: "/admin/locations", icon: MapPin },
 ];
 
 const AdminLayout = ({ children }: Props) => {

@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Calendar, Car, Shield, Clock, MapPin, ChevronRight } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
-import { locations } from "@/lib/mock-data";
+import { useLocations } from "@/hooks/useLocations";
 import { useVehicles, usePricingTiers, getStartingPriceFromTiers } from "@/hooks/useVehicles";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ const Index = () => {
 
   const { data: vehicles = [], isLoading: loadingVehicles } = useVehicles();
   const { data: allTiers = [], isLoading: loadingTiers } = usePricingTiers();
+  const { data: locations = [], isLoading: loadingLocations } = useLocations();
 
   const handleSearch = () => {
     const params = new URLSearchParams();
@@ -27,7 +28,7 @@ const Index = () => {
   };
 
   const featured = vehicles.filter((v) => v.is_available).slice(0, 3);
-  const isLoading = loadingVehicles || loadingTiers;
+  const isLoading = loadingVehicles || loadingTiers || loadingLocations;
 
   return (
     <Layout>
@@ -55,7 +56,7 @@ const Index = () => {
                   </SelectTrigger>
                   <SelectContent>
                     {locations.map((loc) => (
-                      <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+                      <SelectItem key={loc.id} value={loc.name}>{loc.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

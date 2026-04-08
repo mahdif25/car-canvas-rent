@@ -3,6 +3,7 @@ import { CheckCircle, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Vehicle, PricingTier, AddonOption, getDailyRateFromTiers } from "@/hooks/useVehicles";
+import { Location, getDeliveryFee } from "@/hooks/useLocations";
 
 interface Props {
   formData: ReservationFormData;
@@ -11,9 +12,10 @@ interface Props {
   vehicle: Vehicle | undefined;
   pricingTiers: PricingTier[];
   addons: AddonOption[];
+  locations: Location[];
 }
 
-const StepConfirmation = ({ formData, confirmationId, rentalDays, vehicle, pricingTiers, addons }: Props) => {
+const StepConfirmation = ({ formData, confirmationId, rentalDays, vehicle, pricingTiers, addons, locations }: Props) => {
   const tiers = pricingTiers.filter((t) => t.vehicle_id === formData.vehicle_id);
   const dailyRate = getDailyRateFromTiers(tiers, rentalDays);
   const vehicleTotal = dailyRate * rentalDays;
@@ -21,16 +23,19 @@ const StepConfirmation = ({ formData, confirmationId, rentalDays, vehicle, prici
     const addon = addons.find((a) => a.id === id);
     return sum + (addon ? Number(addon.price_per_day) * rentalDays : 0);
   }, 0);
-  const total = vehicleTotal + addonsTotal;
+  const deliveryFee = getDeliveryFee(
+    locations,
+    formData.pickup_location,
+    formData.return_location || formData.pickup_location
+  );
+  const total = vehicleTotal + addonsTotal + deliveryFee;
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
       <div className="text-center space-y-4">
         <CheckCircle className="mx-auto text-primary" size={64} />
         <h2 className="text-2xl font-bold">Réservation confirmée !</h2>
-        <p className="text-muted-foreground">
-          Votre numéro de réservation est
-        </p>
+        <p className="text-muted-foreground">Votre numéro de réservation est</p>
         <p className="text-3xl font-bold text-primary">{confirmationId}</p>
       </div>
 
@@ -46,8 +51,14 @@ const StepConfirmation = ({ formData, confirmationId, rentalDays, vehicle, prici
             <span>{formData.return_date} à {formData.return_time}</span>
             <span className="text-muted-foreground">Durée</span>
             <span>{rentalDays} jour{rentalDays > 1 ? "s" : ""}</span>
-            <span className="text-muted-foreground">Lieu</span>
+            <span className="text-muted-foreground">Lieu de prise en charge</span>
             <span>{formData.pickup_location}</span>
+            {formData.return_location && formData.return_location !== formData.pickup_location && (
+              <>
+                <span className="text-muted-foreground">Lieu de retour</span>
+                <span>{formData.return_location}</span>
+              </>
+            )}
           </div>
         </div>
 
@@ -80,6 +91,10 @@ const StepConfirmation = ({ formData, confirmationId, rentalDays, vehicle, prici
                 </div>
               );
             })}
+            <div className="flex justify-between">
+              <span>Frais de livraison</span>
+              <span>{deliveryFee > 0 ? `${deliveryFee.toLocaleString()} MAD` : "Gratuit"}</span>
+            </div>
             <div className="flex justify-between font-bold text-base pt-2 border-t border-border">
               <span>Total</span>
               <span className="text-primary">{total.toLocaleString()} MAD</span>
