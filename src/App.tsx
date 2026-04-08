@@ -14,6 +14,8 @@ import AdminFleet from "./pages/admin/AdminFleet";
 import AdminAddons from "./pages/admin/AdminAddons";
 import AdminReservations from "./pages/admin/AdminReservations";
 import AdminLocations from "./pages/admin/AdminLocations";
+import AdminAnalytics from "./pages/admin/AdminAnalytics";
+import AdminLeads from "./pages/admin/AdminLeads";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +38,8 @@ const App = () => (
             <Route path="/admin/addons" element={<AdminAddons />} />
             <Route path="/admin/reservations" element={<AdminReservations />} />
             <Route path="/admin/locations" element={<AdminLocations />} />
+            <Route path="/admin/analytics" element={<AdminAnalytics />} />
+            <Route path="/admin/leads" element={<AdminLeads />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

@@ -10,7 +10,7 @@ import { toast } from "@/hooks/use-toast";
 import { useMemo, useState } from "react";
 import { useVehicles, usePricingTiers, getDailyRateFromTiers } from "@/hooks/useVehicles";
 import { useLocations, getDeliveryFee } from "@/hooks/useLocations";
-import { Printer, Save } from "lucide-react";
+import { Printer, Save, Pencil, Check, X } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 
 type ReservationStatus = Database["public"]["Enums"]["reservation_status"];
@@ -52,6 +52,7 @@ const AdminReservations = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editState, setEditState] = useState<Record<string, EditState>>({});
+  const [clientEdits, setClientEdits] = useState<Record<string, { field: string; value: string } | null>>({});
 
   const { data: reservations, isLoading } = useQuery({
     queryKey: ["admin-reservations", statusFilter],
@@ -312,6 +313,21 @@ const AdminReservations = () => {
                   onSave={(calc) => saveReservation.mutate({ id: r.id, edit: getEdit(r.id, r), calc })}
                   onPrint={(calc) => handlePrint(r, getEdit(r.id, r), calc)}
                   isSaving={saveReservation.isPending}
+                  clientEdit={clientEdits[r.id] || null}
+                  onStartClientEdit={(field, value) => setClientEdits((prev) => ({ ...prev, [r.id]: { field, value } }))}
+                  onCancelClientEdit={() => setClientEdits((prev) => ({ ...prev, [r.id]: null }))}
+                  onSaveClientEdit={async (id, field, value) => {
+                    const updateObj: any = {};
+                    if (field === "email") updateObj.customer_email = value;
+                    if (field === "phone") updateObj.customer_phone = value;
+                    if (field === "license") updateObj.customer_license = value;
+                    const { error } = await supabase.from("reservations").update(updateObj).eq("id", id);
+                    if (!error) {
+                      qc.invalidateQueries({ queryKey: ["admin-reservations"] });
+                      toast({ title: "Information mise à jour" });
+                    }
+                    setClientEdits((prev) => ({ ...prev, [id]: null }));
+                  }}
                 />
               ))}
             </div>
@@ -362,9 +378,13 @@ interface RowProps {
   onSave: (calc: { totalPrice: number; deliveryFee: number; depositAmount: number }) => void;
   onPrint: (calc: ReturnType<typeof useCalc>) => void;
   isSaving: boolean;
+  clientEdit: { field: string; value: string } | null;
+  onStartClientEdit: (field: string, value: string) => void;
+  onCancelClientEdit: () => void;
+  onSaveClientEdit: (id: string, field: string, value: string) => void;
 }
 
-const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, pricingTiers, locations, allAddons, onUpdateStatus, onUpdateDeposit, onSave, onPrint, isSaving }: RowProps) => {
+const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, pricingTiers, locations, allAddons, onUpdateStatus, onUpdateDeposit, onSave, onPrint, isSaving, clientEdit, onStartClientEdit, onCancelClientEdit, onSaveClientEdit }: RowProps) => {
   const calc = useCalc(edit, vehicles, pricingTiers, locations, allAddons);
 
   const toggleAddon = (addonId: string) => {
@@ -395,11 +415,34 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
 
       {isExpanded && (
         <div className="border-t p-4 bg-secondary/30 space-y-4">
-          {/* Client info */}
+          {/* Client info with inline edit */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div><p className="text-muted-foreground">Email</p><p className="break-all">{r.customer_email}</p></div>
-            <div><p className="text-muted-foreground">Téléphone</p><p>{r.customer_phone}</p></div>
-            <div><p className="text-muted-foreground">Permis</p><p>{r.customer_license}</p></div>
+            {[
+              { label: "Email", field: "email", value: r.customer_email },
+              { label: "Téléphone", field: "phone", value: r.customer_phone },
+              { label: "Permis", field: "license", value: r.customer_license },
+            ].map(({ label, field, value }) => (
+              <div key={field}>
+                <p className="text-muted-foreground">{label}</p>
+                {clientEdit?.field === field ? (
+                  <div className="flex items-center gap-1 mt-1">
+                    <Input
+                      className="h-7 text-sm"
+                      value={clientEdit.value}
+                      onChange={(e) => onStartClientEdit(field, e.target.value)}
+                      autoFocus
+                    />
+                    <button onClick={() => onSaveClientEdit(r.id, field, clientEdit.value)} className="text-primary hover:text-primary/80"><Check size={16} /></button>
+                    <button onClick={onCancelClientEdit} className="text-muted-foreground hover:text-foreground"><X size={16} /></button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1">
+                    <p className={field === "email" ? "break-all" : ""}>{value}</p>
+                    <button onClick={() => onStartClientEdit(field, value)} className="text-muted-foreground hover:text-primary"><Pencil size={13} /></button>
+                  </div>
+                )}
+              </div>
+            ))}
             <div><p className="text-muted-foreground">Créée le</p><p>{new Date(r.created_at).toLocaleDateString("fr-FR")}</p></div>
           </div>
 

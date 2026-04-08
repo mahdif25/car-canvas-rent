@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { ReservationFormData } from "@/lib/types";
@@ -13,6 +13,7 @@ import StepDriverInfo from "@/components/reservation/StepDriverInfo";
 import StepConfirmation from "@/components/reservation/StepConfirmation";
 import ReservationSidebar from "@/components/reservation/ReservationSidebar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAnalytics } from "@/hooks/useAnalytics";
 
 const steps = [
   { label: "Dates & Lieu", number: 1 },
@@ -48,6 +49,15 @@ const Reservation = () => {
 
   const [confirmationId, setConfirmationId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const analytics = useAnalytics();
+
+  // Track reservation step changes
+  useEffect(() => {
+    analytics.trackReservationStep(currentStep, {
+      vehicle_id: formData.vehicle_id || undefined,
+      pickup_location: formData.pickup_location || undefined,
+    });
+  }, [currentStep]);
 
   const { data: vehicles = [], isLoading: loadingVehicles } = useVehicles();
   const { data: pricingTiers = [], isLoading: loadingTiers } = usePricingTiers();
@@ -125,7 +135,9 @@ const Reservation = () => {
       }
 
       setConfirmationId(reservation.id.slice(0, 8).toUpperCase());
+      analytics.markLeadCompleted(reservation.id);
       nextStep();
+
     } catch (err: any) {
       console.error("Reservation error:", err);
       toast.error("Erreur lors de la réservation. Veuillez réessayer.");
@@ -204,7 +216,7 @@ const Reservation = () => {
                 <StepAddons formData={formData} updateForm={updateForm} onNext={nextStep} onBack={prevStep} addons={addons} />
               )}
               {currentStep === 4 && (
-                <StepDriverInfo formData={formData} updateForm={updateForm} onConfirm={handleConfirm} onBack={prevStep} rentalDays={rentalDays} vehicle={selectedVehicle} />
+                <StepDriverInfo formData={formData} updateForm={updateForm} onConfirm={handleConfirm} onBack={prevStep} rentalDays={rentalDays} vehicle={selectedVehicle} analytics={analytics} />
               )}
               {currentStep === 5 && (
                 <StepConfirmation formData={formData} confirmationId={confirmationId} rentalDays={rentalDays} vehicle={selectedVehicle} pricingTiers={pricingTiers} addons={addons} locations={locations} />
