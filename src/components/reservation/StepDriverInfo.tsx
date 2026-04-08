@@ -30,23 +30,23 @@ const StepDriverInfo = ({ formData, updateForm, onConfirm, onBack, vehicle }: Pr
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <label className="text-sm font-medium">Prénom *</label>
-          <Input value={formData.first_name} onChange={(e) => updateForm({ first_name: e.target.value })} placeholder="Votre prénom" />
+          <Input value={formData.first_name} onChange={(e) => updateForm({ first_name: e.target.value })} onBlur={(e) => handleBlur("first_name", e.target.value)} placeholder="Votre prénom" />
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium">Nom *</label>
-          <Input value={formData.last_name} onChange={(e) => updateForm({ last_name: e.target.value })} placeholder="Votre nom" />
+          <Input value={formData.last_name} onChange={(e) => updateForm({ last_name: e.target.value })} onBlur={(e) => handleBlur("last_name", e.target.value)} placeholder="Votre nom" />
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium">Email *</label>
-          <Input type="email" value={formData.email} onChange={(e) => updateForm({ email: e.target.value })} placeholder="email@exemple.com" />
+          <Input type="email" value={formData.email} onChange={(e) => updateForm({ email: e.target.value })} onBlur={(e) => handleBlur("email", e.target.value)} placeholder="email@exemple.com" />
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium">Téléphone *</label>
-          <Input value={formData.phone} onChange={(e) => updateForm({ phone: e.target.value })} placeholder="+212 6 00 00 00 00" />
+          <Input value={formData.phone} onChange={(e) => updateForm({ phone: e.target.value })} onBlur={(e) => handleBlur("phone", e.target.value)} placeholder="+212 6 00 00 00 00" />
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium">N° Permis de conduire *</label>
-          <Input value={formData.license_number} onChange={(e) => updateForm({ license_number: e.target.value })} placeholder="Numéro du permis" />
+          <Input value={formData.license_number} onChange={(e) => updateForm({ license_number: e.target.value })} onBlur={(e) => handleBlur("license_number", e.target.value)} placeholder="Numéro du permis" />
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium">Nationalité</label>

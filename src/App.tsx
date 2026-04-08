@@ -14,6 +14,8 @@ import AdminFleet from "./pages/admin/AdminFleet";
 import AdminAddons from "./pages/admin/AdminAddons";
 import AdminReservations from "./pages/admin/AdminReservations";
 import AdminLocations from "./pages/admin/AdminLocations";
+import AdminAnalytics from "./pages/admin/AdminAnalytics";
+import AdminLeads from "./pages/admin/AdminLeads";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();

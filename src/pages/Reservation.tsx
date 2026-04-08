@@ -13,6 +13,7 @@ import StepDriverInfo from "@/components/reservation/StepDriverInfo";
 import StepConfirmation from "@/components/reservation/StepConfirmation";
 import ReservationSidebar from "@/components/reservation/ReservationSidebar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAnalytics } from "@/hooks/useAnalytics";
 
 const steps = [
   { label: "Dates & Lieu", number: 1 },
@@ -48,6 +49,15 @@ const Reservation = () => {
 
   const [confirmationId, setConfirmationId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const analytics = useAnalytics();
+
+  // Track reservation step changes
+  useEffect(() => {
+    analytics.trackReservationStep(currentStep, {
+      vehicle_id: formData.vehicle_id || undefined,
+      pickup_location: formData.pickup_location || undefined,
+    });
+  }, [currentStep]);
 
   const { data: vehicles = [], isLoading: loadingVehicles } = useVehicles();
   const { data: pricingTiers = [], isLoading: loadingTiers } = usePricingTiers();
