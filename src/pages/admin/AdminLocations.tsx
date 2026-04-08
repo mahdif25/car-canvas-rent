@@ -160,7 +160,7 @@ const AdminLocations = () => {
                   ) : (
                     <>
                       <td className="px-4 py-3 font-medium">{loc.name}</td>
-                      <td className="px-4 py-3">{loc.is_free ? <span className="text-green-600 font-medium">Gratuit</span> : `${Number(loc.delivery_fee).toLocaleString()} MAD`}</td>
+                      <td className="px-4 py-3">{loc.is_free ? <span className="text-primary font-medium">Gratuit</span> : `${Number(loc.delivery_fee).toLocaleString()} MAD`}</td>
                       <td className="px-4 py-3 text-center">
                         <Switch checked={loc.is_free} onCheckedChange={async () => {
                           await supabase.from("locations").update({ is_free: !loc.is_free }).eq("id", loc.id);
