@@ -182,7 +182,7 @@ const AdminAnalytics = () => {
           )}
 
           <Tabs defaultValue="funnel" className="space-y-4">
-            <TabsList className="flex-wrap">
+            <TabsList className="flex-wrap bg-secondary text-foreground">
               <TabsTrigger value="funnel">Entonnoir</TabsTrigger>
               <TabsTrigger value="pages">Pages</TabsTrigger>
               <TabsTrigger value="devices">Appareils</TabsTrigger>
