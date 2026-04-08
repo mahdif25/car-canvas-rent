@@ -44,6 +44,108 @@ export type Database = {
         }
         Relationships: []
       }
+      analytics_events: {
+        Row: {
+          browser: string | null
+          city: string | null
+          country: string | null
+          created_at: string | null
+          device_type: string | null
+          event_type: string
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          os: string | null
+          page_path: string | null
+          referrer: string | null
+          session_id: string
+          user_agent: string | null
+          visitor_id: string
+        }
+        Insert: {
+          browser?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          device_type?: string | null
+          event_type: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          os?: string | null
+          page_path?: string | null
+          referrer?: string | null
+          session_id: string
+          user_agent?: string | null
+          visitor_id: string
+        }
+        Update: {
+          browser?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          device_type?: string | null
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          os?: string | null
+          page_path?: string | null
+          referrer?: string | null
+          session_id?: string
+          user_agent?: string | null
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      leads: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          first_name: string | null
+          id: string
+          last_name: string | null
+          last_reservation_step: number | null
+          license_number: string | null
+          phone: string | null
+          reservation_completed: boolean | null
+          reservation_id: string | null
+          session_id: string | null
+          updated_at: string | null
+          visitor_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          last_reservation_step?: number | null
+          license_number?: string | null
+          phone?: string | null
+          reservation_completed?: boolean | null
+          reservation_id?: string | null
+          session_id?: string | null
+          updated_at?: string | null
+          visitor_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          last_reservation_step?: number | null
+          license_number?: string | null
+          phone?: string | null
+          reservation_completed?: boolean | null
+          reservation_id?: string | null
+          session_id?: string | null
+          updated_at?: string | null
+          visitor_id?: string | null
+        }
+        Relationships: []
+      }
       locations: {
         Row: {
           created_at: string
