@@ -1,6 +1,7 @@
 import { ReservationFormData } from "@/lib/types";
 import { Vehicle, PricingTier, AddonOption, getDailyRateFromTiers } from "@/hooks/useVehicles";
-import { CalendarDays, MapPin, Car } from "lucide-react";
+import { Location, getDeliveryFee } from "@/hooks/useLocations";
+import { CalendarDays, MapPin, Car, Truck } from "lucide-react";
 
 interface Props {
   formData: ReservationFormData;
@@ -8,9 +9,10 @@ interface Props {
   vehicles: Vehicle[];
   pricingTiers: PricingTier[];
   addons: AddonOption[];
+  locations: Location[];
 }
 
-const ReservationSidebar = ({ formData, rentalDays, vehicles, pricingTiers, addons }: Props) => {
+const ReservationSidebar = ({ formData, rentalDays, vehicles, pricingTiers, addons, locations }: Props) => {
   const vehicle = vehicles.find((v) => v.id === formData.vehicle_id);
   const tiers = pricingTiers.filter((t) => t.vehicle_id === formData.vehicle_id);
   const dailyRate = vehicle ? getDailyRateFromTiers(tiers, rentalDays) : 0;
@@ -21,7 +23,13 @@ const ReservationSidebar = ({ formData, rentalDays, vehicles, pricingTiers, addo
     return sum + (addon ? Number(addon.price_per_day) * rentalDays : 0);
   }, 0);
 
-  const total = vehicleTotal + addonsTotal;
+  const deliveryFee = getDeliveryFee(
+    locations,
+    formData.pickup_location,
+    formData.return_location || formData.pickup_location
+  );
+
+  const total = vehicleTotal + addonsTotal + deliveryFee;
 
   return (
     <div className="bg-secondary p-6 rounded-pill sticky top-24 space-y-5">
@@ -30,7 +38,12 @@ const ReservationSidebar = ({ formData, rentalDays, vehicles, pricingTiers, addo
       {formData.pickup_location && (
         <div className="flex items-start gap-2 text-sm">
           <MapPin size={16} className="text-primary mt-0.5 shrink-0" />
-          <span>{formData.pickup_location}</span>
+          <div>
+            <p>{formData.pickup_location}</p>
+            {formData.return_location && formData.return_location !== formData.pickup_location && (
+              <p className="text-muted-foreground">Retour : {formData.return_location}</p>
+            )}
+          </div>
         </div>
       )}
 
@@ -70,6 +83,13 @@ const ReservationSidebar = ({ formData, rentalDays, vehicles, pricingTiers, addo
                 </div>
               );
             })}
+
+            {formData.pickup_location && (
+              <div className="flex justify-between">
+                <span className="flex items-center gap-1"><Truck size={14} /> Frais de livraison</span>
+                <span>{deliveryFee > 0 ? `${deliveryFee.toLocaleString()} MAD` : "Gratuit"}</span>
+              </div>
+            )}
 
             <div className="flex justify-between font-bold text-lg pt-2 border-t border-border">
               <span>Total</span>
