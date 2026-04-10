@@ -215,7 +215,7 @@ const Index = () => {
                     {/* Car image with Sovoy sliding strip */}
                     <div className="relative mx-5 mt-4 rounded-xl overflow-hidden h-44 bg-secondary">
                       {/* Sliding primary color strip — right to left on hover */}
-                      <div className="absolute inset-0 bg-primary origin-right scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-out" />
+                      <div className="absolute inset-0 bg-primary translate-x-full group-hover:translate-x-0 transition-transform duration-500 ease-out" />
                       <img
                         src={v.image_url || "/placeholder.svg"}
                         alt={v.name}
