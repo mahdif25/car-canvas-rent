@@ -142,7 +142,7 @@ const AdminLayout = ({ children }: Props) => {
   // Desktop layout
   return (
     <div className="flex min-h-screen">
-      <aside className="w-64 bg-dark text-dark-foreground flex flex-col shrink-0">
+      <aside className="w-64 bg-dark text-dark-foreground flex flex-col shrink-0 overflow-hidden">
         <div className="p-4 border-b border-foreground/10">
           <Link to="/admin">
             <img src={logo} alt="Centre Lux Car" className="h-10 brightness-200" />
