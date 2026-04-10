@@ -58,9 +58,21 @@ const Index = () => {
         {heroType === "image" && heroValue && (
           <img src={heroValue} alt="" className="absolute inset-0 w-full h-full object-cover" />
         )}
-        {heroType === "video" && heroValue && (
-          <video src={heroValue} className="absolute inset-0 w-full h-full object-cover" autoPlay muted loop playsInline />
-        )}
+        {heroType === "video" && heroValue && (() => {
+          const ytId = getYouTubeId(heroValue);
+          return ytId ? (
+            <iframe
+              src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&playlist=${ytId}`}
+              className="absolute inset-0 w-full h-full pointer-events-none"
+              style={{ transform: "scale(1.2)", transformOrigin: "center" }}
+              allow="autoplay; encrypted-media"
+              frameBorder="0"
+              title="Hero video"
+            />
+          ) : (
+            <video src={heroValue} className="absolute inset-0 w-full h-full object-cover" autoPlay muted loop playsInline />
+          );
+        })()}
         <div className="absolute inset-0 bg-dark" style={{ opacity: heroType !== "color" ? overlayOpacity : 0 }} />
         <div className="absolute inset-0 bg-gradient-to-r from-dark/95 to-dark/60" style={{ opacity: heroType === "color" ? 1 : 0 }} />
         <div className="container relative z-10 py-20 md:py-32">
