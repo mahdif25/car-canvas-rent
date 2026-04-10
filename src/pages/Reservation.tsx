@@ -294,7 +294,8 @@ const Reservation = () => {
                 <StepVehicle formData={formData} updateForm={updateForm} rentalDays={rentalDays} onNext={nextStep} onBack={prevStep} vehicles={vehicles} pricingTiers={pricingTiers} />
               )}
               {currentStep === 3 && (
-                <StepDriverInfo formData={formData} updateForm={updateForm} onNext={nextStep} onBack={prevStep} rentalDays={rentalDays} vehicle={selectedVehicle} analytics={analytics} />
+                <StepDriverInfo formData={formData} updateForm={updateForm} onNext={nextStep} onBack={prevStep} rentalDays={rentalDays} vehicle={selectedVehicle} analytics={analytics} leadCaptureMode={siteSettings?.lead_capture_mode || "blur"} />
+              )}
               )}
               {currentStep === 4 && (
                 <StepSummary formData={formData} updateForm={updateForm} onConfirm={handleConfirm} onBack={prevStep} rentalDays={rentalDays} vehicles={vehicles} pricingTiers={pricingTiers} addons={addons} locations={locations} isSubmitting={isSubmitting} />
