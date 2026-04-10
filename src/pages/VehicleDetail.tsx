@@ -80,7 +80,7 @@ const VehicleDetail = () => {
                   alt={vehicle.name}
                   className="w-full h-full object-cover aspect-video"
                   style={activeIndex === 0 ? {
-                    transform: `${(vehicle as any).image_flipped ? 'scaleX(-1)' : ''} scale(${(vehicle as any).image_scale_detail ?? 1})`.trim() || 'none'
+                    transform: `${vehicle.image_flipped ? 'scaleX(-1)' : ''} scale(${vehicle.image_scale_detail ?? 1})`.trim() || 'none'
                   } : undefined}
                 />
               </div>
