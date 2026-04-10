@@ -89,6 +89,17 @@ const WhatsAppPopup = () => {
 
   return (
     <>
+      {/* Hidden autofill input */}
+      <input
+        ref={nameInputRef}
+        type="text"
+        name="fname"
+        autoComplete="given-name"
+        onChange={(e) => setAutofillName(e.target.value)}
+        className="absolute opacity-0 h-0 w-0 pointer-events-none"
+        tabIndex={-1}
+        aria-hidden="true"
+      />
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="fixed bottom-6 left-6 z-50 w-14 h-14 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
