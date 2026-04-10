@@ -125,18 +125,21 @@ export function useAnalytics() {
   const markLeadCompleted = useCallback(
     async (reservationId: string) => {
       try {
-        const { data: existing } = await supabase
-          .from("leads")
-          .select("id")
-          .eq("visitor_id", visitorId.current)
-          .order("created_at", { ascending: false })
-          .limit(1);
-
-        if (existing && existing.length > 0) {
+        let targetId = leadIdRef.current;
+        if (!targetId) {
+          const { data: existing } = await supabase
+            .from("leads")
+            .select("id")
+            .eq("visitor_id", visitorId.current)
+            .order("created_at", { ascending: false })
+            .limit(1);
+          if (existing && existing.length > 0) targetId = existing[0].id;
+        }
+        if (targetId) {
           await supabase
             .from("leads")
             .update({ reservation_completed: true, reservation_id: reservationId, updated_at: new Date().toISOString() })
-            .eq("id", existing[0].id);
+            .eq("id", targetId);
         }
       } catch {
         // silent
