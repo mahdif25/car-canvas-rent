@@ -1,29 +1,24 @@
 
 
-# Fix: Vehicle Image Fill in Reservation Sidebar
+# Fix Vehicle Image Rendering in Reservation Sidebar
 
-## Change
+## Problem
+The sidebar image uses `object-cover` which crops some vehicle images (depending on the original photo composition). Some cars appear cut off or poorly framed.
 
-In `src/components/reservation/ReservationSidebar.tsx` (lines 30-32), change the image from `object-contain` with padding to `object-cover` without padding, so the car fills the entire container edge-to-edge.
+## Solution
+Switch to `object-contain` so the full vehicle is always visible, matching the approach used on the Fleet page. The `bg-secondary` background fills any empty space.
+
+### Change in `src/components/reservation/ReservationSidebar.tsx` (line 31)
 
 **Current:**
 ```tsx
-<div className="w-full h-28 bg-secondary rounded-lg p-2">
-  <img ... className="w-full h-full object-contain" />
-</div>
+<img src={vehicle.image_url} alt={vehicle.name} className="w-full h-full object-cover" />
 ```
 
 **New:**
 ```tsx
-<div className="w-full h-28 bg-secondary rounded-lg overflow-hidden">
-  <img ... className="w-full h-full object-cover" />
-</div>
+<img src={vehicle.image_url} alt={vehicle.name} className="w-full h-full object-contain" />
 ```
 
-- Remove `p-2` padding from container
-- Add `overflow-hidden` to clip the image within rounded corners
-- Change `object-contain` → `object-cover` so the image fills the box
-
-### File
-- `src/components/reservation/ReservationSidebar.tsx`
+Single line change. The `bg-secondary` on the container already provides a clean background for any gaps.
 
