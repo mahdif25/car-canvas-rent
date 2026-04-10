@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, X } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { STRUCTURED_FEATURES } from "@/lib/vehicle-features";
 import type { Database } from "@/integrations/supabase/types";
 
 type Vehicle = Database["public"]["Tables"]["vehicles"]["Row"];
@@ -31,7 +32,7 @@ const AdminFleet = () => {
     name: "", brand: "", model: "", year: new Date().getFullYear(),
     category: "Sedan", transmission: "Manuelle", fuel: "Diesel",
     seats: 5, doors: 4, luggage: 3, security_deposit: 0, is_available: true,
-    features: [],
+    features: [], has_climatisation: true, has_gps: false, has_bluetooth: false, has_usb: false, has_camera: false,
   });
   const [tiers, setTiers] = useState(defaultTiers);
   const [featureInput, setFeatureInput] = useState("");
@@ -101,14 +102,14 @@ const AdminFleet = () => {
   const resetForm = () => {
     setShowForm(false);
     setEditingId(null);
-    setForm({ name: "", brand: "", model: "", year: new Date().getFullYear(), category: "Sedan", transmission: "Manuelle", fuel: "Diesel", seats: 5, doors: 4, luggage: 3, security_deposit: 0, is_available: true, features: [] });
+    setForm({ name: "", brand: "", model: "", year: new Date().getFullYear(), category: "Sedan", transmission: "Manuelle", fuel: "Diesel", seats: 5, doors: 4, luggage: 3, security_deposit: 0, is_available: true, features: [], has_climatisation: true, has_gps: false, has_bluetooth: false, has_usb: false, has_camera: false });
     setTiers(defaultTiers);
     setFeatureInput("");
   };
 
   const editVehicle = (v: Vehicle) => {
     setEditingId(v.id);
-    setForm({ name: v.name, brand: v.brand, model: v.model, year: v.year, category: v.category, transmission: v.transmission, fuel: v.fuel, seats: v.seats, doors: v.doors, luggage: v.luggage, security_deposit: Number(v.security_deposit), is_available: v.is_available, image_url: v.image_url, features: v.features ?? [] });
+    setForm({ name: v.name, brand: v.brand, model: v.model, year: v.year, category: v.category, transmission: v.transmission, fuel: v.fuel, seats: v.seats, doors: v.doors, luggage: v.luggage, security_deposit: Number(v.security_deposit), is_available: v.is_available, image_url: v.image_url, features: v.features ?? [], has_climatisation: (v as any).has_climatisation ?? true, has_gps: (v as any).has_gps ?? false, has_bluetooth: (v as any).has_bluetooth ?? false, has_usb: (v as any).has_usb ?? false, has_camera: (v as any).has_camera ?? false });
     const vehicleTiers = allTiers?.filter((t) => t.vehicle_id === v.id) ?? [];
     setTiers(vehicleTiers.length > 0 ? vehicleTiers.map((t) => ({ min_days: t.min_days, max_days: t.max_days, daily_rate: Number(t.daily_rate) })) : defaultTiers);
     setShowForm(true);
@@ -213,11 +214,30 @@ const AdminFleet = () => {
               </div>
             </div>
 
-            {/* Features */}
+            {/* Structured Features */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">Équipements</label>
+              <label className="text-sm font-medium">Caractéristiques</label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {STRUCTURED_FEATURES.map((sf) => (
+                  <div key={sf.key} className="flex items-center justify-between p-3 border rounded-xl">
+                    <div className="flex items-center gap-2">
+                      <sf.icon size={16} className="text-primary" />
+                      <span className="text-sm">{sf.label}</span>
+                    </div>
+                    <Switch
+                      checked={(form as any)[sf.key] ?? false}
+                      onCheckedChange={(checked) => setForm((f) => ({ ...f, [sf.key]: checked }))}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Custom Features */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Équipements supplémentaires</label>
               <div className="flex gap-2">
-                <Input value={featureInput} onChange={(e) => setFeatureInput(e.target.value)} placeholder="Ex: Climatisation" onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addFeature())} />
+                <Input value={featureInput} onChange={(e) => setFeatureInput(e.target.value)} placeholder="Ex: Toit ouvrant" onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addFeature())} />
                 <Button type="button" variant="outline" onClick={addFeature}>Ajouter</Button>
               </div>
               <div className="flex flex-wrap gap-2 mt-2">
