@@ -110,9 +110,9 @@ const Fleet = () => {
                       <img
                         src={v.image_url || "/placeholder.svg"}
                         alt={v.name}
-                        className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                        className="w-full h-full object-contain transition-transform duration-300"
                         style={{
-                          transform: `${(v as any).image_flipped ? 'scaleX(-1)' : ''} scale(${(v as any).image_scale_fleet ?? 1})`.trim() || 'none'
+                          transform: `${v.image_flipped ? 'scaleX(-1)' : ''} scale(${v.image_scale_fleet ?? 1})`.trim() || 'none'
                         }}
                       />
                       <div className="absolute top-3 right-3 w-9 h-9 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center">
