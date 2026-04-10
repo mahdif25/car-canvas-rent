@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
-import { useVehicles, usePricingTiers, getDailyRateFromTiers } from "@/hooks/useVehicles";
+import { useVehicles, usePricingTiers, getDailyRateFromTiers, getStartingPriceFromTiers } from "@/hooks/useVehicles";
 import { useLocations } from "@/hooks/useLocations";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { X, RotateCcw, Send } from "lucide-react";
