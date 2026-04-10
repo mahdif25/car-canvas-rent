@@ -15,7 +15,6 @@ const Navbar = () => {
   const location = useLocation();
   const { data: settings } = useSiteSettings();
   const logoH = settings?.logo_height || 48;
-  const location = useLocation();
 
   return (
     <header className="sticky top-0 z-50 bg-background border-b border-border shadow-sm">
