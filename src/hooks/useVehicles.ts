@@ -27,6 +27,34 @@ export const useVehicle = (id: string | undefined) =>
     enabled: !!id,
   });
 
+export const useVehicleBySlug = (slug: string | undefined) =>
+  useQuery({
+    queryKey: ["vehicles", "slug", slug],
+    queryFn: async () => {
+      // Try slug first
+      const { data: bySlug } = await supabase.from("vehicles").select("*").eq("slug", slug!).maybeSingle();
+      if (bySlug) return bySlug as Vehicle;
+      // Fall back to id (UUID)
+      const { data: byId, error } = await supabase.from("vehicles").select("*").eq("id", slug!).maybeSingle();
+      if (error) throw error;
+      return byId as Vehicle | null;
+    },
+    enabled: !!slug,
+  });
+
+export type VehicleImage = { id: string; vehicle_id: string; image_url: string; sort_order: number; created_at: string };
+
+export const useVehicleImages = (vehicleId: string | undefined) =>
+  useQuery({
+    queryKey: ["vehicle_images", vehicleId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("vehicle_images").select("*").eq("vehicle_id", vehicleId!).order("sort_order");
+      if (error) throw error;
+      return data as VehicleImage[];
+    },
+    enabled: !!vehicleId,
+  });
+
 export const usePricingTiers = (vehicleId?: string) =>
   useQuery({
     queryKey: ["pricing_tiers", vehicleId ?? "all"],
