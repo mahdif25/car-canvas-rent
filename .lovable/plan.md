@@ -1,24 +1,19 @@
 
 
-# Fix Vehicle Image Rendering in Reservation Sidebar
+# Update Brand Logo
 
-## Problem
-The sidebar image uses `object-cover` which crops some vehicle images (depending on the original photo composition). Some cars appear cut off or poorly framed.
+## Change
+Replace the existing logo file at `src/assets/logo.png` with the new uploaded logo image.
 
-## Solution
-Switch to `object-contain` so the full vehicle is always visible, matching the approach used on the Fleet page. The `bg-secondary` background fills any empty space.
+## Details
+The logo is imported from `src/assets/logo.png` in 4 files:
+- `src/components/layout/Navbar.tsx`
+- `src/components/layout/Footer.tsx`
+- `src/components/admin/AdminLayout.tsx`
+- `src/pages/admin/AdminLogin.tsx`
 
-### Change in `src/components/reservation/ReservationSidebar.tsx` (line 31)
+Since all files reference the same path, replacing the single file updates the logo everywhere. No code changes needed.
 
-**Current:**
-```tsx
-<img src={vehicle.image_url} alt={vehicle.name} className="w-full h-full object-cover" />
-```
-
-**New:**
-```tsx
-<img src={vehicle.image_url} alt={vehicle.name} className="w-full h-full object-contain" />
-```
-
-Single line change. The `bg-secondary` on the container already provides a clean background for any gaps.
+## Steps
+1. Copy `user-uploads://image-removebg-preview.png` to `src/assets/logo.png` (overwrite)
 
