@@ -19,6 +19,9 @@ import AdminLeads from "./pages/admin/AdminLeads";
 import AdminMarketing from "./pages/admin/AdminMarketing";
 import AdminSettings from "./pages/admin/AdminSettings";
 import NotFound from "./pages/NotFound";
+import ConditionsGenerales from "./pages/ConditionsGenerales";
+import TrackReservation from "./pages/TrackReservation";
+import Unsubscribe from "./pages/Unsubscribe";
 import TrackingScripts from "./components/TrackingScripts";
 
 const queryClient = new QueryClient();
@@ -36,6 +39,9 @@ const App = () => (
             <Route path="/fleet" element={<Fleet />} />
             <Route path="/fleet/:slug" element={<VehicleDetail />} />
             <Route path="/reservation" element={<Reservation />} />
+            <Route path="/conditions-generales" element={<ConditionsGenerales />} />
+            <Route path="/suivi-reservation" element={<TrackReservation />} />
+            <Route path="/unsubscribe" element={<Unsubscribe />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/fleet" element={<AdminFleet />} />

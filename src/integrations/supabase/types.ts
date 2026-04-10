@@ -408,6 +408,7 @@ export type Database = {
           deposit_status: Database["public"]["Enums"]["deposit_status"]
           discount_amount: number
           id: string
+          marketing_consent: boolean
           pickup_date: string
           pickup_location: string
           pickup_time: string | null
@@ -434,6 +435,7 @@ export type Database = {
           deposit_status?: Database["public"]["Enums"]["deposit_status"]
           discount_amount?: number
           id?: string
+          marketing_consent?: boolean
           pickup_date: string
           pickup_location: string
           pickup_time?: string | null
@@ -460,6 +462,7 @@ export type Database = {
           deposit_status?: Database["public"]["Enums"]["deposit_status"]
           discount_amount?: number
           id?: string
+          marketing_consent?: boolean
           pickup_date?: string
           pickup_location?: string
           pickup_time?: string | null
