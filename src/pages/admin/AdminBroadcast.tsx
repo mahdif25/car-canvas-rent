@@ -53,6 +53,8 @@ const AdminBroadcast = () => {
   const [discountAmount, setDiscountAmount] = useState("");
   const [friendDiscountAmount, setFriendDiscountAmount] = useState("");
   const [couponExpiresAt, setCouponExpiresAt] = useState("");
+  const [minTotalPrice, setMinTotalPrice] = useState("");
+  const [minRentalDays, setMinRentalDays] = useState("");
 
   const [sending, setSending] = useState(false);
 
@@ -159,7 +161,7 @@ const AdminBroadcast = () => {
         coupon_prefix: couponPrefix || null,
         coupon_expires_at: couponExpiresAt || null,
         source_coupon_id: couponMode === "shared" ? sourceCouponId : null,
-        filters_json: { statusFilter, stepFilter, dateFrom, dateTo, search },
+        filters_json: { statusFilter, stepFilter, dateFrom, dateTo, search, minTotalPrice: minTotalPrice || null, minRentalDays: minRentalDays || null },
         recipient_count: selectedLeads.length,
         status: "draft",
       };
@@ -374,6 +376,16 @@ const AdminBroadcast = () => {
                     <div className="space-y-1">
                       <label className="text-sm font-medium">Date d'expiration (optionnel)</label>
                       <Input type="datetime-local" value={couponExpiresAt} onChange={(e) => setCouponExpiresAt(e.target.value)} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-sm font-medium">Montant min. réservation (MAD)</label>
+                        <Input type="number" value={minTotalPrice} onChange={(e) => setMinTotalPrice(e.target.value)} placeholder="Aucun minimum" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-sm font-medium">Nb min. de jours</label>
+                        <Input type="number" value={minRentalDays} onChange={(e) => setMinRentalDays(e.target.value)} placeholder="Aucun minimum" />
+                      </div>
                     </div>
                     <p className="text-xs text-muted-foreground">
                       {couponMode === "unique"

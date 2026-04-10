@@ -47,6 +47,11 @@ Deno.serve(async (req) => {
     })
   }
 
+  // Extract coupon conditions from filters_json
+  const filtersJson = broadcast.filters_json as Record<string, any> || {}
+  const minTotalPrice = filtersJson.minTotalPrice ? Number(filtersJson.minTotalPrice) : null
+  const minRentalDays = filtersJson.minRentalDays ? Number(filtersJson.minRentalDays) : null
+
   // Mark as sending
   await supabase.from('email_broadcasts').update({ status: 'sending' }).eq('id', broadcastId)
 
@@ -87,6 +92,8 @@ Deno.serve(async (req) => {
           max_uses: 1,
           is_active: true,
           expires_at: broadcast.coupon_expires_at || null,
+          min_total_price: minTotalPrice,
+          min_rental_days: minRentalDays,
         }).select('id, code').single()
 
         if (!cErr && newCoupon) {
@@ -117,6 +124,8 @@ Deno.serve(async (req) => {
           max_uses: 1,
           is_active: true,
           expires_at: broadcast.coupon_expires_at || null,
+          min_total_price: minTotalPrice,
+          min_rental_days: minRentalDays,
         }).select('id, code').single()
 
         if (c2) {
@@ -148,6 +157,8 @@ Deno.serve(async (req) => {
             expiresAt: expiresFormatted,
             friendCouponCode,
             friendDiscountAmount: broadcast.friend_discount_amount || broadcast.discount_amount,
+            minTotalPrice: minTotalPrice,
+            minRentalDays: minRentalDays,
           },
         },
       })

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ReservationFormData } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,7 @@ const StepSummary = ({ formData, updateForm, onConfirm, onBack, rentalDays, vehi
   const [promoInput, setPromoInput] = useState(formData.promo_code || "");
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoApplied, setPromoApplied] = useState(!!formData.coupon_id);
+  const [couponConditions, setCouponConditions] = useState<{ min_total_price: number | null; min_rental_days: number | null } | null>(null);
 
   const vehicle = vehicles.find((v) => v.id === formData.vehicle_id);
   const tiers = pricingTiers.filter((t) => t.vehicle_id === formData.vehicle_id);
@@ -43,8 +44,29 @@ const StepSummary = ({ formData, updateForm, onConfirm, onBack, rentalDays, vehi
     formData.return_location || formData.pickup_location
   );
 
+  const subtotalBeforeDiscount = vehicleTotal + addonsTotal + deliveryFee;
   const discount = formData.discount_amount || 0;
-  const total = Math.max(0, vehicleTotal + addonsTotal + deliveryFee - discount);
+  const total = Math.max(0, subtotalBeforeDiscount - discount);
+
+  // Auto-revoke coupon if conditions no longer met
+  useEffect(() => {
+    if (!promoApplied || !couponConditions) return;
+    const { min_total_price, min_rental_days } = couponConditions;
+    const reasons: string[] = [];
+    if (min_rental_days && rentalDays < min_rental_days) {
+      reasons.push(`un minimum de ${min_rental_days} jours de location`);
+    }
+    if (min_total_price && subtotalBeforeDiscount < min_total_price) {
+      reasons.push(`un montant minimum de ${Number(min_total_price).toLocaleString()} MAD`);
+    }
+    if (reasons.length > 0) {
+      updateForm({ promo_code: "", discount_amount: 0, coupon_id: "" });
+      setPromoApplied(false);
+      setPromoInput("");
+      setCouponConditions(null);
+      toast.error(`Coupon retiré : ce code nécessite ${reasons.join(" et ")}`);
+    }
+  }, [rentalDays, subtotalBeforeDiscount, formData.vehicle_id, formData.selected_addons.length]);
 
   const toggleAddon = (id: string) => {
     const current = formData.selected_addons;
@@ -75,6 +97,18 @@ const StepSummary = ({ formData, updateForm, onConfirm, onBack, rentalDays, vehi
         toast.error("Ce code promo a atteint sa limite d'utilisation");
         return;
       }
+      // Check conditions
+      const minDays = (data as any).min_rental_days as number | null;
+      const minPrice = (data as any).min_total_price as number | null;
+      if (minDays && rentalDays < minDays) {
+        toast.error(`Ce coupon nécessite un minimum de ${minDays} jours de location`);
+        return;
+      }
+      if (minPrice && subtotalBeforeDiscount < minPrice) {
+        toast.error(`Ce coupon nécessite un montant minimum de ${Number(minPrice).toLocaleString()} MAD`);
+        return;
+      }
+      setCouponConditions({ min_total_price: minPrice, min_rental_days: minDays });
       updateForm({ promo_code: data.code, discount_amount: Number(data.discount_amount), coupon_id: data.id });
       setPromoApplied(true);
       toast.success(`Code promo appliqué : -${Number(data.discount_amount).toLocaleString()} MAD`);
@@ -89,6 +123,7 @@ const StepSummary = ({ formData, updateForm, onConfirm, onBack, rentalDays, vehi
     updateForm({ promo_code: "", discount_amount: 0, coupon_id: "" });
     setPromoApplied(false);
     setPromoInput("");
+    setCouponConditions(null);
   };
 
   return (

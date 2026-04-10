@@ -14,6 +14,8 @@ interface Props {
   expiresAt?: string
   friendCouponCode?: string
   friendDiscountAmount?: number
+  minTotalPrice?: number | null
+  minRentalDays?: number | null
 }
 
 const PromotionalEmail = (props: Props) => {
@@ -25,6 +27,8 @@ const PromotionalEmail = (props: Props) => {
     expiresAt,
     friendCouponCode,
     friendDiscountAmount = 0,
+    minTotalPrice,
+    minRentalDays,
   } = props
 
   const fmt = (n: number) => n.toLocaleString('fr-FR')
@@ -54,6 +58,12 @@ const PromotionalEmail = (props: Props) => {
               {expiresAt && (
                 <Text style={couponExpiry}>Valable jusqu'au {expiresAt}</Text>
               )}
+              {minRentalDays && (
+                <Text style={couponExpiry}>Valable pour les réservations de {minRentalDays} jours minimum</Text>
+              )}
+              {minTotalPrice && (
+                <Text style={couponExpiry}>Valable pour les réservations à partir de {fmt(minTotalPrice)} MAD</Text>
+              )}
             </Section>
           )}
 
@@ -64,6 +74,12 @@ const PromotionalEmail = (props: Props) => {
               <Text style={couponDiscount}>-{fmt(friendDiscountAmount)} MAD pour son premier séjour</Text>
               {expiresAt && (
                 <Text style={couponExpiry}>Valable jusqu'au {expiresAt}</Text>
+              )}
+              {minRentalDays && (
+                <Text style={couponExpiry}>Valable pour les réservations de {minRentalDays} jours minimum</Text>
+              )}
+              {minTotalPrice && (
+                <Text style={couponExpiry}>Valable pour les réservations à partir de {fmt(minTotalPrice)} MAD</Text>
               )}
               <Text style={referralNote}>
                 Partagez ce code avec un ami — vous bénéficiez tous les deux d'une réduction !
@@ -97,6 +113,8 @@ export const template = {
     expiresAt: '31 décembre 2026',
     friendCouponCode: 'AMI-MOHAMMED',
     friendDiscountAmount: 150,
+    minTotalPrice: 1500,
+    minRentalDays: 7,
     subject: 'Offre spéciale rentrée 🚗',
   },
 } satisfies TemplateEntry
