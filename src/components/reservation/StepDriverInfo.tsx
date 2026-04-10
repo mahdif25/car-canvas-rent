@@ -13,23 +13,45 @@ interface Props {
   onBack: () => void;
   rentalDays: number;
   vehicle: Vehicle | undefined;
+  leadCaptureMode?: string;
   analytics?: {
     captureLeadField: (fields: Record<string, string>, step: number) => void;
     trackFieldCapture: (fields: Record<string, string>) => void;
   };
 }
 
-const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics }: Props) => {
-  const handleBlur = (field: string, value: string) => {
-    if (!value || !analytics) return;
-    const fields: Record<string, string> = { [field]: value };
+const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadCaptureMode = "blur" }: Props) => {
+  const collectAllFields = (): Record<string, string> => {
+    const fields: Record<string, string> = {};
     if (formData.first_name) fields.first_name = formData.first_name;
     if (formData.last_name) fields.last_name = formData.last_name;
     if (formData.email) fields.email = formData.email;
     if (formData.phone) fields.phone = formData.phone;
     if (formData.license_number) fields.license_number = formData.license_number;
+    return fields;
+  };
+
+  const handleBlur = (field: string, value: string) => {
+    if (leadCaptureMode !== "blur" || !value || !analytics) return;
+    const fields: Record<string, string> = { [field]: value, ...collectAllFields() };
     analytics.captureLeadField(fields, 3);
     analytics.trackFieldCapture(fields);
+  };
+
+  const handleNext = () => {
+    if (leadCaptureMode === "submit" && analytics) {
+      const fields = collectAllFields();
+      if (Object.keys(fields).length > 0) {
+        analytics.captureLeadField(fields, 3);
+        analytics.trackFieldCapture(fields);
+      }
+    }
+    // Store user data in sessionStorage for Advanced Matching
+    if (formData.email) sessionStorage.setItem("fb_em", formData.email);
+    if (formData.first_name) sessionStorage.setItem("fb_fn", formData.first_name);
+    if (formData.last_name) sessionStorage.setItem("fb_ln", formData.last_name);
+    if (formData.phone) sessionStorage.setItem("fb_ph", formData.phone);
+    onNext();
   };
 
   const isValid =
@@ -54,28 +76,28 @@ const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics }: Pro
             <label className="text-sm font-medium">Prénom *</label>
             <div className="relative">
               <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input className="pl-9" value={formData.first_name} onChange={(e) => updateForm({ first_name: e.target.value })} onBlur={(e) => handleBlur("first_name", e.target.value)} placeholder="Votre prénom" />
+              <Input className="pl-9" name="fname" autoComplete="given-name" value={formData.first_name} onChange={(e) => updateForm({ first_name: e.target.value })} onBlur={(e) => handleBlur("first_name", e.target.value)} placeholder="Votre prénom" />
             </div>
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Nom *</label>
             <div className="relative">
               <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input className="pl-9" value={formData.last_name} onChange={(e) => updateForm({ last_name: e.target.value })} onBlur={(e) => handleBlur("last_name", e.target.value)} placeholder="Votre nom" />
+              <Input className="pl-9" name="lname" autoComplete="family-name" value={formData.last_name} onChange={(e) => updateForm({ last_name: e.target.value })} onBlur={(e) => handleBlur("last_name", e.target.value)} placeholder="Votre nom" />
             </div>
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Email *</label>
             <div className="relative">
               <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input className="pl-9" type="email" value={formData.email} onChange={(e) => updateForm({ email: e.target.value })} onBlur={(e) => handleBlur("email", e.target.value)} placeholder="email@exemple.com" />
+              <Input className="pl-9" type="email" name="email" autoComplete="email" value={formData.email} onChange={(e) => updateForm({ email: e.target.value })} onBlur={(e) => handleBlur("email", e.target.value)} placeholder="email@exemple.com" />
             </div>
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Téléphone *</label>
             <div className="relative">
               <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input className="pl-9" value={formData.phone} onChange={(e) => updateForm({ phone: e.target.value })} onBlur={(e) => handleBlur("phone", e.target.value)} placeholder="+212 6 00 00 00 00" />
+              <Input className="pl-9" name="phone" autoComplete="tel" value={formData.phone} onChange={(e) => updateForm({ phone: e.target.value })} onBlur={(e) => handleBlur("phone", e.target.value)} placeholder="+212 6 00 00 00 00" />
             </div>
           </div>
           <div className="space-y-2">
@@ -96,7 +118,7 @@ const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics }: Pro
             <label className="text-sm font-medium">Date de naissance</label>
             <div className="relative">
               <CalendarDays size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input className="pl-9" type="date" value={formData.dob} onChange={(e) => updateForm({ dob: e.target.value })} />
+              <Input className="pl-9" type="date" name="bday" autoComplete="bday" value={formData.dob} onChange={(e) => updateForm({ dob: e.target.value })} />
             </div>
           </div>
         </div>
@@ -118,7 +140,7 @@ const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics }: Pro
 
       <div className="flex flex-col-reverse sm:flex-row gap-3">
         <Button variant="outline" onClick={onBack} className="rounded-xl px-8 w-full sm:w-auto">Retour</Button>
-        <Button onClick={onNext} disabled={!isValid} className="bg-primary text-primary-foreground hover:bg-accent rounded-xl px-8 h-12 font-semibold w-full sm:w-auto">
+        <Button onClick={handleNext} disabled={!isValid} className="bg-primary text-primary-foreground hover:bg-accent rounded-xl px-8 h-12 font-semibold w-full sm:w-auto">
           Continuer
         </Button>
       </div>

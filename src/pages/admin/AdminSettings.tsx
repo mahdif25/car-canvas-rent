@@ -114,6 +114,7 @@ const AdminSettings = () => {
               <h2 className="font-semibold text-lg">Pixels & Analytics</h2>
               {[
                 { key: "facebook_pixel_id" as const, label: "Facebook Pixel ID", placeholder: "123456789" },
+                { key: "facebook_capi_token" as const, label: "Facebook Conversions API Token", placeholder: "EAAxxxxxxx..." },
                 { key: "tiktok_pixel_id" as const, label: "TikTok Pixel ID", placeholder: "XXXXX" },
                 { key: "google_analytics_id" as const, label: "Google Analytics ID", placeholder: "G-XXXXXXXXXX" },
                 { key: "google_tag_manager_id" as const, label: "Google Tag Manager ID", placeholder: "GTM-XXXXXXX" },
@@ -124,10 +125,31 @@ const AdminSettings = () => {
                     value={(form[field.key] as string) || ""}
                     onChange={(e) => setForm({ ...form, [field.key]: e.target.value })}
                     placeholder={field.placeholder}
+                    type={field.key === "facebook_capi_token" ? "password" : "text"}
                   />
+                  {field.key === "facebook_capi_token" && (
+                    <p className="text-xs text-muted-foreground">
+                      Requis pour le suivi serveur (CAPI). Génère-le depuis Facebook Events Manager → Settings → Generate Access Token.
+                    </p>
+                  )}
                 </div>
               ))}
-              <Button onClick={() => save(["facebook_pixel_id", "tiktok_pixel_id", "google_analytics_id", "google_tag_manager_id"])} disabled={updateMutation.isPending}>
+
+              <div className="space-y-3 pt-2 border-t border-border">
+                <Label>Mode de capture des données</Label>
+                <Select value={form.lead_capture_mode || "blur"} onValueChange={(v) => setForm({ ...form, lead_capture_mode: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="blur">Au blur (progressif)</SelectItem>
+                    <SelectItem value="submit">Au submit (complet)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  « Au blur » capture les données à chaque champ rempli (meilleur pour capturer les abandons). « Au submit » envoie toutes les données en une fois quand l'utilisateur clique Continuer.
+                </p>
+              </div>
+
+              <Button onClick={() => save(["facebook_pixel_id", "facebook_capi_token", "tiktok_pixel_id", "google_analytics_id", "google_tag_manager_id", "lead_capture_mode"])} disabled={updateMutation.isPending}>
                 Sauvegarder
               </Button>
             </div>

@@ -15,3 +15,5 @@ project_id = "mtcxliurdruvrzjtxful"
     verify_jwt = false
   [functions.send-broadcast]
     verify_jwt = true
+  [functions.facebook-capi]
+    verify_jwt = false

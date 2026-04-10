@@ -32,10 +32,26 @@ function detectDevice(): { device_type: string; browser: string; os: string } {
   return { device_type, browser, os };
 }
 
+declare global {
+  interface Window {
+    fbq?: (...args: any[]) => void;
+  }
+}
+
 export function useAnalytics() {
   const visitorId = useRef(getOrCreate(localStorage, "clc_visitor_id"));
   const sessionId = useRef(getOrCreate(sessionStorage, "clc_session_id"));
   const device = useRef(detectDevice());
+
+  // Capture fbclid on init
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const fbclid = params.get("fbclid");
+    if (fbclid) {
+      sessionStorage.setItem("fbclid", fbclid);
+      sessionStorage.setItem("fbc", `fb.1.${Date.now()}.${fbclid}`);
+    }
+  }, []);
 
   const track = useCallback(
     async (event_type: string, metadata: Record<string, any> = {}, page_path?: string) => {
@@ -57,7 +73,7 @@ export function useAnalytics() {
           }),
         });
       } catch {
-        // silent fail – analytics should never break UX
+        // silent fail
       }
     },
     []
@@ -79,6 +95,58 @@ export function useAnalytics() {
     [track]
   );
 
+  // Facebook event tracking (Pixel + CAPI)
+  const trackFacebookEvent = useCallback(
+    async (eventName: string, customData: Record<string, any> = {}) => {
+      const eventId = crypto.randomUUID();
+
+      // Client-side Pixel
+      try {
+        if (window.fbq) {
+          window.fbq("track", eventName, customData, { eventID: eventId });
+        }
+      } catch {
+        // silent
+      }
+
+      // Server-side CAPI
+      try {
+        const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+        const url = `https://${projectId}.supabase.co/functions/v1/facebook-capi`;
+        const userData: Record<string, string> = {};
+        const em = sessionStorage.getItem("fb_em");
+        const fn = sessionStorage.getItem("fb_fn");
+        const ln = sessionStorage.getItem("fb_ln");
+        const ph = sessionStorage.getItem("fb_ph");
+        const fbc = sessionStorage.getItem("fbc");
+        const fbp = sessionStorage.getItem("fbp");
+        const fbclid = sessionStorage.getItem("fbclid");
+        if (em) userData.em = em;
+        if (fn) userData.fn = fn;
+        if (ln) userData.ln = ln;
+        if (ph) userData.ph = ph;
+        if (fbc) userData.fbc = fbc;
+        if (fbp) userData.fbp = fbp;
+        if (fbclid) userData.fbclid = fbclid;
+
+        await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            event_name: eventName,
+            event_id: eventId,
+            event_source_url: window.location.href,
+            user_data: userData,
+            custom_data: customData,
+          }),
+        });
+      } catch {
+        // silent
+      }
+    },
+    []
+  );
+
   // Auto-track page view on mount
   useEffect(() => {
     trackPageView();
@@ -90,7 +158,6 @@ export function useAnalytics() {
     async (fields: Record<string, string>, step: number) => {
       try {
         if (leadIdRef.current) {
-          // Update existing lead for this session
           await supabase
             .from("leads")
             .update({
@@ -100,7 +167,6 @@ export function useAnalytics() {
             })
             .eq("id", leadIdRef.current);
         } else {
-          // First capture this session — insert new row
           const { data } = await supabase
             .from("leads")
             .insert({
@@ -154,6 +220,7 @@ export function useAnalytics() {
     trackPageView,
     trackReservationStep,
     trackFieldCapture,
+    trackFacebookEvent,
     captureLeadField,
     markLeadCompleted,
   };
