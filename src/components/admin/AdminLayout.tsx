@@ -148,7 +148,7 @@ const AdminLayout = ({ children }: Props) => {
             <img src={logo} alt="Centre Lux Car" className="h-10 brightness-200" />
           </Link>
         </div>
-        <nav className="flex-1 p-4 space-y-1">
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {navItems.map((item) => (
             <Link
               key={item.path}
@@ -164,7 +164,7 @@ const AdminLayout = ({ children }: Props) => {
             </Link>
           ))}
         </nav>
-        <div className="p-4 border-t border-foreground/10 space-y-1">
+        <div className="p-4 border-t border-foreground/10 space-y-1 shrink-0">
           <Link
             to="/admin/settings"
             className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
