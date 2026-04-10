@@ -14,6 +14,7 @@ import StepConfirmation from "@/components/reservation/StepConfirmation";
 import ReservationSidebar from "@/components/reservation/ReservationSidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAnalytics } from "@/hooks/useAnalytics";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { Check } from "lucide-react";
 
 const steps = [
@@ -53,12 +54,20 @@ const Reservation = () => {
   const [confirmationId, setConfirmationId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const analytics = useAnalytics();
+  const { data: siteSettings } = useSiteSettings();
 
   useEffect(() => {
     analytics.trackReservationStep(currentStep, {
       vehicle_id: formData.vehicle_id || undefined,
       pickup_location: formData.pickup_location || undefined,
     });
+    // Fire CAPI events on specific steps
+    if (currentStep === 4) {
+      analytics.trackFacebookEvent("InitiateCheckout", {
+        currency: "MAD",
+        content_ids: [formData.vehicle_id],
+      });
+    }
   }, [currentStep]);
 
   const { data: vehicles = [], isLoading: loadingVehicles } = useVehicles();
