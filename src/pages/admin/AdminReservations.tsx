@@ -11,6 +11,7 @@ import { useMemo, useState } from "react";
 import { useVehicles, usePricingTiers, getDailyRateFromTiers } from "@/hooks/useVehicles";
 import { useLocations, getDeliveryFee } from "@/hooks/useLocations";
 import { Printer, Save, Pencil, Check, X } from "lucide-react";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import type { Database } from "@/integrations/supabase/types";
 
 type ReservationStatus = Database["public"]["Enums"]["reservation_status"];
