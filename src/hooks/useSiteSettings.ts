@@ -7,6 +7,7 @@ export interface SiteSettings {
   hero_bg_value: string;
   hero_overlay_opacity: number;
   facebook_pixel_id: string;
+  facebook_capi_token: string;
   tiktok_pixel_id: string;
   google_analytics_id: string;
   google_tag_manager_id: string;
@@ -17,6 +18,7 @@ export interface SiteSettings {
   send_reservation_emails: boolean;
   google_reviews_url: string;
   show_reviews_section: boolean;
+  lead_capture_mode: string;
   updated_at: string;
 }
 
