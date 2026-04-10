@@ -1,5 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { Users, Fuel, Settings2, DoorOpen, Briefcase, Shield, Check, Star } from "lucide-react";
+import { getActiveFeatures } from "@/lib/vehicle-features";
 import Layout from "@/components/layout/Layout";
 import { useVehicle, usePricingTiers } from "@/hooks/useVehicles";
 import { Button } from "@/components/ui/button";
@@ -103,11 +104,17 @@ const VehicleDetail = () => {
                 ))}
               </div>
 
-              {vehicle.features && vehicle.features.length > 0 && (
+              {/* Structured feature icons */}
+              {getActiveFeatures(vehicle).length > 0 && (
                 <div>
                   <h3 className="font-semibold mb-3">Équipements inclus</h3>
                   <div className="flex flex-wrap gap-2">
-                    {vehicle.features.map((f) => (
+                    {getActiveFeatures(vehicle).map((f) => (
+                      <span key={f.key} className="flex items-center gap-1.5 text-sm bg-secondary px-3 py-1.5 rounded-full">
+                        <f.icon size={14} className="text-primary" />{f.label}
+                      </span>
+                    ))}
+                    {vehicle.features?.map((f) => (
                       <span key={f} className="flex items-center gap-1 text-sm bg-secondary px-3 py-1.5 rounded-full">
                         <Check size={14} className="text-primary" />{f}
                       </span>
@@ -115,6 +122,12 @@ const VehicleDetail = () => {
                   </div>
                 </div>
               )}
+
+              {/* Insurance badge */}
+              <div className="flex items-center gap-2 p-3 bg-primary/5 border border-primary/20 rounded-xl">
+                <Shield size={18} className="text-primary shrink-0" />
+                <p className="text-sm font-medium text-primary">Assurance tous risques incluse</p>
+              </div>
 
               {tiers.length > 0 && (
                 <div>
