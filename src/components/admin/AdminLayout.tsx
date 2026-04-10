@@ -2,7 +2,7 @@ import { ReactNode, useState } from "react";
 import { Link, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Car, Settings, CalendarDays, LayoutDashboard, LogOut, MapPin, Menu, MoreHorizontal, BarChart3, Users, Tag } from "lucide-react";
+import { Car, Settings, CalendarDays, LayoutDashboard, LogOut, MapPin, Menu, MoreHorizontal, BarChart3, Users, Tag, Puzzle } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import logo from "@/assets/logo.png";
 
@@ -13,13 +13,12 @@ interface Props {
 const navItems = [
   { label: "Dashboard", path: "/admin", icon: LayoutDashboard },
   { label: "Flotte", path: "/admin/fleet", icon: Car },
-  { label: "Options", path: "/admin/addons", icon: Settings },
+  { label: "Add-ons", path: "/admin/addons", icon: Puzzle },
   { label: "Réservations", path: "/admin/reservations", icon: CalendarDays },
   { label: "Lieux", path: "/admin/locations", icon: MapPin },
   { label: "Marketing", path: "/admin/marketing", icon: Tag },
   { label: "Analytics", path: "/admin/analytics", icon: BarChart3 },
   { label: "Leads", path: "/admin/leads", icon: Users },
-  { label: "Paramètres", path: "/admin/settings", icon: Settings },
 ];
 
 const bottomNavItems = navItems.slice(0, 4);
@@ -84,7 +83,19 @@ const AdminLayout = ({ children }: Props) => {
                   </Link>
                 ))}
               </nav>
-              <div className="p-4 border-t border-foreground/10 mt-auto">
+              <div className="p-4 border-t border-foreground/10 mt-auto space-y-1">
+                <Link
+                  to="/admin/settings"
+                  onClick={() => setDrawerOpen(false)}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
+                    location.pathname === "/admin/settings"
+                      ? "bg-primary/20 text-primary"
+                      : "hover:bg-foreground/5"
+                  }`}
+                >
+                  <Settings size={18} />
+                  Paramètres
+                </Link>
                 <button
                   onClick={signOut}
                   className="flex items-center gap-3 px-3 py-2 text-sm text-foreground/60 hover:text-foreground w-full"
@@ -153,7 +164,18 @@ const AdminLayout = ({ children }: Props) => {
             </Link>
           ))}
         </nav>
-        <div className="p-4 border-t border-foreground/10">
+        <div className="p-4 border-t border-foreground/10 space-y-1">
+          <Link
+            to="/admin/settings"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
+              location.pathname === "/admin/settings"
+                ? "bg-primary/20 text-primary"
+                : "hover:bg-foreground/5"
+            }`}
+          >
+            <Settings size={18} />
+            Paramètres
+          </Link>
           <button
             onClick={signOut}
             className="flex items-center gap-3 px-3 py-2 text-sm text-foreground/60 hover:text-foreground w-full"
