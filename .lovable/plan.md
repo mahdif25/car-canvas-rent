@@ -1,23 +1,28 @@
 
 
-# Fix Sidebar Bottom Visibility & Settings Tabs Visibility
+# Fix Visibility: Sidebar Déconnexion & Settings Tabs
 
-## Issues
-1. **Déconnexion button not visible**: The sidebar bottom section is cut off. The sidebar needs `overflow-hidden` on the aside and the nav section should scroll independently so the bottom pinned section (Paramètres + Déconnexion) always stays visible.
-2. **Settings tabs not visible**: The `TabsList` with `flex-wrap` on a `bg-muted` background blends into the page. The tabs need proper width and visible styling.
+## Root Causes
+
+1. **Déconnexion button**: Uses `text-foreground/60` which resolves to dark gray (10% lightness) at 60% opacity — invisible on the dark sidebar (`bg-dark` is also 10% lightness). Needs `text-dark-foreground/60` (white at 60% opacity).
+
+2. **Settings tabs**: The CSS variables `--muted` and `--muted-foreground` are identical (`220 9% 46%`), so inactive tab text is the same color as the tab bar background. The inactive tabs need explicit contrasting text color.
 
 ## Changes
 
 ### 1. `src/components/admin/AdminLayout.tsx`
-- Add `overflow-hidden` to the desktop `<aside>` so the flex column doesn't overflow
-- Add `overflow-y-auto` to the `<nav>` section so main nav items scroll if needed
-- Ensure the bottom div with Paramètres + Déconnexion has `shrink-0` so it's always pinned at the bottom
+- Change Déconnexion button class from `text-foreground/60 hover:text-foreground` to `text-dark-foreground/60 hover:text-dark-foreground` (desktop sidebar, line 181)
+- Apply same fix to mobile drawer Déconnexion button
 
 ### 2. `src/pages/admin/AdminSettings.tsx`
-- Change `TabsList` to use `w-full` and `grid grid-cols-5` (or similar) instead of `flex-wrap` so all tab triggers are clearly visible with proper sizing
-- Alternatively, make the TabsList `w-full flex` with proper spacing so tabs don't collapse into invisibility on the muted background
+- Add explicit text color to the `TabsList` so inactive tabs are visible: add `bg-card border border-border` to the TabsList
+- Add `text-foreground` to inactive `TabsTrigger` items so they contrast against the background
+
+### 3. `src/index.css`
+- Fix `--muted-foreground` to a readable value like `220 9% 30%` so it contrasts against `--muted` (`220 9% 46%`). This fixes the root cause for all muted-foreground usage site-wide.
 
 ## Files Changed
-1. `src/components/admin/AdminLayout.tsx` — fix sidebar overflow for bottom section visibility
-2. `src/pages/admin/AdminSettings.tsx` — fix TabsList to be fully visible
+1. `src/components/admin/AdminLayout.tsx`
+2. `src/pages/admin/AdminSettings.tsx`
+3. `src/index.css`
 
