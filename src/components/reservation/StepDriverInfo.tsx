@@ -15,7 +15,7 @@ interface Props {
   vehicle: Vehicle | undefined;
   leadCaptureMode?: string;
   analytics?: {
-    captureLeadField: (fields: Record<string, string>, step: number) => void;
+    captureLeadField: (fields: Record<string, string>, step: number, capi_allowed?: boolean) => void;
     trackFieldCapture: (fields: Record<string, string>) => void;
   };
 }
