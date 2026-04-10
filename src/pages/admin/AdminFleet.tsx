@@ -128,7 +128,7 @@ const AdminFleet = () => {
     category: "Sedan", transmission: "Manuelle", fuel: "Diesel",
     seats: 5, doors: 4, luggage: 3, security_deposit: 0, is_available: true,
     features: [], has_climatisation: true, has_gps: false, has_bluetooth: false, has_usb: false, has_camera: false,
-    slug: "", image_flipped: false, image_scale: 1.0,
+    slug: "", image_flipped: false, image_scale_home: 1.0, image_scale_fleet: 1.0, image_scale_detail: 1.0, image_scale_reservation: 1.0, image_scale_sidebar: 1.0,
   });
   const [tiers, setTiers] = useState(defaultTiers);
   const [featureInput, setFeatureInput] = useState("");
@@ -211,7 +211,7 @@ const AdminFleet = () => {
   const resetForm = () => {
     setShowForm(false);
     setEditingId(null);
-    setForm({ name: "", brand: "", model: "", year: new Date().getFullYear(), category: "Sedan", transmission: "Manuelle", fuel: "Diesel", seats: 5, doors: 4, luggage: 3, security_deposit: 0, is_available: true, features: [], has_climatisation: true, has_gps: false, has_bluetooth: false, has_usb: false, has_camera: false, slug: "", image_flipped: false, image_scale: 1.0 });
+    setForm({ name: "", brand: "", model: "", year: new Date().getFullYear(), category: "Sedan", transmission: "Manuelle", fuel: "Diesel", seats: 5, doors: 4, luggage: 3, security_deposit: 0, is_available: true, features: [], has_climatisation: true, has_gps: false, has_bluetooth: false, has_usb: false, has_camera: false, slug: "", image_flipped: false, image_scale_home: 1.0, image_scale_fleet: 1.0, image_scale_detail: 1.0, image_scale_reservation: 1.0, image_scale_sidebar: 1.0 });
     setTiers(defaultTiers);
     setFeatureInput("");
     setGalleryUrls([]);
@@ -219,7 +219,7 @@ const AdminFleet = () => {
 
   const editVehicle = async (v: Vehicle) => {
     setEditingId(v.id);
-    setForm({ name: v.name, brand: v.brand, model: v.model, year: v.year, category: v.category, transmission: v.transmission, fuel: v.fuel, seats: v.seats, doors: v.doors, luggage: v.luggage, security_deposit: Number(v.security_deposit), is_available: v.is_available, image_url: v.image_url, features: v.features ?? [], has_climatisation: v.has_climatisation ?? true, has_gps: v.has_gps ?? false, has_bluetooth: v.has_bluetooth ?? false, has_usb: v.has_usb ?? false, has_camera: v.has_camera ?? false, slug: v.slug ?? "", image_flipped: (v as any).image_flipped ?? false, image_scale: Number((v as any).image_scale ?? 1) });
+    setForm({ name: v.name, brand: v.brand, model: v.model, year: v.year, category: v.category, transmission: v.transmission, fuel: v.fuel, seats: v.seats, doors: v.doors, luggage: v.luggage, security_deposit: Number(v.security_deposit), is_available: v.is_available, image_url: v.image_url, features: v.features ?? [], has_climatisation: v.has_climatisation ?? true, has_gps: v.has_gps ?? false, has_bluetooth: v.has_bluetooth ?? false, has_usb: v.has_usb ?? false, has_camera: v.has_camera ?? false, slug: v.slug ?? "", image_flipped: (v as any).image_flipped ?? false, image_scale_home: Number((v as any).image_scale_home ?? 1), image_scale_fleet: Number((v as any).image_scale_fleet ?? 1), image_scale_detail: Number((v as any).image_scale_detail ?? 1), image_scale_reservation: Number((v as any).image_scale_reservation ?? 1), image_scale_sidebar: Number((v as any).image_scale_sidebar ?? 1) });
     const vehicleTiers = allTiers?.filter((t) => t.vehicle_id === v.id) ?? [];
     setTiers(vehicleTiers.length > 0 ? vehicleTiers.map((t) => ({ min_days: t.min_days, max_days: t.max_days, daily_rate: Number(t.daily_rate) })) : defaultTiers);
     const { data: imgs } = await supabase.from("vehicle_images").select("*").eq("vehicle_id", v.id).order("sort_order");
@@ -360,37 +360,51 @@ const AdminFleet = () => {
             {form.image_url && (
               <div className="space-y-4 p-4 border rounded-xl bg-muted/30">
                 <h4 className="text-sm font-medium flex items-center gap-2"><FlipHorizontal size={16} className="text-primary" /> Ajustements de l'image</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm">Inverser l'image (miroir)</label>
-                    <Switch
-                      checked={(form as any).image_flipped ?? false}
-                      onCheckedChange={(checked) => setForm((f) => ({ ...f, image_flipped: checked }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <label className="text-sm">Zoom de l'image</label>
-                      <span className="text-xs text-muted-foreground">{((form as any).image_scale ?? 1).toFixed(2)}x</span>
-                    </div>
-                    <Slider
-                      min={0.5}
-                      max={2}
-                      step={0.05}
-                      value={[(form as any).image_scale ?? 1]}
-                      onValueChange={([val]) => setForm((f) => ({ ...f, image_scale: val }))}
-                    />
-                  </div>
-                </div>
-                <div className="mt-2 rounded-lg overflow-hidden border bg-secondary h-40 flex items-center justify-center">
-                  <img
-                    src={form.image_url}
-                    alt="Aperçu"
-                    className="max-h-full max-w-full object-contain"
-                    style={{
-                      transform: `${(form as any).image_flipped ? 'scaleX(-1)' : ''} scale(${(form as any).image_scale ?? 1})`.trim() || 'none'
-                    }}
+                <div className="flex items-center justify-between mb-4">
+                  <label className="text-sm">Inverser l'image (miroir)</label>
+                  <Switch
+                    checked={(form as any).image_flipped ?? false}
+                    onCheckedChange={(checked) => setForm((f) => ({ ...f, image_flipped: checked }))}
                   />
+                </div>
+
+                <h4 className="text-sm font-medium">Zoom par emplacement</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {([
+                    { key: "image_scale_home", label: "Accueil", w: 320, h: 180, objFit: "object-contain", bg: "bg-secondary" },
+                    { key: "image_scale_fleet", label: "Flotte", w: 320, h: 180, objFit: "object-contain", bg: "bg-secondary" },
+                    { key: "image_scale_detail", label: "Détail véhicule", w: 400, h: 225, objFit: "object-cover", bg: "bg-background" },
+                    { key: "image_scale_reservation", label: "Réservation", w: 280, h: 160, objFit: "object-contain", bg: "bg-secondary" },
+                    { key: "image_scale_sidebar", label: "Barre latérale", w: 200, h: 130, objFit: "object-contain", bg: "bg-secondary" },
+                  ] as const).map((placement) => {
+                    const scaleVal = Number((form as any)[placement.key] ?? 1);
+                    return (
+                      <div key={placement.key} className="space-y-2">
+                        <div className="flex justify-between">
+                          <label className="text-sm font-medium">{placement.label}</label>
+                          <span className="text-xs text-muted-foreground">{scaleVal.toFixed(2)}x</span>
+                        </div>
+                        <Slider
+                          min={0.5} max={2} step={0.05}
+                          value={[scaleVal]}
+                          onValueChange={([val]) => setForm((f) => ({ ...f, [placement.key]: val }))}
+                        />
+                        <div
+                          className={`rounded-lg overflow-hidden border ${placement.bg} flex items-center justify-center`}
+                          style={{ width: placement.w, height: placement.h, maxWidth: "100%" }}
+                        >
+                          <img
+                            src={form.image_url}
+                            alt={placement.label}
+                            className={`w-full h-full ${placement.objFit}`}
+                            style={{
+                              transform: `${(form as any).image_flipped ? 'scaleX(-1)' : ''} scale(${scaleVal})`.trim() || 'none'
+                            }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}

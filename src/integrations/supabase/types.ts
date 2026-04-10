@@ -858,7 +858,11 @@ export type Database = {
           has_usb: boolean
           id: string
           image_flipped: boolean
-          image_scale: number
+          image_scale_detail: number
+          image_scale_fleet: number
+          image_scale_home: number
+          image_scale_reservation: number
+          image_scale_sidebar: number
           image_url: string | null
           is_available: boolean
           luggage: number
@@ -885,7 +889,11 @@ export type Database = {
           has_usb?: boolean
           id?: string
           image_flipped?: boolean
-          image_scale?: number
+          image_scale_detail?: number
+          image_scale_fleet?: number
+          image_scale_home?: number
+          image_scale_reservation?: number
+          image_scale_sidebar?: number
           image_url?: string | null
           is_available?: boolean
           luggage?: number
@@ -912,7 +920,11 @@ export type Database = {
           has_usb?: boolean
           id?: string
           image_flipped?: boolean
-          image_scale?: number
+          image_scale_detail?: number
+          image_scale_fleet?: number
+          image_scale_home?: number
+          image_scale_reservation?: number
+          image_scale_sidebar?: number
           image_url?: string | null
           is_available?: boolean
           luggage?: number

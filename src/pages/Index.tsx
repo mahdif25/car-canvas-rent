@@ -218,7 +218,7 @@ const Index = () => {
                         alt={v.name}
                         className="relative z-10 w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                         style={{
-                          transform: `${(v as any).image_flipped ? 'scaleX(-1)' : ''} scale(${(v as any).image_scale ?? 1})`.trim() || 'none'
+                          transform: `${(v as any).image_flipped ? 'scaleX(-1)' : ''} scale(${(v as any).image_scale_home ?? 1})`.trim() || 'none'
                         }}
                       />
                     </div>
