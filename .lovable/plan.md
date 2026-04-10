@@ -1,45 +1,36 @@
 
 
-# Fix Reservation Zoom Not Visually Applying
+# Lead CAPI Reporting Flag Based on Capture Mode
 
-## Problem
-The zoom scale values are being saved and applied via `transform: scale()`, but the visual effect is invisible because:
+## Overview
+Add a `capi_allowed` column to the `leads` table. When capture mode is "submit", leads captured on blur are saved with `capi_allowed = false` (visible in admin but not reportable to Facebook CAPI). When the user clicks submit, the lead is upgraded to `capi_allowed = true`. When mode is "blur", all leads are saved with `capi_allowed = true` immediately.
 
-1. **Sidebar** (`ReservationSidebar.tsx` line 30): The container has `overflow-hidden`, so when the image scales up, the overflow is clipped — making it look the same size
-2. **StepVehicle** (`StepVehicle.tsx` line 45): The image has `object-cover` with fixed dimensions (`w-48 h-32`), and `scale()` on an `object-cover` image just enlarges the element box (which gets clipped by the flex layout)
+## Database Migration
 
-## Root Cause
-`transform: scale()` scales the entire `<img>` element, but when the parent clips overflow, the scaled-up portion is invisible. The correct approach is to use `object-position` combined with a CSS `scale` on the image content, or better yet, wrap the image in a container and scale inside it.
-
-## Fix
-
-### Both files: Wrap image in an overflow-hidden container, scale the img inside
-The pattern should be:
-```tsx
-<div className="... overflow-hidden">
-  <img style={{ transform: `scale(${scale})` }} className="w-full h-full object-contain" />
-</div>
+```sql
+ALTER TABLE public.leads
+  ADD COLUMN capi_allowed boolean NOT NULL DEFAULT true;
 ```
 
-This way `scale()` zooms into the image (showing more detail / less surrounding space), which is the expected "zoom" behavior.
+## Code Changes
 
-### `src/components/reservation/StepVehicle.tsx`
-- Wrap the `<img>` in a fixed-size `div` with `overflow-hidden`
-- Move dimensions (`md:w-48 h-32`) to the wrapper div
-- Let the img be `w-full h-full object-contain` with the transform
+### 1. `src/hooks/useAnalytics.ts`
+- Add optional `capi_allowed` parameter to `captureLeadField` (default `true`)
+- Pass it through on both insert and update calls
 
-### `src/components/reservation/ReservationSidebar.tsx`
-- The container already has `overflow-hidden` — the issue is that `object-contain` + `scale()` works correctly only when the image fills its container. Currently it should work, but we need to verify the scale value is actually coming through from the database (not stuck at 1.0)
-- Remove `(v as any)` casts since the types now include these columns natively
+### 2. `src/components/reservation/StepDriverInfo.tsx`
+- **Remove** the early return in `handleBlur` when mode is "submit" — always capture on blur
+- When mode is "submit": call `captureLeadField` with `capi_allowed: false` on blur
+- When mode is "blur": call `captureLeadField` with `capi_allowed: true` on blur (current behavior)
+- In `handleNext` (submit button): always call `captureLeadField` with `capi_allowed: true` to upgrade the flag
 
-### All other pages (Index.tsx, Fleet.tsx, VehicleDetail.tsx)
-- Apply the same wrapper pattern to ensure zoom works consistently everywhere — wrap images in `overflow-hidden` containers and scale inside
+### 3. `src/pages/admin/AdminLeads.tsx`
+- Add `capi_allowed` to the `LeadRow` interface and query
+- Display a badge per lead: green "CAPI ✓" when allowed, gray "CAPI ✗" when not
 
-### Files to change
-- `src/components/reservation/StepVehicle.tsx`
-- `src/components/reservation/ReservationSidebar.tsx`
-- `src/pages/Index.tsx`
-- `src/pages/Fleet.tsx`
-- `src/pages/VehicleDetail.tsx`
-- Remove unnecessary `(v as any)` casts since the DB types already include these columns
+### Files
+- `leads` table (migration — add `capi_allowed` column)
+- `src/hooks/useAnalytics.ts`
+- `src/components/reservation/StepDriverInfo.tsx`
+- `src/pages/admin/AdminLeads.tsx`
 
