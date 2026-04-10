@@ -109,12 +109,12 @@ const Index = () => {
         <div className="absolute inset-0 bg-dark" style={{ opacity: heroType !== "color" ? overlayOpacity : 0 }} />
         <div className="absolute inset-0 bg-gradient-to-r from-dark/95 to-dark/60" style={{ opacity: heroType === "color" ? 1 : 0 }} />
         <div className="container relative z-10 py-20 md:py-32">
-          <div className="max-w-2xl space-y-6">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-              Louez votre voiture <span className="text-primary">en toute confiance</span>
+          <div className={`max-w-2xl space-y-6 ${titleStyle.textAlign === "center" ? "mx-auto" : ""}`}>
+            <h1 className={`${getStyleClasses(titleStyle)} leading-tight ${getAnimationClass(titleAnim)}`}>
+              {titleText} {titleHighlight && <span className="text-primary">{titleHighlight}</span>}
             </h1>
-            <p className="text-lg opacity-80">
-              Des véhicules de qualité, un service professionnel et des prix compétitifs partout au Maroc.
+            <p className={`${getStyleClasses(subtitleStyle)} opacity-80 ${getAnimationClass(subtitleAnim, true)}`}>
+              {subtitleText}
             </p>
           </div>
 
