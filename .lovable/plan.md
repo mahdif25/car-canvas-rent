@@ -1,61 +1,45 @@
 
 
-# Per-Placement Image Zoom with Real-Size Previews
+# Fix Reservation Zoom Not Visually Applying
 
-## Overview
-Replace the single `image_scale` with five placement-specific zoom columns. In the admin panel, show five sliders each with a preview box that matches the real dimensions and styling of that placement on the site.
+## Problem
+The zoom scale values are being saved and applied via `transform: scale()`, but the visual effect is invisible because:
 
-## Database Migration
+1. **Sidebar** (`ReservationSidebar.tsx` line 30): The container has `overflow-hidden`, so when the image scales up, the overflow is clipped — making it look the same size
+2. **StepVehicle** (`StepVehicle.tsx` line 45): The image has `object-cover` with fixed dimensions (`w-48 h-32`), and `scale()` on an `object-cover` image just enlarges the element box (which gets clipped by the flex layout)
 
-```sql
-ALTER TABLE public.vehicles
-  ADD COLUMN image_scale_home numeric NOT NULL DEFAULT 1.0,
-  ADD COLUMN image_scale_fleet numeric NOT NULL DEFAULT 1.0,
-  ADD COLUMN image_scale_detail numeric NOT NULL DEFAULT 1.0,
-  ADD COLUMN image_scale_reservation numeric NOT NULL DEFAULT 1.0,
-  ADD COLUMN image_scale_sidebar numeric NOT NULL DEFAULT 1.0;
+## Root Cause
+`transform: scale()` scales the entire `<img>` element, but when the parent clips overflow, the scaled-up portion is invisible. The correct approach is to use `object-position` combined with a CSS `scale` on the image content, or better yet, wrap the image in a container and scale inside it.
 
-UPDATE public.vehicles SET
-  image_scale_home = image_scale,
-  image_scale_fleet = image_scale,
-  image_scale_detail = image_scale,
-  image_scale_reservation = image_scale,
-  image_scale_sidebar = image_scale;
+## Fix
 
-ALTER TABLE public.vehicles DROP COLUMN image_scale;
+### Both files: Wrap image in an overflow-hidden container, scale the img inside
+The pattern should be:
+```tsx
+<div className="... overflow-hidden">
+  <img style={{ transform: `scale(${scale})` }} className="w-full h-full object-contain" />
+</div>
 ```
 
-## Code Changes
+This way `scale()` zooms into the image (showing more detail / less surrounding space), which is the expected "zoom" behavior.
 
-### 1. Admin Panel (`src/pages/admin/AdminFleet.tsx`)
-Replace the single zoom slider with a **"Zoom par emplacement"** section containing five entries. Each entry has:
-- A label (e.g. "Accueil", "Flotte", "Détail véhicule", "Réservation", "Barre latérale")
-- A slider (0.5–2.0, step 0.05)
-- A **live preview box** sized to match the real placement dimensions:
+### `src/components/reservation/StepVehicle.tsx`
+- Wrap the `<img>` in a fixed-size `div` with `overflow-hidden`
+- Move dimensions (`md:w-48 h-32`) to the wrapper div
+- Let the img be `w-full h-full object-contain` with the transform
 
-| Placement | Preview dimensions | Aspect / style |
-|---|---|---|
-| Accueil (Home) | ~320×180px | aspect-video, object-contain, bg-secondary |
-| Flotte (Fleet) | ~320×180px | aspect-video, object-contain, bg-secondary |
-| Détail véhicule | ~400×225px | aspect-video, object-cover |
-| Réservation | ~280×160px | object-contain, bg-secondary |
-| Barre latérale | ~200×130px | object-contain, rounded |
+### `src/components/reservation/ReservationSidebar.tsx`
+- The container already has `overflow-hidden` — the issue is that `object-contain` + `scale()` works correctly only when the image fills its container. Currently it should work, but we need to verify the scale value is actually coming through from the database (not stuck at 1.0)
+- Remove `(v as any)` casts since the types now include these columns natively
 
-Each preview applies `image_flipped` + the placement-specific scale so the admin sees exactly how the car will appear in each context.
+### All other pages (Index.tsx, Fleet.tsx, VehicleDetail.tsx)
+- Apply the same wrapper pattern to ensure zoom works consistently everywhere — wrap images in `overflow-hidden` containers and scale inside
 
-### 2. Update image renders to use placement-specific columns
-- `src/pages/Index.tsx` → `image_scale_home`
-- `src/pages/Fleet.tsx` → `image_scale_fleet`
-- `src/pages/VehicleDetail.tsx` → `image_scale_detail`
-- `src/components/reservation/StepVehicle.tsx` → `image_scale_reservation`
-- `src/components/reservation/ReservationSidebar.tsx` → `image_scale_sidebar`
-
-### Files
-- `vehicles` table (migration — add 5 columns, drop 1)
-- `src/pages/admin/AdminFleet.tsx`
+### Files to change
+- `src/components/reservation/StepVehicle.tsx`
+- `src/components/reservation/ReservationSidebar.tsx`
 - `src/pages/Index.tsx`
 - `src/pages/Fleet.tsx`
 - `src/pages/VehicleDetail.tsx`
-- `src/components/reservation/StepVehicle.tsx`
-- `src/components/reservation/ReservationSidebar.tsx`
+- Remove unnecessary `(v as any)` casts since the DB types already include these columns
 
