@@ -1,16 +1,28 @@
 
 
-# Add Vehicle Image to Reservation Sidebar
+# Fix: Vehicle Image Fill in Reservation Sidebar
 
 ## Change
 
-In `src/components/reservation/ReservationSidebar.tsx`, add a small vehicle image at the top of the sidebar content when a vehicle is selected. The vehicle's `image_url` field will be used.
+In `src/components/reservation/ReservationSidebar.tsx` (lines 30-32), change the image from `object-contain` with padding to `object-cover` without padding, so the car fills the entire container edge-to-edge.
 
-### What changes
-- After the `<h3>Résumé</h3>` heading in the desktop sidebar, render a small rounded image of the selected vehicle using `vehicle.image_url`
-- Image styled as: `w-full h-28 object-contain bg-secondary rounded-lg p-2`
-- Also show the image in the mobile expanded view at the top of the content
-- Same image added inside the `content` block, before the location/dates info, so it appears in both desktop and mobile views
+**Current:**
+```tsx
+<div className="w-full h-28 bg-secondary rounded-lg p-2">
+  <img ... className="w-full h-full object-contain" />
+</div>
+```
+
+**New:**
+```tsx
+<div className="w-full h-28 bg-secondary rounded-lg overflow-hidden">
+  <img ... className="w-full h-full object-cover" />
+</div>
+```
+
+- Remove `p-2` padding from container
+- Add `overflow-hidden` to clip the image within rounded corners
+- Change `object-contain` → `object-cover` so the image fills the box
 
 ### File
 - `src/components/reservation/ReservationSidebar.tsx`
