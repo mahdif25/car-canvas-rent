@@ -1,18 +1,31 @@
 
 
-# Make Featured Cars Section More Compact
+# Fix: Vehicle Images Rendering on Fleet Page
 
-## Changes to `src/pages/Index.tsx`
+## Problem
+The Tucson (and potentially other vehicles) image gets cropped awkwardly because `object-cover` on an `aspect-video` (16:9) container forces a tight crop. Cars photographed from certain angles or with wider compositions lose important parts.
 
-Reduce spacing and sizing throughout the featured vehicles section:
+## Solution
+Change the image rendering approach:
 
-1. **Section padding**: `py-16` → `py-10`
-2. **Title margin**: `mb-10` → `mb-6`, title size `text-3xl` → `text-2xl`
-3. **Card header**: `p-5 pb-0` → `p-4 pb-0`, title `text-lg` → `text-base`
-4. **Image area**: `mx-5 mt-4 h-44` → `mx-4 mt-3 h-36`, reduce inner padding `p-4` → `p-2`
-5. **Features + price area**: `p-5 space-y-4` → `p-4 space-y-3`, icon size `14` → `12`, gap `gap-3` → `gap-2`
-6. **Price**: `text-2xl` → `text-xl`, CTA button padding `px-4 py-2` → `px-3 py-1.5`
-7. **Grid gap**: `gap-6` → `gap-4`
+**In `src/pages/Fleet.tsx`** (line 109-113):
+- Change `object-cover` to `object-contain` so the full car is always visible
+- Add a subtle `bg-secondary` background to the image container so the empty space around contained images looks clean (matches the card style)
+- Keep `aspect-video` for consistent card heights
+- Keep the hover scale effect
 
-Single file change, all in `src/pages/Index.tsx`.
+```
+// Current
+<div className="aspect-video overflow-hidden relative">
+  <img ... className="w-full h-full object-cover ..." />
+
+// New  
+<div className="aspect-video overflow-hidden relative bg-secondary">
+  <img ... className="w-full h-full object-contain p-2 ..." />
+```
+
+This ensures every car image — regardless of its original dimensions or aspect ratio — renders fully visible within the card. The `bg-secondary` fill prevents white gaps from looking jarring, and the small `p-2` padding gives breathing room.
+
+## File
+- `src/pages/Fleet.tsx` — single change on lines 109-114
 
