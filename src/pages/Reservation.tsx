@@ -45,6 +45,9 @@ const Reservation = () => {
     nationality: "",
     dob: "",
     terms_accepted: false,
+    promo_code: "",
+    discount_amount: 0,
+    coupon_id: "",
   });
 
   const [confirmationId, setConfirmationId] = useState("");
@@ -96,7 +99,8 @@ const Reservation = () => {
         formData.pickup_location,
         formData.return_location || formData.pickup_location
       );
-      const totalPrice = vehicleTotal + addonsTotal + deliveryFee;
+      const totalPrice = vehicleTotal + addonsTotal + deliveryFee - formData.discount_amount;
+      const finalTotal = Math.max(0, totalPrice);
       const depositAmount = selectedVehicle ? Number(selectedVehicle.security_deposit) : 0;
 
       const { data: reservation, error } = await supabase
@@ -116,9 +120,11 @@ const Reservation = () => {
           customer_license: formData.license_number,
           customer_nationality: formData.nationality || null,
           customer_dob: formData.dob || null,
-          total_price: totalPrice,
+          total_price: finalTotal,
           deposit_amount: depositAmount,
           delivery_fee: deliveryFee,
+          coupon_id: formData.coupon_id || null,
+          discount_amount: formData.discount_amount,
         })
         .select()
         .single();
@@ -132,6 +138,16 @@ const Reservation = () => {
         }));
         const { error: addonError } = await supabase.from("reservation_addons").insert(addonRows);
         if (addonError) console.error("Addon insert error:", addonError);
+      }
+
+      // Record coupon usage if applicable
+      if (formData.coupon_id) {
+        await supabase.from("coupon_usages").insert({
+          coupon_id: formData.coupon_id,
+          reservation_id: reservation.id,
+          customer_email: formData.email,
+          discount_applied: formData.discount_amount,
+        });
       }
 
       setConfirmationId(reservation.id.slice(0, 8).toUpperCase());
