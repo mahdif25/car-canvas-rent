@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AdminLayout from "@/components/admin/AdminLayout";
@@ -7,9 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, X } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Upload, Image, Loader2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { STRUCTURED_FEATURES } from "@/lib/vehicle-features";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import type { Database } from "@/integrations/supabase/types";
 
 type Vehicle = Database["public"]["Tables"]["vehicles"]["Row"];
@@ -23,6 +24,99 @@ const defaultTiers = [
   { min_days: 15, max_days: 29, daily_rate: 0 },
   { min_days: 30, max_days: null as number | null, daily_rate: 0 },
 ];
+
+const uploadImage = async (file: File): Promise<string> => {
+  const ext = file.name.split(".").pop();
+  const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const { error } = await supabase.storage.from("vehicle-images").upload(path, file);
+  if (error) throw error;
+  const { data } = supabase.storage.from("vehicle-images").getPublicUrl(path);
+  return data.publicUrl;
+};
+
+const deleteStorageFile = async (url: string) => {
+  try {
+    const parts = url.split("/vehicle-images/");
+    if (parts.length < 2) return;
+    const path = decodeURIComponent(parts[1]);
+    await supabase.storage.from("vehicle-images").remove([path]);
+  } catch {}
+};
+
+const ImageUploadField = ({
+  value,
+  onChange,
+  onDelete,
+  label,
+}: {
+  value: string;
+  onChange: (url: string) => void;
+  onDelete?: () => void;
+  label?: string;
+}) => {
+  const [uploading, setUploading] = useState(false);
+  const ref = useRef<HTMLInputElement>(null);
+
+  const handleUpload = async (file: File) => {
+    setUploading(true);
+    try {
+      const url = await uploadImage(file);
+      onChange(url);
+    } catch (e: any) {
+      toast({ title: "Erreur upload", description: e.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      {label && <label className="text-sm font-medium">{label}</label>}
+      <input
+        ref={ref}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) handleUpload(file);
+          e.target.value = "";
+        }}
+      />
+      {value ? (
+        <div className="relative group w-full">
+          <img src={value} alt="" className="w-full h-32 object-contain rounded-lg border bg-muted" />
+          <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button type="button" size="icon" variant="secondary" className="h-7 w-7" onClick={() => ref.current?.click()} disabled={uploading}>
+              <Upload size={14} />
+            </Button>
+            {onDelete && (
+              <Button type="button" size="icon" variant="destructive" className="h-7 w-7" onClick={onDelete}>
+                <Trash2 size={14} />
+              </Button>
+            )}
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => ref.current?.click()}
+          disabled={uploading}
+          className="w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-2 text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+        >
+          {uploading ? <Loader2 size={24} className="animate-spin" /> : <Upload size={24} />}
+          <span className="text-xs">{uploading ? "Upload en cours..." : "Cliquer pour uploader"}</span>
+        </button>
+      )}
+      <Collapsible>
+        <CollapsibleTrigger className="text-xs text-muted-foreground hover:underline">ou coller un lien</CollapsibleTrigger>
+        <CollapsibleContent>
+          <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder="https://..." className="mt-1" />
+        </CollapsibleContent>
+      </Collapsible>
+    </div>
+  );
+};
 
 const AdminFleet = () => {
   const qc = useQueryClient();
@@ -62,12 +156,10 @@ const AdminFleet = () => {
       if (editingId) {
         const { error } = await supabase.from("vehicles").update(saveData).eq("id", editingId);
         if (error) throw error;
-        // Update tiers
         await supabase.from("vehicle_pricing_tiers").delete().eq("vehicle_id", editingId);
         const tierInserts = tiers.map((t) => ({ vehicle_id: editingId, ...t }));
         const { error: tierErr } = await supabase.from("vehicle_pricing_tiers").insert(tierInserts);
         if (tierErr) throw tierErr;
-        // Update gallery images
         await supabase.from("vehicle_images").delete().eq("vehicle_id", editingId);
         if (galleryUrls.filter(Boolean).length > 0) {
           const imgInserts = galleryUrls.filter(Boolean).map((url, i) => ({ vehicle_id: editingId, image_url: url, sort_order: i }));
@@ -80,7 +172,6 @@ const AdminFleet = () => {
         const tierInserts = tiers.map((t) => ({ vehicle_id: data.id, ...t }));
         const { error: tierErr } = await supabase.from("vehicle_pricing_tiers").insert(tierInserts);
         if (tierErr) throw tierErr;
-        // Insert gallery images
         if (galleryUrls.filter(Boolean).length > 0) {
           const imgInserts = galleryUrls.filter(Boolean).map((url, i) => ({ vehicle_id: data.id, image_url: url, sort_order: i }));
           const { error: imgErr } = await supabase.from("vehicle_images").insert(imgInserts);
@@ -127,10 +218,9 @@ const AdminFleet = () => {
 
   const editVehicle = async (v: Vehicle) => {
     setEditingId(v.id);
-    setForm({ name: v.name, brand: v.brand, model: v.model, year: v.year, category: v.category, transmission: v.transmission, fuel: v.fuel, seats: v.seats, doors: v.doors, luggage: v.luggage, security_deposit: Number(v.security_deposit), is_available: v.is_available, image_url: v.image_url, features: v.features ?? [], has_climatisation: (v as any).has_climatisation ?? true, has_gps: (v as any).has_gps ?? false, has_bluetooth: (v as any).has_bluetooth ?? false, has_usb: (v as any).has_usb ?? false, has_camera: (v as any).has_camera ?? false, slug: (v as any).slug ?? "" });
+    setForm({ name: v.name, brand: v.brand, model: v.model, year: v.year, category: v.category, transmission: v.transmission, fuel: v.fuel, seats: v.seats, doors: v.doors, luggage: v.luggage, security_deposit: Number(v.security_deposit), is_available: v.is_available, image_url: v.image_url, features: v.features ?? [], has_climatisation: v.has_climatisation ?? true, has_gps: v.has_gps ?? false, has_bluetooth: v.has_bluetooth ?? false, has_usb: v.has_usb ?? false, has_camera: v.has_camera ?? false, slug: v.slug ?? "" });
     const vehicleTiers = allTiers?.filter((t) => t.vehicle_id === v.id) ?? [];
     setTiers(vehicleTiers.length > 0 ? vehicleTiers.map((t) => ({ min_days: t.min_days, max_days: t.max_days, daily_rate: Number(t.daily_rate) })) : defaultTiers);
-    // Load gallery images
     const { data: imgs } = await supabase.from("vehicle_images").select("*").eq("vehicle_id", v.id).order("sort_order");
     setGalleryUrls((imgs ?? []).map((img: any) => img.image_url));
     setShowForm(true);
@@ -145,6 +235,22 @@ const AdminFleet = () => {
 
   const removeFeature = (i: number) => {
     setForm((f) => ({ ...f, features: (f.features ?? []).filter((_, idx) => idx !== i) }));
+  };
+
+  const handleDeleteGalleryImage = async (index: number) => {
+    const url = galleryUrls[index];
+    if (url?.includes("vehicle-images")) {
+      await deleteStorageFile(url);
+    }
+    setGalleryUrls(galleryUrls.filter((_, idx) => idx !== index));
+  };
+
+  const handleDeleteMainImage = async () => {
+    const url = form.image_url;
+    if (url?.includes("vehicle-images")) {
+      await deleteStorageFile(url);
+    }
+    setForm((f) => ({ ...f, image_url: "" }));
   };
 
   return (
@@ -230,10 +336,6 @@ const AdminFleet = () => {
                 <Input type="number" value={form.security_deposit} onChange={(e) => setForm((f) => ({ ...f, security_deposit: parseFloat(e.target.value) }))} />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">URL Image (principale)</label>
-                <Input value={form.image_url ?? ""} onChange={(e) => setForm((f) => ({ ...f, image_url: e.target.value }))} placeholder="https://..." />
-              </div>
-              <div className="space-y-2">
                 <label className="text-sm font-medium">Slug (URL)</label>
                 <div className="flex gap-2">
                   <Input value={form.slug ?? ""} onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))} placeholder="renault-clio-2026" />
@@ -245,24 +347,35 @@ const AdminFleet = () => {
               </div>
             </div>
 
+            {/* Main Image Upload */}
+            <ImageUploadField
+              label="Image principale"
+              value={form.image_url ?? ""}
+              onChange={(url) => setForm((f) => ({ ...f, image_url: url }))}
+              onDelete={handleDeleteMainImage}
+            />
+
             {/* Gallery Images */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Images supplémentaires (galerie)</label>
-              {galleryUrls.map((url, i) => (
-                <div key={i} className="flex gap-2 items-center">
-                  <Input
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {galleryUrls.map((url, i) => (
+                  <ImageUploadField
+                    key={i}
                     value={url}
-                    onChange={(e) => { const u = [...galleryUrls]; u[i] = e.target.value; setGalleryUrls(u); }}
-                    placeholder="https://..."
+                    onChange={(newUrl) => { const u = [...galleryUrls]; u[i] = newUrl; setGalleryUrls(u); }}
+                    onDelete={() => handleDeleteGalleryImage(i)}
                   />
-                  <Button type="button" variant="ghost" size="icon" onClick={() => setGalleryUrls(galleryUrls.filter((_, idx) => idx !== i))}>
-                    <X size={16} />
-                  </Button>
-                </div>
-              ))}
-              <Button type="button" variant="outline" size="sm" onClick={() => setGalleryUrls([...galleryUrls, ""])}>
-                <Plus size={14} className="mr-1" /> Ajouter une image
-              </Button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setGalleryUrls([...galleryUrls, ""])}
+                  className="h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-2 text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                >
+                  <Plus size={24} />
+                  <span className="text-xs">Ajouter une image</span>
+                </button>
+              </div>
             </div>
 
             {/* Structured Features */}
@@ -357,7 +470,12 @@ const AdminFleet = () => {
                 <tbody>
                   {vehicles.map((v) => (
                     <tr key={v.id} className="border-b last:border-0">
-                      <td className="py-2 px-3 font-medium">{v.name}</td>
+                      <td className="py-2 px-3 font-medium">
+                        <div className="flex items-center gap-2">
+                          {v.image_url && <img src={v.image_url} alt="" className="w-10 h-8 object-contain rounded" />}
+                          {v.name}
+                        </div>
+                      </td>
                       <td className="py-2 px-3">{v.category}</td>
                       <td className="py-2 px-3">{v.transmission}</td>
                       <td className="py-2 px-3 text-right">{Number(v.security_deposit).toLocaleString()} MAD</td>
