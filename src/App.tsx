@@ -17,7 +17,9 @@ import AdminLocations from "./pages/admin/AdminLocations";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminLeads from "./pages/admin/AdminLeads";
 import AdminMarketing from "./pages/admin/AdminMarketing";
+import AdminSettings from "./pages/admin/AdminSettings";
 import NotFound from "./pages/NotFound";
+import TrackingScripts from "./components/TrackingScripts";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +30,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <TrackingScripts />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/fleet" element={<Fleet />} />
@@ -42,6 +45,7 @@ const App = () => (
             <Route path="/admin/marketing" element={<AdminMarketing />} />
             <Route path="/admin/analytics" element={<AdminAnalytics />} />
             <Route path="/admin/leads" element={<AdminLeads />} />
+            <Route path="/admin/settings" element={<AdminSettings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

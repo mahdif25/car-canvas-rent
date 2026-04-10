@@ -6,6 +6,7 @@ import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { useLocations } from "@/hooks/useLocations";
 import { useVehicles, usePricingTiers, getStartingPriceFromTiers } from "@/hooks/useVehicles";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DatePickerField } from "@/components/ui/date-picker-field";
@@ -19,6 +20,11 @@ const Index = () => {
   const { data: vehicles = [], isLoading: loadingVehicles } = useVehicles();
   const { data: allTiers = [], isLoading: loadingTiers } = usePricingTiers();
   const { data: locations = [], isLoading: loadingLocations } = useLocations();
+  const { data: siteSettings } = useSiteSettings();
+
+  const heroType = siteSettings?.hero_bg_type || "color";
+  const heroValue = siteSettings?.hero_bg_value || "";
+  const overlayOpacity = siteSettings?.hero_overlay_opacity ?? 0.6;
 
   const handleSearch = () => {
     const params = new URLSearchParams();
@@ -34,8 +40,16 @@ const Index = () => {
   return (
     <Layout>
       {/* Hero */}
-      <section className="relative bg-dark text-dark-foreground overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-dark/95 to-dark/60" />
+      <section className="relative text-white overflow-hidden" style={heroType === "color" && heroValue ? { backgroundColor: heroValue } : undefined}>
+        {heroType === "color" && !heroValue && <div className="absolute inset-0 bg-dark" />}
+        {heroType === "image" && heroValue && (
+          <img src={heroValue} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        )}
+        {heroType === "video" && heroValue && (
+          <video src={heroValue} className="absolute inset-0 w-full h-full object-cover" autoPlay muted loop playsInline />
+        )}
+        <div className="absolute inset-0 bg-dark" style={{ opacity: heroType !== "color" ? overlayOpacity : 0 }} />
+        <div className="absolute inset-0 bg-gradient-to-r from-dark/95 to-dark/60" style={{ opacity: heroType === "color" ? 1 : 0 }} />
         <div className="container relative z-10 py-20 md:py-32">
           <div className="max-w-2xl space-y-6">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">

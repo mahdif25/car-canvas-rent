@@ -19,6 +19,7 @@ const navItems = [
   { label: "Marketing", path: "/admin/marketing", icon: Tag },
   { label: "Analytics", path: "/admin/analytics", icon: BarChart3 },
   { label: "Leads", path: "/admin/leads", icon: Users },
+  { label: "Paramètres", path: "/admin/settings", icon: Settings },
 ];
 
 const bottomNavItems = navItems.slice(0, 4);
