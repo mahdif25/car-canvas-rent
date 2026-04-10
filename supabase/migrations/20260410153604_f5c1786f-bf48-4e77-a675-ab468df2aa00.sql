@@ -1,0 +1,1 @@
+ALTER TABLE public.site_settings ADD COLUMN logo_height integer NOT NULL DEFAULT 48;

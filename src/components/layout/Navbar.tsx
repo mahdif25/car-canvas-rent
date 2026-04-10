@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import logo from "@/assets/logo.png";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const navLinks = [
   { label: "Accueil", path: "/" },
@@ -12,12 +13,14 @@ const navLinks = [
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const { data: settings } = useSiteSettings();
+  const logoH = settings?.logo_height || 48;
 
   return (
     <header className="sticky top-0 z-50 bg-background border-b border-border shadow-sm">
       <div className="container flex items-center justify-between h-16">
         <Link to="/" className="flex items-center gap-2">
-          <img src={logo} alt="Centre Lux Car" className="h-12 w-auto" />
+          <img src={logo} alt="Centre Lux Car" style={{ height: logoH }} className="w-auto" />
         </Link>
 
         {/* Desktop nav */}

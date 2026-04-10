@@ -2,6 +2,7 @@ import { ReactNode, useState } from "react";
 import { Link, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { Car, Settings, CalendarDays, LayoutDashboard, LogOut, MapPin, Menu, MoreHorizontal, BarChart3, Users, Tag, Puzzle, Mail } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import logo from "@/assets/logo.png";
@@ -29,6 +30,8 @@ const AdminLayout = ({ children }: Props) => {
   const location = useLocation();
   const isMobile = useIsMobile();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const { data: settings } = useSiteSettings();
+  const logoH = settings?.logo_height || 48;
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Chargement...</div>;
@@ -56,7 +59,7 @@ const AdminLayout = ({ children }: Props) => {
         {/* Mobile top header */}
         <header className="bg-dark text-dark-foreground flex items-center justify-between px-4 h-14 shrink-0">
           <Link to="/admin">
-            <img src={logo} alt="Centre Lux Car" className="h-8 brightness-200" />
+            <img src={logo} alt="Centre Lux Car" style={{ height: logoH }} className="brightness-200" />
           </Link>
           <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
             <SheetTrigger asChild>
@@ -65,7 +68,7 @@ const AdminLayout = ({ children }: Props) => {
             <SheetContent side="left" className="bg-dark text-dark-foreground w-64 p-0">
               <SheetTitle className="sr-only">Navigation</SheetTitle>
               <div className="p-4 border-b border-foreground/10">
-                <img src={logo} alt="Centre Lux Car" className="h-8 brightness-200" />
+                <img src={logo} alt="Centre Lux Car" style={{ height: logoH }} className="brightness-200" />
               </div>
               <nav className="p-4 space-y-1">
                 {navItems.map((item) => (
@@ -146,7 +149,7 @@ const AdminLayout = ({ children }: Props) => {
       <aside className="w-64 bg-dark text-dark-foreground flex flex-col shrink-0 overflow-hidden">
         <div className="p-4 border-b border-foreground/10">
           <Link to="/admin">
-            <img src={logo} alt="Centre Lux Car" className="h-10 brightness-200" />
+            <img src={logo} alt="Centre Lux Car" style={{ height: logoH }} className="brightness-200" />
           </Link>
         </div>
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">

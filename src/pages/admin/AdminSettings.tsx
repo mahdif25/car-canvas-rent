@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { Palette, BarChart3, Mail, MessageCircle, Star, Plus, Pencil, Trash2 } from "lucide-react";
+import logo from "@/assets/logo.png";
 
 const AdminSettings = () => {
   const { data: settings, isLoading } = useSiteSettings();
@@ -113,6 +114,26 @@ const AdminSettings = () => {
                 </div>
               )}
               <Button onClick={() => save(["hero_bg_type", "hero_bg_value", "hero_overlay_opacity"])} disabled={updateMutation.isPending}>
+                Sauvegarder
+              </Button>
+            </div>
+
+            {/* Logo Size */}
+            <div className="bg-card rounded-xl p-6 space-y-5 border border-border">
+              <h2 className="font-semibold text-lg">Taille du logo</h2>
+              <div className="space-y-2">
+                <Label>Hauteur du logo ({form.logo_height ?? 48}px)</Label>
+                <Slider
+                  value={[form.logo_height ?? 48]}
+                  onValueChange={([v]) => setForm({ ...form, logo_height: v })}
+                  min={32} max={80} step={2}
+                />
+              </div>
+              <div className="flex items-center gap-4 p-4 bg-secondary rounded-lg">
+                <img src={logo} alt="Aperçu logo" style={{ height: form.logo_height ?? 48 }} className="w-auto" />
+                <span className="text-sm text-muted-foreground">Aperçu</span>
+              </div>
+              <Button onClick={() => save(["logo_height"])} disabled={updateMutation.isPending}>
                 Sauvegarder
               </Button>
             </div>

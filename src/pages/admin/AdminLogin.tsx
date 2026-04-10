@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,8 @@ import { toast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
 
 const AdminLogin = () => {
+  const { data: settings } = useSiteSettings();
+  const logoH = (settings?.logo_height || 48) + 16;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -52,7 +55,7 @@ const AdminLogin = () => {
     <div className="min-h-screen bg-dark flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <img src={logo} alt="Centre Lux Car" className="h-16 mx-auto mb-4" />
+          <img src={logo} alt="Centre Lux Car" style={{ height: logoH }} className="mx-auto mb-4" />
           <CardTitle>{isSignUp ? "Créer un compte" : "Administration"}</CardTitle>
         </CardHeader>
         <CardContent>
