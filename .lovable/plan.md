@@ -1,34 +1,64 @@
 
 
-# Fix Hero Video Background
+# Hero Section: Video Pause Position + Animated Editable Texts
 
-## Problem
-The video URL stored is `https://youtu.be/qdkX33buWTQ` — a YouTube share link. The HTML `<video>` tag cannot play YouTube URLs. It only accepts direct video file URLs (`.mp4`, `.webm`).
+## Overview
+Add admin controls to: (1) set a YouTube video start/pause time, (2) customize both hero texts (title + subtitle) with formatting and entrance animations — all from the admin settings panel.
 
-## Two Options
+## Database Migration
+Add 8 new columns to `site_settings`:
 
-### Option A: Support YouTube embeds (recommended)
-Detect YouTube URLs and render an `<iframe>` embed instead of a `<video>` tag. This lets you paste any YouTube link in admin settings.
+```sql
+ALTER TABLE public.site_settings
+  ADD COLUMN hero_video_start_time integer NOT NULL DEFAULT 0,
+  ADD COLUMN hero_title_text text NOT NULL DEFAULT 'Louez votre voiture',
+  ADD COLUMN hero_title_highlight text NOT NULL DEFAULT 'en toute confiance',
+  ADD COLUMN hero_subtitle_text text NOT NULL DEFAULT 'Des véhicules de qualité, un service professionnel et des prix compétitifs partout au Maroc.',
+  ADD COLUMN hero_title_animation text NOT NULL DEFAULT 'fade-up',
+  ADD COLUMN hero_subtitle_animation text NOT NULL DEFAULT 'fade-up',
+  ADD COLUMN hero_title_style jsonb NOT NULL DEFAULT '{"fontSize":"5xl","fontWeight":"bold","textAlign":"left"}',
+  ADD COLUMN hero_subtitle_style jsonb NOT NULL DEFAULT '{"fontSize":"lg","fontWeight":"normal","textAlign":"left"}';
+```
 
-### Option B: Use a direct MP4 file
-Upload an `.mp4` file to your backend storage and use that direct URL instead. This gives better performance (no YouTube branding, faster load) but requires hosting the file.
+- `hero_video_start_time` — seconds into the YouTube video to start (and freeze point for non-looping)
+- `hero_title_text` / `hero_title_highlight` — main title and highlighted span
+- `hero_subtitle_text` — subtitle paragraph
+- `hero_title_animation` / `hero_subtitle_animation` — animation type: `none`, `fade-up`, `fade-in`, `slide-left`, `slide-right`, `zoom-in`, `typewriter`
+- `hero_title_style` / `hero_subtitle_style` — JSON with `fontSize`, `fontWeight`, `textAlign`, `color`
 
-## Plan — Implement both: YouTube detection + direct video support
+## Code Changes
 
-### `src/pages/Index.tsx`
-- Add a helper function to detect YouTube URLs and extract the video ID
-- When `hero_bg_type === "video"` and URL is YouTube: render an `<iframe>` with `youtube.com/embed/{id}?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&playlist={id}` and pointer-events-none
-- When `hero_bg_type === "video"` and URL is a direct file: keep the existing `<video>` tag
+### 1. `src/hooks/useSiteSettings.ts`
+- Add all 8 new fields to the `SiteSettings` interface
 
-### `src/pages/admin/AdminSettings.tsx` (optional improvement)
-- Add a hint text under the video URL input: "Paste a YouTube link or a direct .mp4 URL"
+### 2. `src/pages/admin/AdminSettings.tsx` — Hero section expansion
+Add under the existing "Arrière-plan Hero" card:
 
-## Recommendation for video content
-For a car rental hero, I recommend:
-- A **cinematic aerial shot of a car driving on a scenic Moroccan road** (coastal highway, Atlas mountains, or city boulevard)
-- Search YouTube for royalty-free stock footage like "luxury car driving Morocco" or "car rental cinematic"
-- Alternatively, use a **direct MP4 from a free stock site** like Pexels or Pixabay (search "car driving aerial") — these give you a direct `.mp4` URL that works without the YouTube embed complexity
+**Video controls:**
+- Start time input (seconds) — shown only when type is "video"
+
+**Hero Texts card:**
+- Title text input + highlight text input
+- Subtitle text input
+- For each text: dropdowns for font size (`xl` to `7xl`), weight (`normal`/`semibold`/`bold`), alignment (`left`/`center`), and animation selector
+- Live preview box showing both texts with chosen formatting and animation
+
+**Animation options:** `none`, `fade-up`, `fade-in`, `slide-left`, `slide-right`, `zoom-in`
+
+### 3. `src/pages/Index.tsx` — Dynamic hero rendering
+- Read the new settings fields
+- For YouTube: append `&start=N` to the embed URL using `hero_video_start_time`
+- Replace hardcoded title/subtitle with `hero_title_text`, `hero_title_highlight`, `hero_subtitle_text`
+- Apply dynamic styles from `hero_title_style` / `hero_subtitle_style` (font size, weight, alignment)
+- Apply CSS animation classes based on `hero_title_animation` / `hero_subtitle_animation`
+
+### 4. `src/index.css` — Add hero text animations
+Add keyframes for: `hero-fade-up`, `hero-fade-in`, `hero-slide-left`, `hero-slide-right`, `hero-zoom-in` with corresponding utility classes
 
 ## Files to change
-- `src/pages/Index.tsx` — add YouTube URL detection and iframe rendering
+- `site_settings` table (migration — 8 columns)
+- `src/hooks/useSiteSettings.ts`
+- `src/pages/admin/AdminSettings.tsx`
+- `src/pages/Index.tsx`
+- `src/index.css`
 
