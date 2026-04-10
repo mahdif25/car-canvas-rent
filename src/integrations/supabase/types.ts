@@ -530,6 +530,38 @@ export type Database = {
         }
         Relationships: []
       }
+      vehicle_images: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          sort_order: number
+          vehicle_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url: string
+          sort_order?: number
+          vehicle_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          sort_order?: number
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_images_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicle_pricing_tiers: {
         Row: {
           created_at: string
@@ -586,6 +618,7 @@ export type Database = {
           name: string
           seats: number
           security_deposit: number
+          slug: string | null
           transmission: string
           updated_at: string
           year: number
@@ -610,6 +643,7 @@ export type Database = {
           name: string
           seats?: number
           security_deposit?: number
+          slug?: string | null
           transmission?: string
           updated_at?: string
           year: number
@@ -634,6 +668,7 @@ export type Database = {
           name?: string
           seats?: number
           security_deposit?: number
+          slug?: string | null
           transmission?: string
           updated_at?: string
           year?: number
