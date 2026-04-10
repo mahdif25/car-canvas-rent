@@ -27,12 +27,23 @@ const WhatsAppPopup = () => {
   const [days, setDays] = useState<number | null>(null);
   const [customDays, setCustomDays] = useState("");
   const [pickupLocation, setPickupLocation] = useState<string | null>(null);
+  const [autofillName, setAutofillName] = useState("");
 
   const bottomRef = useRef<HTMLDivElement>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [step, isOpen]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (nameInputRef.current?.value) {
+        setAutofillName(nameInputRef.current.value);
+      }
+    }, 600);
+    return () => clearTimeout(timer);
+  }, []);
 
   if (!settings?.whatsapp_enabled || !settings.whatsapp_number) return null;
 
