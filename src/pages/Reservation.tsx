@@ -28,7 +28,7 @@ const Reservation = () => {
   const [searchParams] = useSearchParams();
   const preselectedVehicle = searchParams.get("vehicle") || "";
 
-  const [currentStep, setCurrentStep] = useState(preselectedVehicle ? 2 : 1);
+  const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<ReservationFormData>({
     pickup_location: searchParams.get("location") || "",
     pickup_date: searchParams.get("pickup") || "",

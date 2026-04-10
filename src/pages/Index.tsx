@@ -202,7 +202,7 @@ const Index = () => {
                 return (
                   <Link
                     key={v.id}
-                    to={`/fleet/${(v as any).slug || v.id}`}
+                    to={`/reservation?vehicle=${v.id}`}
                     className="group bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
                   >
                     <div className="p-4 pb-0 space-y-1">

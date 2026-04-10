@@ -103,7 +103,7 @@ const Fleet = () => {
                 return (
                   <Link
                     key={v.id}
-                    to={`/fleet/${(v as any).slug || v.id}`}
+                    to={`/reservation?vehicle=${v.id}`}
                     className="group bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300"
                   >
                     <div className="aspect-video overflow-hidden relative bg-secondary">
