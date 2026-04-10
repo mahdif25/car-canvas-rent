@@ -75,4 +75,7 @@ export interface ReservationFormData {
   nationality: string;
   dob: string;
   terms_accepted: boolean;
+  promo_code: string;
+  discount_amount: number;
+  coupon_id: string;
 }

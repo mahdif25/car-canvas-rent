@@ -2,7 +2,7 @@ import { ReactNode, useState } from "react";
 import { Link, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Car, Settings, CalendarDays, LayoutDashboard, LogOut, MapPin, Menu, MoreHorizontal, BarChart3, Users } from "lucide-react";
+import { Car, Settings, CalendarDays, LayoutDashboard, LogOut, MapPin, Menu, MoreHorizontal, BarChart3, Users, Tag } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import logo from "@/assets/logo.png";
 
@@ -16,6 +16,7 @@ const navItems = [
   { label: "Options", path: "/admin/addons", icon: Settings },
   { label: "Réservations", path: "/admin/reservations", icon: CalendarDays },
   { label: "Lieux", path: "/admin/locations", icon: MapPin },
+  { label: "Marketing", path: "/admin/marketing", icon: Tag },
   { label: "Analytics", path: "/admin/analytics", icon: BarChart3 },
   { label: "Leads", path: "/admin/leads", icon: Users },
 ];
