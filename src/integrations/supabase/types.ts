@@ -857,6 +857,8 @@ export type Database = {
           has_gps: boolean
           has_usb: boolean
           id: string
+          image_flipped: boolean
+          image_scale: number
           image_url: string | null
           is_available: boolean
           luggage: number
@@ -882,6 +884,8 @@ export type Database = {
           has_gps?: boolean
           has_usb?: boolean
           id?: string
+          image_flipped?: boolean
+          image_scale?: number
           image_url?: string | null
           is_available?: boolean
           luggage?: number
@@ -907,6 +911,8 @@ export type Database = {
           has_gps?: boolean
           has_usb?: boolean
           id?: string
+          image_flipped?: boolean
+          image_scale?: number
           image_url?: string | null
           is_available?: boolean
           luggage?: number
