@@ -1,31 +1,47 @@
 
 
-# Upload Vehicle Images from Admin Panel
+# Add Image Flip & Zoom Controls for Vehicles
 
 ## Overview
-Replace the URL text inputs for both the main image and gallery images with file upload buttons. Files get uploaded to the existing `vehicle-images` storage bucket, and the resulting public URL is saved to the database.
+Add two new columns to the `vehicles` table — `image_flipped` (boolean) and `image_scale` (numeric, default 1.0) — and expose them as controls in the admin panel. All vehicle image renders across the site will apply the corresponding CSS transforms.
 
-## Changes
+## Database Migration
 
-### 1. Add RLS policies for storage bucket (`migration`)
-Add storage policies so authenticated admins can upload/delete files in the `vehicle-images` bucket:
 ```sql
-CREATE POLICY "Admins can upload vehicle images" ON storage.objects
-  FOR INSERT TO authenticated WITH CHECK (bucket_id = 'vehicle-images' AND has_role(auth.uid(), 'admin'));
-CREATE POLICY "Admins can delete vehicle images" ON storage.objects
-  FOR DELETE TO authenticated USING (bucket_id = 'vehicle-images' AND has_role(auth.uid(), 'admin'));
-CREATE POLICY "Anyone can view vehicle images" ON storage.objects
-  FOR SELECT TO public USING (bucket_id = 'vehicle-images');
+ALTER TABLE public.vehicles
+  ADD COLUMN image_flipped boolean NOT NULL DEFAULT false,
+  ADD COLUMN image_scale numeric NOT NULL DEFAULT 1.0;
 ```
 
-### 2. Update AdminFleet.tsx
-- Add an `uploadImage` helper function that uploads a file to `vehicle-images/{vehicleId or timestamp}/{filename}` via `supabase.storage` and returns the public URL
-- **Main image**: Replace the URL text input with a file input + upload button. Show a thumbnail preview of the current image. Keep the URL input as a fallback (collapsible "ou coller un lien")
-- **Gallery images**: Replace each URL input with a file upload area. Show thumbnail previews. Keep "coller un lien" as fallback option
-- Add loading states during upload
-- Add a delete button on each thumbnail that removes the file from storage
+## Code Changes
+
+### 1. Admin Panel (`src/pages/admin/AdminFleet.tsx`)
+Next to the main image upload, add:
+- **"Inverser l'image"** — a Switch toggle for horizontal flip
+- **"Zoom de l'image"** — a Slider (range 0.5 to 2.0, step 0.05) to control scale
+- Show a live preview of the image with both transforms applied
+
+### 2. All image render locations — apply conditional CSS transform
+Each vehicle `<img>` tag gets:
+```tsx
+style={{
+  transform: `${v.image_flipped ? 'scaleX(-1)' : ''} scale(${v.image_scale ?? 1})`.trim() || 'none'
+}}
+```
+
+Files to update:
+- `src/pages/Index.tsx` — homepage vehicle cards
+- `src/pages/Fleet.tsx` — fleet page cards
+- `src/pages/VehicleDetail.tsx` — detail page main image
+- `src/components/reservation/StepVehicle.tsx` — vehicle selection list
+- `src/components/reservation/ReservationSidebar.tsx` — sidebar thumbnail
 
 ### Files
-- `supabase/migrations/` (new migration for storage RLS)
+- `vehicles` table (migration — 2 new columns)
 - `src/pages/admin/AdminFleet.tsx`
+- `src/pages/Index.tsx`
+- `src/pages/Fleet.tsx`
+- `src/pages/VehicleDetail.tsx`
+- `src/components/reservation/StepVehicle.tsx`
+- `src/components/reservation/ReservationSidebar.tsx`
 
