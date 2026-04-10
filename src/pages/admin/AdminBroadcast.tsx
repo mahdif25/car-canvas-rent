@@ -168,7 +168,7 @@ const AdminBroadcast = () => {
         .from("email_broadcasts" as any)
         .insert(broadcastData)
         .select("id")
-        .single();
+        .single() as { data: { id: string } | null; error: any };
 
       if (bErr || !broadcast) throw new Error(bErr?.message || "Failed to create broadcast");
 
@@ -180,7 +180,7 @@ const AdminBroadcast = () => {
         status: "pending",
       }));
 
-      const { error: rErr } = await supabase.from("broadcast_recipients" as any).insert(recipientRows);
+      const { error: rErr } = await supabase.from("broadcast_recipients" as any).insert(recipientRows) as { error: any };
       if (rErr) throw new Error(rErr.message);
 
       // 3. Invoke send-broadcast edge function
