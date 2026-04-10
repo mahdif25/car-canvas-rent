@@ -49,12 +49,12 @@ const AdminSettings = () => {
       <div className="space-y-6">
         <h1 className="text-2xl font-bold">Paramètres</h1>
         <Tabs defaultValue="appearance" className="space-y-6">
-          <TabsList className="w-full grid grid-cols-5 h-auto">
-            <TabsTrigger value="appearance" className="gap-2"><Palette size={16} />Apparence</TabsTrigger>
-            <TabsTrigger value="tracking" className="gap-2"><BarChart3 size={16} />Tracking</TabsTrigger>
-            <TabsTrigger value="emails" className="gap-2"><Mail size={16} />Emails</TabsTrigger>
-            <TabsTrigger value="whatsapp" className="gap-2"><MessageCircle size={16} />WhatsApp</TabsTrigger>
-            <TabsTrigger value="reviews" className="gap-2"><Star size={16} />Avis</TabsTrigger>
+          <TabsList className="w-full grid grid-cols-5 h-auto bg-card border border-border">
+            <TabsTrigger value="appearance" className="gap-2 text-foreground"><Palette size={16} />Apparence</TabsTrigger>
+            <TabsTrigger value="tracking" className="gap-2 text-foreground"><BarChart3 size={16} />Tracking</TabsTrigger>
+            <TabsTrigger value="emails" className="gap-2 text-foreground"><Mail size={16} />Emails</TabsTrigger>
+            <TabsTrigger value="whatsapp" className="gap-2 text-foreground"><MessageCircle size={16} />WhatsApp</TabsTrigger>
+            <TabsTrigger value="reviews" className="gap-2 text-foreground"><Star size={16} />Avis</TabsTrigger>
           </TabsList>
 
           {/* Appearance */}

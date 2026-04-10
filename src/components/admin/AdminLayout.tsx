@@ -98,7 +98,7 @@ const AdminLayout = ({ children }: Props) => {
                 </Link>
                 <button
                   onClick={signOut}
-                  className="flex items-center gap-3 px-3 py-2 text-sm text-foreground/60 hover:text-foreground w-full"
+                  className="flex items-center gap-3 px-3 py-2 text-sm text-dark-foreground/60 hover:text-dark-foreground w-full"
                 >
                   <LogOut size={18} />
                   Déconnexion
@@ -178,7 +178,7 @@ const AdminLayout = ({ children }: Props) => {
           </Link>
           <button
             onClick={signOut}
-            className="flex items-center gap-3 px-3 py-2 text-sm text-foreground/60 hover:text-foreground w-full"
+            className="flex items-center gap-3 px-3 py-2 text-sm text-dark-foreground/60 hover:text-dark-foreground w-full"
           >
             <LogOut size={18} />
             Déconnexion
