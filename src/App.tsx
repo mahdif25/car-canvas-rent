@@ -17,6 +17,7 @@ import AdminLocations from "./pages/admin/AdminLocations";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminLeads from "./pages/admin/AdminLeads";
 import AdminMarketing from "./pages/admin/AdminMarketing";
+import AdminBroadcast from "./pages/admin/AdminBroadcast";
 import AdminSettings from "./pages/admin/AdminSettings";
 import NotFound from "./pages/NotFound";
 import ConditionsGenerales from "./pages/ConditionsGenerales";
@@ -49,6 +50,7 @@ const App = () => (
             <Route path="/admin/reservations" element={<AdminReservations />} />
             <Route path="/admin/locations" element={<AdminLocations />} />
             <Route path="/admin/marketing" element={<AdminMarketing />} />
+            <Route path="/admin/broadcast" element={<AdminBroadcast />} />
             <Route path="/admin/analytics" element={<AdminAnalytics />} />
             <Route path="/admin/leads" element={<AdminLeads />} />
             <Route path="/admin/settings" element={<AdminSettings />} />
