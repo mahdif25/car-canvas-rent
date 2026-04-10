@@ -161,6 +161,11 @@ const Reservation = () => {
       const confId = reservation.id.slice(0, 8).toUpperCase();
       setConfirmationId(confId);
       analytics.markLeadCompleted(reservation.id);
+      analytics.trackFacebookEvent("Purchase", {
+        currency: "MAD",
+        value: finalTotal,
+        content_ids: [formData.vehicle_id],
+      });
 
       // Send confirmation + welcome emails
       const fmtDate = (d: string) => new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
