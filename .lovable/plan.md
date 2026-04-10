@@ -1,78 +1,75 @@
 
 
-# Coupon / Promo Code System
+# Restyle Website Based on Figma "Qent" Car Rental Design
 
-## Overview
-Add a Marketing section in the admin dashboard to create and manage discount coupons, and a promo code input field in the reservation checkout (Step 4 - Driver Info) that applies the discount to the total.
+## Design Analysis from Figma
 
-## Database Migration
+The Figma design ("Qent") is a **mobile-first car rental app** with these key style patterns (adapted to your existing web layout and green brand colors):
 
-**New table: `coupons`**
-- `id` uuid PK
-- `code` text UNIQUE NOT NULL — the promo code (uppercase)
-- `discount_amount` numeric NOT NULL — fixed price discount in MAD
-- `max_uses` integer NULL — NULL = unlimited
-- `current_uses` integer DEFAULT 0
-- `is_active` boolean DEFAULT true
-- `expires_at` timestamptz NULL
-- `created_at` timestamptz DEFAULT now()
+1. **Cards**: Clean white cards with subtle shadows, rounded corners (~16px), no harsh borders
+2. **Car Details page**: Image carousel with dot indicators, feature specs in icon-grid cards (Capacity, Engine, Speed), star ratings
+3. **Filters**: Horizontal chip/pill toggles for categories (All Cars, Regular, Luxury), color dots, capacity numbers in circles
+4. **Calendar/Date picker**: Full popover calendar with time pickers (AM/PM toggle), date range highlighting with filled circles on start/end, "Cancel"/"Done" buttons
+5. **Booking form (image-5)**: Step progress bar (dots connected by lines), form fields with clean borders, gender radio pills, rental duration chips (Hour/Day/Weekly/Monthly), date fields showing `dd/Month/yyyy`, location with map pin icon, prominent full-width CTA button
+6. **Typography**: Clean, semibold headings, muted descriptions
+7. **Layout**: Generous whitespace, icon-prefixed fields, bottom navigation on mobile
 
-**New table: `coupon_usages`** — tracks who used each coupon
-- `id` uuid PK
-- `coupon_id` uuid REFERENCES coupons(id)
-- `reservation_id` uuid REFERENCES reservations(id)
-- `customer_email` text NOT NULL
-- `discount_applied` numeric NOT NULL
-- `created_at` timestamptz DEFAULT now()
+## What Changes (keeping your green #00C853 + black #1A1A1A palette)
 
-**Add columns to `reservations`:**
-- `coupon_id` uuid NULL
-- `discount_amount` numeric DEFAULT 0
+### 1. New `DatePickerField` component
+- `src/components/ui/date-picker-field.tsx` -- Popover + Calendar picker
+- Trigger button shows calendar icon + formatted date (`dd/MM/yyyy`) or placeholder
+- Styled to match Figma: clean bordered button, calendar popover with month navigation
 
-**RLS:**
-- Coupons: public SELECT (for validation), admin INSERT/UPDATE/DELETE
-- Coupon usages: public INSERT (to record usage), admin SELECT
-- Update on coupon_usages insert: a trigger increments `coupons.current_uses`
+### 2. Home Page (`src/pages/Index.tsx`)
+- Replace `<Input type="date">` with `DatePickerField` in hero search bar
+- Vehicle cards: add star rating placeholder, slightly rounder corners, image with heart/favorite icon overlay (visual only)
+- Benefits section: icon cards with larger icons in circular backgrounds matching Figma style
 
-## New Admin Page: `src/pages/admin/AdminMarketing.tsx`
+### 3. Fleet Page (`src/pages/Fleet.tsx`)
+- Replace dropdown filters with horizontal **chip/pill toggles** for categories (matching Figma "All Cars / Regular / Luxury" style)
+- Keep transmission as chips too
+- Vehicle cards: match Figma card style with specs row using icon badges
 
-- Table listing all coupons: code, discount amount, uses / max uses, status, expiry
-- "Create coupon" dialog with fields: code, discount amount, max uses (optional), expiry date (optional)
-- Toggle active/inactive
-- Click a coupon row to expand and see usage history (who used it, reservation ID, date)
+### 4. Vehicle Detail Page (`src/pages/VehicleDetail.tsx`)
+- Feature specs as icon cards in a grid (like Figma: Capacity 5 Seats, Engine 670HP, Max Speed 250km/h style)
+- Image with dot carousel indicator (visual dots, single image for now)
+- Owner/contact section style (adapted as agency info)
 
-## Checkout Integration
+### 5. Reservation Flow -- Step Dates (`src/components/reservation/StepDates.tsx`)
+- Use `DatePickerField` for pickup/return dates
+- Add icons (MapPin, Calendar, Clock) before each field group
+- Wrap in card sections with subtle borders
 
-**`src/lib/types.ts`** — add `promo_code` and `discount_amount` to `ReservationFormData`
+### 6. Reservation Flow -- Step Driver Info (`src/components/reservation/StepDriverInfo.tsx`)
+- Match Figma booking details style: icon-prefixed input fields
+- Full-width CTA button on mobile
+- Clean card wrapper around the form
 
-**`src/components/reservation/StepDriverInfo.tsx`** — add a "Code promo" input field with an "Appliquer" button. On click:
-1. Query `coupons` table where `code` matches, `is_active = true`, not expired, `current_uses < max_uses` (or max_uses is null)
-2. If valid, set `discount_amount` in form state and show success message
-3. If invalid, show error toast
+### 7. Reservation Flow -- Stepper (`src/pages/Reservation.tsx`)
+- Redesign stepper to match Figma: connected dots with labels, filled state for completed steps
+- On mobile: compact dot stepper with active label only
 
-**`src/components/reservation/ReservationSidebar.tsx`** — show discount line item if applied, subtract from total
+### 8. Sidebar (`src/components/reservation/ReservationSidebar.tsx`)
+- On mobile: collapsible sticky bottom bar showing total, expandable on tap
+- Desktop: keep sticky sidebar with cleaner card styling
 
-**`src/pages/Reservation.tsx`** — in `handleConfirm`:
-- Subtract discount from `totalPrice`
-- Save `coupon_id` and `discount_amount` on the reservation
-- Insert into `coupon_usages`
+### 9. Admin Reservations (`src/pages/admin/AdminReservations.tsx`)
+- Replace `<Input type="date">` with `DatePickerField` in edit modal
 
-**`src/components/reservation/StepConfirmation.tsx`** — show discount in the summary
-
-## Navigation
-
-**`src/components/admin/AdminLayout.tsx`** — add "Marketing" nav item with `Tag` icon
-**`src/App.tsx`** — add `/admin/marketing` route
+### 10. Confirmation Page (`src/components/reservation/StepConfirmation.tsx`)
+- Match Figma confirmation style: card-based sections with clean dividers
 
 ## Files Changed
 
-1. Migration — `coupons`, `coupon_usages` tables + trigger + `reservations` columns
-2. `src/pages/admin/AdminMarketing.tsx` — new page
-3. `src/lib/types.ts` — add promo fields to form data
-4. `src/components/reservation/StepDriverInfo.tsx` — promo code input
-5. `src/components/reservation/ReservationSidebar.tsx` — discount line
-6. `src/components/reservation/StepConfirmation.tsx` — discount in summary
-7. `src/pages/Reservation.tsx` — apply discount on submit
-8. `src/components/admin/AdminLayout.tsx` — nav item
-9. `src/App.tsx` — route
+1. `src/components/ui/date-picker-field.tsx` -- **new**
+2. `src/pages/Index.tsx` -- date picker + card restyling
+3. `src/pages/Fleet.tsx` -- chip filters + card restyling
+4. `src/pages/VehicleDetail.tsx` -- feature icon cards, image dots
+5. `src/components/reservation/StepDates.tsx` -- date picker, icons, cards
+6. `src/components/reservation/StepDriverInfo.tsx` -- icon-prefixed fields, mobile CTA
+7. `src/components/reservation/StepConfirmation.tsx` -- cleaner card style
+8. `src/components/reservation/ReservationSidebar.tsx` -- mobile bottom bar
+9. `src/pages/Reservation.tsx` -- redesigned stepper, mobile layout
+10. `src/pages/admin/AdminReservations.tsx` -- date picker in edit modal
 
