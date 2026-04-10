@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
-import { useVehicles, usePricingTiers, getDailyRateFromTiers } from "@/hooks/useVehicles";
+import { useVehicles, usePricingTiers, getDailyRateFromTiers, getStartingPriceFromTiers } from "@/hooks/useVehicles";
 import { useLocations } from "@/hooks/useLocations";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { X, RotateCcw, Send } from "lucide-react";
@@ -27,12 +27,23 @@ const WhatsAppPopup = () => {
   const [days, setDays] = useState<number | null>(null);
   const [customDays, setCustomDays] = useState("");
   const [pickupLocation, setPickupLocation] = useState<string | null>(null);
+  const [autofillName, setAutofillName] = useState("");
 
   const bottomRef = useRef<HTMLDivElement>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [step, isOpen]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (nameInputRef.current?.value) {
+        setAutofillName(nameInputRef.current.value);
+      }
+    }, 600);
+    return () => clearTimeout(timer);
+  }, []);
 
   if (!settings?.whatsapp_enabled || !settings.whatsapp_number) return null;
 
@@ -78,6 +89,17 @@ const WhatsAppPopup = () => {
 
   return (
     <>
+      {/* Hidden autofill input */}
+      <input
+        ref={nameInputRef}
+        type="text"
+        name="fname"
+        autoComplete="given-name"
+        onChange={(e) => setAutofillName(e.target.value)}
+        className="absolute opacity-0 h-0 w-0 pointer-events-none"
+        tabIndex={-1}
+        aria-hidden="true"
+      />
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="fixed bottom-6 left-6 z-50 w-14 h-14 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
@@ -113,27 +135,31 @@ const WhatsAppPopup = () => {
           {/* Messages */}
           <ScrollArea className="flex-1 min-h-0 bg-[#ECE5DD]">
             <div className="p-4 space-y-1">
-              <BotBubble>Bonjour ! 👋 Quel véhicule vous intéresse ?</BotBubble>
+              <BotBubble>{autofillName ? `Bonjour ${autofillName} ! 👋` : "Bonjour ! 👋"} Quel véhicule vous intéresse ?</BotBubble>
 
               {step >= 2 && selectedVehicle && <UserBubble text={selectedVehicle.name} />}
 
               {step === 1 && (
                 <div className="space-y-2 mb-3">
-                  {availableVehicles.map((v) => (
-                    <button
-                      key={v.id}
-                      onClick={() => selectVehicle(v)}
-                      className="w-full flex items-center gap-3 p-2 rounded-xl bg-white hover:bg-gray-50 transition-colors text-left shadow-sm"
-                    >
-                      {v.image_url && (
-                        <img src={v.image_url} alt={v.name} className="w-16 h-10 object-cover rounded-lg" />
-                      )}
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{v.name}</p>
-                        <p className="text-xs text-gray-500">{v.category}</p>
-                      </div>
-                    </button>
-                  ))}
+                  {availableVehicles.map((v) => {
+                    const rate = tiers ? getStartingPriceFromTiers(tiers.filter((t) => t.vehicle_id === v.id)) : 0;
+                    return (
+                      <button
+                        key={v.id}
+                        onClick={() => selectVehicle(v)}
+                        className="w-full flex items-center gap-3 p-2 rounded-xl bg-white hover:bg-gray-50 transition-colors text-left shadow-sm"
+                      >
+                        {v.image_url && (
+                          <img src={v.image_url} alt={v.name} className="w-16 h-10 object-cover rounded-lg" />
+                        )}
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{v.name}</p>
+                          <p className="text-xs text-gray-500">{v.category}</p>
+                          {rate > 0 && <p className="text-xs text-[#25D366] font-semibold">À partir de {rate} MAD/jour</p>}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
 
