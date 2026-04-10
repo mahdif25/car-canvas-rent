@@ -83,7 +83,19 @@ const AdminLayout = ({ children }: Props) => {
                   </Link>
                 ))}
               </nav>
-              <div className="p-4 border-t border-foreground/10 mt-auto">
+              <div className="p-4 border-t border-foreground/10 mt-auto space-y-1">
+                <Link
+                  to="/admin/settings"
+                  onClick={() => setDrawerOpen(false)}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
+                    location.pathname === "/admin/settings"
+                      ? "bg-primary/20 text-primary"
+                      : "hover:bg-foreground/5"
+                  }`}
+                >
+                  <Settings size={18} />
+                  Paramètres
+                </Link>
                 <button
                   onClick={signOut}
                   className="flex items-center gap-3 px-3 py-2 text-sm text-foreground/60 hover:text-foreground w-full"
@@ -152,7 +164,18 @@ const AdminLayout = ({ children }: Props) => {
             </Link>
           ))}
         </nav>
-        <div className="p-4 border-t border-foreground/10">
+        <div className="p-4 border-t border-foreground/10 space-y-1">
+          <Link
+            to="/admin/settings"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
+              location.pathname === "/admin/settings"
+                ? "bg-primary/20 text-primary"
+                : "hover:bg-foreground/5"
+            }`}
+          >
+            <Settings size={18} />
+            Paramètres
+          </Link>
           <button
             onClick={signOut}
             className="flex items-center gap-3 px-3 py-2 text-sm text-foreground/60 hover:text-foreground w-full"
