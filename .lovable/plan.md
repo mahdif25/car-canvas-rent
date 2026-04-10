@@ -1,75 +1,47 @@
 
 
-# Restyle Website Based on Figma "Qent" Car Rental Design
+# Reorganize Reservation Flow: Capture Info Earlier, Show Fees Later
 
-## Design Analysis from Figma
+## Current Flow (4 steps + confirmation)
+1. Dates & Location → 2. Vehicle → 3. Add-ons → 4. Driver Info + Promo → 5. Confirmation
 
-The Figma design ("Qent") is a **mobile-first car rental app** with these key style patterns (adapted to your existing web layout and green brand colors):
+## New Flow (3 steps + confirmation)
+1. **Dates & Location** — pickup/return dates, location (no delivery fee shown yet)
+2. **Vehicle** — select car, show only car daily rate × days
+3. **Driver Info** — capture personal details early (name, email, phone, license, etc.)
+4. **Summary & Confirm** — show full breakdown: car total + add-ons selector + delivery fees + promo code field + total price. User confirms here.
 
-1. **Cards**: Clean white cards with subtle shadows, rounded corners (~16px), no harsh borders
-2. **Car Details page**: Image carousel with dot indicators, feature specs in icon-grid cards (Capacity, Engine, Speed), star ratings
-3. **Filters**: Horizontal chip/pill toggles for categories (All Cars, Regular, Luxury), color dots, capacity numbers in circles
-4. **Calendar/Date picker**: Full popover calendar with time pickers (AM/PM toggle), date range highlighting with filled circles on start/end, "Cancel"/"Done" buttons
-5. **Booking form (image-5)**: Step progress bar (dots connected by lines), form fields with clean borders, gender radio pills, rental duration chips (Hour/Day/Weekly/Monthly), date fields showing `dd/Month/yyyy`, location with map pin icon, prominent full-width CTA button
-6. **Typography**: Clean, semibold headings, muted descriptions
-7. **Layout**: Generous whitespace, icon-prefixed fields, bottom navigation on mobile
+## Key Changes
 
-## What Changes (keeping your green #00C853 + black #1A1A1A palette)
+### `src/pages/Reservation.tsx`
+- Change steps array from 4 to 3: `["Dates", "Véhicule", "Infos"]`
+- Step 3 = StepDriverInfo (was step 4)
+- Step 4 = new StepSummary (combines old StepAddons + pricing breakdown + promo code + confirm button)
+- Step 5 = StepConfirmation (success screen)
+- Update stepper rendering and step navigation
 
-### 1. New `DatePickerField` component
-- `src/components/ui/date-picker-field.tsx` -- Popover + Calendar picker
-- Trigger button shows calendar icon + formatted date (`dd/MM/yyyy`) or placeholder
-- Styled to match Figma: clean bordered button, calendar popover with month navigation
+### `src/components/reservation/ReservationSidebar.tsx`
+- Remove delivery fee line item from sidebar during steps 1-3
+- Only show vehicle + dates in sidebar; no delivery fee calculation until step 4
 
-### 2. Home Page (`src/pages/Index.tsx`)
-- Replace `<Input type="date">` with `DatePickerField` in hero search bar
-- Vehicle cards: add star rating placeholder, slightly rounder corners, image with heart/favorite icon overlay (visual only)
-- Benefits section: icon cards with larger icons in circular backgrounds matching Figma style
+### New: `src/components/reservation/StepSummary.tsx`
+- Combines: add-ons selection (from StepAddons), delivery fee display, promo code input (from StepDriverInfo), full price breakdown, and confirm button
+- Shows: vehicle total, each selected addon cost, delivery fee, discount, grand total
+- Contains the "Confirmer" button that triggers reservation submission
 
-### 3. Fleet Page (`src/pages/Fleet.tsx`)
-- Replace dropdown filters with horizontal **chip/pill toggles** for categories (matching Figma "All Cars / Regular / Luxury" style)
-- Keep transmission as chips too
-- Vehicle cards: match Figma card style with specs row using icon badges
+### `src/components/reservation/StepDriverInfo.tsx`
+- Remove promo code section (moved to StepSummary)
+- Change `onConfirm` to `onNext` — this step now just advances to summary
+- Keep all personal info fields
 
-### 4. Vehicle Detail Page (`src/pages/VehicleDetail.tsx`)
-- Feature specs as icon cards in a grid (like Figma: Capacity 5 Seats, Engine 670HP, Max Speed 250km/h style)
-- Image with dot carousel indicator (visual dots, single image for now)
-- Owner/contact section style (adapted as agency info)
-
-### 5. Reservation Flow -- Step Dates (`src/components/reservation/StepDates.tsx`)
-- Use `DatePickerField` for pickup/return dates
-- Add icons (MapPin, Calendar, Clock) before each field group
-- Wrap in card sections with subtle borders
-
-### 6. Reservation Flow -- Step Driver Info (`src/components/reservation/StepDriverInfo.tsx`)
-- Match Figma booking details style: icon-prefixed input fields
-- Full-width CTA button on mobile
-- Clean card wrapper around the form
-
-### 7. Reservation Flow -- Stepper (`src/pages/Reservation.tsx`)
-- Redesign stepper to match Figma: connected dots with labels, filled state for completed steps
-- On mobile: compact dot stepper with active label only
-
-### 8. Sidebar (`src/components/reservation/ReservationSidebar.tsx`)
-- On mobile: collapsible sticky bottom bar showing total, expandable on tap
-- Desktop: keep sticky sidebar with cleaner card styling
-
-### 9. Admin Reservations (`src/pages/admin/AdminReservations.tsx`)
-- Replace `<Input type="date">` with `DatePickerField` in edit modal
-
-### 10. Confirmation Page (`src/components/reservation/StepConfirmation.tsx`)
-- Match Figma confirmation style: card-based sections with clean dividers
+### `src/components/reservation/StepAddons.tsx`
+- Will no longer be rendered as a standalone step
+- Its addon toggle logic will be incorporated into StepSummary
 
 ## Files Changed
 
-1. `src/components/ui/date-picker-field.tsx` -- **new**
-2. `src/pages/Index.tsx` -- date picker + card restyling
-3. `src/pages/Fleet.tsx` -- chip filters + card restyling
-4. `src/pages/VehicleDetail.tsx` -- feature icon cards, image dots
-5. `src/components/reservation/StepDates.tsx` -- date picker, icons, cards
-6. `src/components/reservation/StepDriverInfo.tsx` -- icon-prefixed fields, mobile CTA
-7. `src/components/reservation/StepConfirmation.tsx` -- cleaner card style
-8. `src/components/reservation/ReservationSidebar.tsx` -- mobile bottom bar
-9. `src/pages/Reservation.tsx` -- redesigned stepper, mobile layout
-10. `src/pages/admin/AdminReservations.tsx` -- date picker in edit modal
+1. `src/pages/Reservation.tsx` — reorder steps (3 + summary + confirmation)
+2. `src/components/reservation/StepSummary.tsx` — **new** (addons + fees + promo + confirm)
+3. `src/components/reservation/StepDriverInfo.tsx` — remove promo, change onConfirm→onNext
+4. `src/components/reservation/ReservationSidebar.tsx` — hide delivery fee from sidebar
 
