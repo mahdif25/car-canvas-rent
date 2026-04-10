@@ -1,31 +1,31 @@
 
 
-# WhatsApp Widget: Per-Car Pricing + Browser Autofill Greeting
+# WhatsApp Widget: Price Range, Explanatory Pricing + Fix Name Capture
 
-## Overview
-Two enhancements to the WhatsApp chat widget:
-1. Show "À partir de X MAD/jour" under each vehicle in the car selection list (Step 1)
-2. Use a hidden input with `autocomplete="given-name"` to capture the browser's saved first name, then personalize the greeting to "Bonjour [Prénom] ! 👋"
+## Changes to `src/components/WhatsAppPopup.tsx`
 
-## Changes — `src/components/WhatsAppPopup.tsx`
+### 1. Vehicle cards (Step 1) — price range
+Replace "À partir de {rate} MAD/jour" with a range showing min–max daily rates:
+- Display `{min} - {max} MAD/jour` when tiers have different rates
+- Display `{rate} MAD/jour` when only one tier or all same rate
+- Add inline helper `getMaxPriceFromTiers(tiers)` using `Math.max()`
 
-### 1. Show starting price per vehicle
-In the Step 1 vehicle list, compute the lowest daily rate from `tiers` for each vehicle using `getStartingPriceFromTiers` (already exported from `useVehicles.ts`) and display it below the category:
-```
-<p className="text-xs text-primary font-semibold">À partir de {rate} MAD/jour</p>
-```
-Import `getStartingPriceFromTiers` from `useVehicles.ts`.
+### 2. Summary bubble (Step 4) — explain the rate
+Replace the generic "À partir de" line with:
+> Pour une location de {days} jours, le tarif est de **{rate} MAD/jour**
 
-### 2. Browser autofill first name capture
-- Add a hidden `<input>` with `autocomplete="given-name"` and `name="fname"` rendered inside the widget (visually hidden but present in the DOM so the browser can autofill it)
-- Add state `autofillName` initialized to `""`
-- Use an `onChange` handler on the input to capture the browser-autofilled value
-- Also attempt to read from the input ref on mount via a short timeout (browsers sometimes fill before React mounts)
-- Update the greeting bubble: if `autofillName` is non-empty, show `Bonjour {autofillName} ! 👋 Quel véhicule vous intéresse ?`, otherwise keep the current `Bonjour ! 👋 Quel véhicule vous intéresse ?`
+### 3. WhatsApp message — conversational tone to owner
+Rewrite pre-filled message:
+> Bonjour, je souhaite louer la {vehicle} pour {days} jours. D'après vos tarifs, le prix serait de {rate} MAD/jour. Récupération à {location}. Merci !
 
-### Technical note on autofill
-Browser autofill is best-effort — it only works if the user has saved form data. The hidden input trick uses `position: absolute; opacity: 0; height: 0` so it's invisible but still autofillable. A `setTimeout` of ~500ms on mount checks if the browser populated it.
+### 4. Fix browser autofill name capture
+The current hidden input approach (`opacity-0 h-0 w-0`) is skipped by most browsers. Fix:
+- Wrap the input in a `<form autoComplete="on">` element (browsers prefer autofilling inside forms)
+- Change hiding to `position: fixed; top: -100px; left: -100px; width: 1px; height: 1px; overflow: hidden` — browsers treat this as autofillable
+- Add `onAnimationStart` handler to detect Chrome's autofill animation event (`onautofillstart`)
+- Replace single timeout with a polling interval (every 500ms for 3s) to catch delayed autofill
+- Keep the greeting logic: show "Bonjour {prénom} ! 👋" if captured, else "Bonjour ! 👋"
 
-## Files
-- `src/components/WhatsAppPopup.tsx` — add import for `getStartingPriceFromTiers`, add autofill input + state, update greeting and vehicle cards
+## File
+- `src/components/WhatsAppPopup.tsx` — all 4 changes in this single file
 
