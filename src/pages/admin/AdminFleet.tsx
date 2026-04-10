@@ -119,9 +119,10 @@ const AdminFleet = () => {
   const resetForm = () => {
     setShowForm(false);
     setEditingId(null);
-    setForm({ name: "", brand: "", model: "", year: new Date().getFullYear(), category: "Sedan", transmission: "Manuelle", fuel: "Diesel", seats: 5, doors: 4, luggage: 3, security_deposit: 0, is_available: true, features: [], has_climatisation: true, has_gps: false, has_bluetooth: false, has_usb: false, has_camera: false });
+    setForm({ name: "", brand: "", model: "", year: new Date().getFullYear(), category: "Sedan", transmission: "Manuelle", fuel: "Diesel", seats: 5, doors: 4, luggage: 3, security_deposit: 0, is_available: true, features: [], has_climatisation: true, has_gps: false, has_bluetooth: false, has_usb: false, has_camera: false, slug: "" });
     setTiers(defaultTiers);
     setFeatureInput("");
+    setGalleryUrls([]);
   };
 
   const editVehicle = (v: Vehicle) => {
