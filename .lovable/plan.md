@@ -1,31 +1,28 @@
 
 
-# Fix: Vehicle Images Rendering on Fleet Page
+# Click "Réserver" → Reservation Page with Car Pre-Selected
 
 ## Problem
-The Tucson (and potentially other vehicles) image gets cropped awkwardly because `object-cover` on an `aspect-video` (16:9) container forces a tight crop. Cars photographed from certain angles or with wider compositions lose important parts.
+Currently, clicking a car card on the homepage or fleet page navigates to the vehicle detail page (`/fleet/:slug`), not the reservation page. The user wants clicking "Réserver" to go directly to `/reservation?vehicle=ID` with the car already selected, starting at step 1 (dates).
 
-## Solution
-Change the image rendering approach:
+## Changes
 
-**In `src/pages/Fleet.tsx`** (line 109-113):
-- Change `object-cover` to `object-contain` so the full car is always visible
-- Add a subtle `bg-secondary` background to the image container so the empty space around contained images looks clean (matches the card style)
-- Keep `aspect-video` for consistent card heights
-- Keep the hover scale effect
+### 1. Homepage cards (`src/pages/Index.tsx`)
+- Change the card's `<Link to={...}>` from `/fleet/${slug}` to `/reservation?vehicle=${v.id}`
+- This sends the user straight to the reservation flow with the vehicle pre-selected
 
-```
-// Current
-<div className="aspect-video overflow-hidden relative">
-  <img ... className="w-full h-full object-cover ..." />
+### 2. Fleet page cards (`src/pages/Fleet.tsx`)
+- Same change: link from `/fleet/${slug}` to `/reservation?vehicle=${v.id}`
 
-// New  
-<div className="aspect-video overflow-hidden relative bg-secondary">
-  <img ... className="w-full h-full object-contain p-2 ..." />
-```
+### 3. Reservation flow order (`src/pages/Reservation.tsx`)
+- When a vehicle is pre-selected via URL param, start at **step 1 (Dates)** instead of step 2
+- The vehicle is already set in `formData.vehicle_id`, so step 2 (vehicle selection) can be skipped
+- Change initial step: `useState(preselectedVehicle ? 2 : 1)` → `useState(1)`
+- After dates are selected in step 1, skip step 2 and go directly to step 3 (driver info) if a vehicle is pre-selected
+- Adjust `nextStep` logic: if on step 1 and vehicle is pre-selected, jump to step 3
 
-This ensures every car image — regardless of its original dimensions or aspect ratio — renders fully visible within the card. The `bg-secondary` fill prevents white gaps from looking jarring, and the small `p-2` padding gives breathing room.
-
-## File
-- `src/pages/Fleet.tsx` — single change on lines 109-114
+### Files
+- `src/pages/Index.tsx` — change card link target
+- `src/pages/Fleet.tsx` — change card link target
+- `src/pages/Reservation.tsx` — adjust step flow for pre-selected vehicles
 
