@@ -98,6 +98,81 @@ export type Database = {
         }
         Relationships: []
       }
+      coupon_usages: {
+        Row: {
+          coupon_id: string
+          created_at: string
+          customer_email: string
+          discount_applied: number
+          id: string
+          reservation_id: string
+        }
+        Insert: {
+          coupon_id: string
+          created_at?: string
+          customer_email: string
+          discount_applied: number
+          id?: string
+          reservation_id: string
+        }
+        Update: {
+          coupon_id?: string
+          created_at?: string
+          customer_email?: string
+          discount_applied?: number
+          id?: string
+          reservation_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_usages_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coupon_usages_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coupons: {
+        Row: {
+          code: string
+          created_at: string
+          current_uses: number
+          discount_amount: number
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_uses: number | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          current_uses?: number
+          discount_amount: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          current_uses?: number
+          discount_amount?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -319,6 +394,7 @@ export type Database = {
       }
       reservations: {
         Row: {
+          coupon_id: string | null
           created_at: string
           customer_dob: string | null
           customer_email: string
@@ -330,6 +406,7 @@ export type Database = {
           delivery_fee: number
           deposit_amount: number
           deposit_status: Database["public"]["Enums"]["deposit_status"]
+          discount_amount: number
           id: string
           pickup_date: string
           pickup_location: string
@@ -343,6 +420,7 @@ export type Database = {
           vehicle_id: string
         }
         Insert: {
+          coupon_id?: string | null
           created_at?: string
           customer_dob?: string | null
           customer_email: string
@@ -354,6 +432,7 @@ export type Database = {
           delivery_fee?: number
           deposit_amount?: number
           deposit_status?: Database["public"]["Enums"]["deposit_status"]
+          discount_amount?: number
           id?: string
           pickup_date: string
           pickup_location: string
@@ -367,6 +446,7 @@ export type Database = {
           vehicle_id: string
         }
         Update: {
+          coupon_id?: string | null
           created_at?: string
           customer_dob?: string | null
           customer_email?: string
@@ -378,6 +458,7 @@ export type Database = {
           delivery_fee?: number
           deposit_amount?: number
           deposit_status?: Database["public"]["Enums"]["deposit_status"]
+          discount_amount?: number
           id?: string
           pickup_date?: string
           pickup_location?: string
@@ -391,6 +472,13 @@ export type Database = {
           vehicle_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "reservations_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "reservations_vehicle_id_fkey"
             columns: ["vehicle_id"]
