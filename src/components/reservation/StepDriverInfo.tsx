@@ -1,9 +1,12 @@
+import { useState } from "react";
 import { ReservationFormData } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Shield } from "lucide-react";
+import { Shield, Tag, Check, X } from "lucide-react";
 import { Vehicle } from "@/hooks/useVehicles";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Props {
   formData: ReservationFormData;
@@ -19,6 +22,56 @@ interface Props {
 }
 
 const StepDriverInfo = ({ formData, updateForm, onConfirm, onBack, vehicle, analytics }: Props) => {
+  const [promoInput, setPromoInput] = useState(formData.promo_code || "");
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoApplied, setPromoApplied] = useState(!!formData.coupon_id);
+
+  const handleApplyPromo = async () => {
+    if (!promoInput.trim()) return;
+    setPromoLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("coupons")
+        .select("*")
+        .eq("code", promoInput.toUpperCase().trim())
+        .eq("is_active", true)
+        .single();
+
+      if (error || !data) {
+        toast.error("Code promo invalide ou expiré");
+        return;
+      }
+
+      if (data.expires_at && new Date(data.expires_at) < new Date()) {
+        toast.error("Ce code promo a expiré");
+        return;
+      }
+
+      if (data.max_uses !== null && data.current_uses >= data.max_uses) {
+        toast.error("Ce code promo a atteint sa limite d'utilisation");
+        return;
+      }
+
+      updateForm({
+        promo_code: data.code,
+        discount_amount: Number(data.discount_amount),
+        coupon_id: data.id,
+      });
+      setPromoApplied(true);
+      toast.success(`Code promo appliqué : -${Number(data.discount_amount).toLocaleString()} MAD`);
+    } catch {
+      toast.error("Erreur lors de la vérification du code");
+    } finally {
+      setPromoLoading(false);
+    }
+  };
+
+  const handleRemovePromo = () => {
+    updateForm({ promo_code: "", discount_amount: 0, coupon_id: "" });
+    setPromoApplied(false);
+    setPromoInput("");
+  };
+
   const handleBlur = (field: string, value: string) => {
     if (!value || !analytics) return;
     const fields: Record<string, string> = { [field]: value };
@@ -86,6 +139,26 @@ const StepDriverInfo = ({ formData, updateForm, onConfirm, onBack, vehicle, anal
           </div>
         </div>
       )}
+
+      {/* Promo code section */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium flex items-center gap-1"><Tag size={14} /> Code promo</label>
+        {promoApplied ? (
+          <div className="flex items-center gap-2 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+            <Check size={16} className="text-primary" />
+            <span className="text-sm font-medium">{formData.promo_code}</span>
+            <span className="text-sm text-primary">-{formData.discount_amount.toLocaleString()} MAD</span>
+            <button onClick={handleRemovePromo} className="ml-auto text-muted-foreground hover:text-foreground"><X size={16} /></button>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <Input value={promoInput} onChange={(e) => setPromoInput(e.target.value)} placeholder="Entrez votre code promo" onKeyDown={(e) => e.key === "Enter" && handleApplyPromo()} />
+            <Button type="button" variant="outline" onClick={handleApplyPromo} disabled={promoLoading || !promoInput.trim()} className="shrink-0">
+              {promoLoading ? "..." : "Appliquer"}
+            </Button>
+          </div>
+        )}
+      </div>
 
       <div className="flex items-start gap-3">
         <Checkbox

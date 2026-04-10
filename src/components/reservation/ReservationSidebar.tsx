@@ -29,7 +29,8 @@ const ReservationSidebar = ({ formData, rentalDays, vehicles, pricingTiers, addo
     formData.return_location || formData.pickup_location
   );
 
-  const total = vehicleTotal + addonsTotal + deliveryFee;
+  const discount = formData.discount_amount || 0;
+  const total = vehicleTotal + addonsTotal + deliveryFee - discount;
 
   return (
     <div className="bg-secondary p-6 rounded-pill sticky top-24 space-y-5">
@@ -88,6 +89,13 @@ const ReservationSidebar = ({ formData, rentalDays, vehicles, pricingTiers, addo
               <div className="flex justify-between">
                 <span className="flex items-center gap-1"><Truck size={14} /> Frais de livraison</span>
                 <span>{deliveryFee > 0 ? `${deliveryFee.toLocaleString()} MAD` : "Gratuit"}</span>
+              </div>
+            )}
+
+            {discount > 0 && (
+              <div className="flex justify-between text-primary">
+                <span>Code promo ({formData.promo_code})</span>
+                <span>-{discount.toLocaleString()} MAD</span>
               </div>
             )}
 
