@@ -49,7 +49,7 @@ const AdminSettings = () => {
       <div className="space-y-6">
         <h1 className="text-2xl font-bold">Paramètres</h1>
         <Tabs defaultValue="appearance" className="space-y-6">
-          <TabsList className="flex-wrap">
+          <TabsList className="w-full grid grid-cols-5 h-auto">
             <TabsTrigger value="appearance" className="gap-2"><Palette size={16} />Apparence</TabsTrigger>
             <TabsTrigger value="tracking" className="gap-2"><BarChart3 size={16} />Tracking</TabsTrigger>
             <TabsTrigger value="emails" className="gap-2"><Mail size={16} />Emails</TabsTrigger>
