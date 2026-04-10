@@ -4,19 +4,48 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
 const TrackingScripts = () => {
   const { data: settings } = useSiteSettings();
 
+  // Capture fbclid from URL on page load
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const fbclid = params.get("fbclid");
+    if (fbclid) {
+      sessionStorage.setItem("fbclid", fbclid);
+      // Build fbc cookie format: fb.1.timestamp.fbclid
+      const fbc = `fb.1.${Date.now()}.${fbclid}`;
+      sessionStorage.setItem("fbc", fbc);
+    }
+    // Capture _fbp cookie if present
+    const fbpCookie = document.cookie.split(";").find((c) => c.trim().startsWith("_fbp="));
+    if (fbpCookie) {
+      sessionStorage.setItem("fbp", fbpCookie.split("=")[1]);
+    }
+  }, []);
+
   useEffect(() => {
     if (!settings) return;
 
-    // Facebook Pixel
+    // Facebook Pixel with Advanced Matching
     if (settings.facebook_pixel_id) {
       const script = document.createElement("script");
+      // Build advanced matching data from sessionStorage
+      const advancedMatching: Record<string, string> = {};
+      const em = sessionStorage.getItem("fb_em");
+      const fn = sessionStorage.getItem("fb_fn");
+      const ln = sessionStorage.getItem("fb_ln");
+      const ph = sessionStorage.getItem("fb_ph");
+      if (em) advancedMatching.em = em.toLowerCase().trim();
+      if (fn) advancedMatching.fn = fn.toLowerCase().trim();
+      if (ln) advancedMatching.ln = ln.toLowerCase().trim();
+      if (ph) advancedMatching.ph = ph.replace(/[^0-9]/g, "");
+
+      const matchingJson = JSON.stringify(advancedMatching);
       script.innerHTML = `
         !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
         n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
         n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
         t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}
         (window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
-        fbq('init','${settings.facebook_pixel_id}');fbq('track','PageView');
+        fbq('init','${settings.facebook_pixel_id}',${matchingJson});fbq('track','PageView');
       `;
       script.id = "fb-pixel";
       if (!document.getElementById("fb-pixel")) document.head.appendChild(script);
