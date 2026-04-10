@@ -1,15 +1,25 @@
+import { useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Users, Fuel, Settings2, DoorOpen, Briefcase, Shield, Check, Star } from "lucide-react";
 import { getActiveFeatures } from "@/lib/vehicle-features";
 import Layout from "@/components/layout/Layout";
-import { useVehicle, usePricingTiers } from "@/hooks/useVehicles";
+import { useVehicleBySlug, usePricingTiers, useVehicleImages } from "@/hooks/useVehicles";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const VehicleDetail = () => {
-  const { id } = useParams();
-  const { data: vehicle, isLoading: loadingVehicle } = useVehicle(id);
-  const { data: tiers = [], isLoading: loadingTiers } = usePricingTiers(id);
+  const { slug } = useParams();
+  const { data: vehicle, isLoading: loadingVehicle } = useVehicleBySlug(slug);
+  const { data: tiers = [], isLoading: loadingTiers } = usePricingTiers(vehicle?.id);
+  const { data: extraImages = [] } = useVehicleImages(vehicle?.id);
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  const allImages = useMemo(() => {
+    const imgs: string[] = [];
+    if (vehicle?.image_url) imgs.push(vehicle.image_url);
+    extraImages.forEach((img) => imgs.push(img.image_url));
+    return imgs.length > 0 ? imgs : ["/placeholder.svg"];
+  }, [vehicle, extraImages]);
 
   if (loadingVehicle || loadingTiers) {
     return (
@@ -62,16 +72,42 @@ const VehicleDetail = () => {
           </Link>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-            {/* Image with dot indicators */}
-            <div className="relative">
+            {/* Image Gallery */}
+            <div className="space-y-3">
               <div className="rounded-2xl overflow-hidden shadow-md">
-                <img src={vehicle.image_url || "/placeholder.svg"} alt={vehicle.name} className="w-full h-full object-cover aspect-video" />
+                <img
+                  src={allImages[activeIndex]}
+                  alt={vehicle.name}
+                  className="w-full h-full object-cover aspect-video"
+                />
               </div>
-              {/* Dot indicators (visual) */}
-              <div className="flex justify-center gap-2 mt-4">
-                <div className="w-8 h-2 rounded-full bg-primary" />
-                <div className="w-2 h-2 rounded-full bg-border" />
-                <div className="w-2 h-2 rounded-full bg-border" />
+              {/* Thumbnails */}
+              {allImages.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {allImages.map((img, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setActiveIndex(i)}
+                      className={`shrink-0 w-20 h-14 rounded-lg overflow-hidden border-2 transition-colors ${
+                        i === activeIndex ? "border-primary" : "border-transparent opacity-60 hover:opacity-100"
+                      }`}
+                    >
+                      <img src={img} alt="" className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
+              {/* Dot indicators */}
+              <div className="flex justify-center gap-2">
+                {allImages.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActiveIndex(i)}
+                    className={`rounded-full transition-all ${
+                      i === activeIndex ? "w-8 h-2 bg-primary" : "w-2 h-2 bg-border"
+                    }`}
+                  />
+                ))}
               </div>
             </div>
 

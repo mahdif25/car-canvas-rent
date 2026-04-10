@@ -150,7 +150,7 @@ const Index = () => {
                 return (
                   <Link
                     key={v.id}
-                    to={`/fleet/${v.id}`}
+                    to={`/fleet/${(v as any).slug || v.id}`}
                     className="group bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300"
                   >
                     <div className="aspect-video overflow-hidden relative">

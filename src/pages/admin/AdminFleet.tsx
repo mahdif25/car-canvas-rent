@@ -28,14 +28,16 @@ const AdminFleet = () => {
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState<Partial<VehicleInsert>>({
+  const [form, setForm] = useState<Partial<VehicleInsert> & { slug?: string }>({
     name: "", brand: "", model: "", year: new Date().getFullYear(),
     category: "Sedan", transmission: "Manuelle", fuel: "Diesel",
     seats: 5, doors: 4, luggage: 3, security_deposit: 0, is_available: true,
     features: [], has_climatisation: true, has_gps: false, has_bluetooth: false, has_usb: false, has_camera: false,
+    slug: "",
   });
   const [tiers, setTiers] = useState(defaultTiers);
   const [featureInput, setFeatureInput] = useState("");
+  const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
 
   const { data: vehicles, isLoading } = useQuery({
     queryKey: ["admin-vehicles"],
@@ -55,20 +57,35 @@ const AdminFleet = () => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      const { slug, ...vehicleData } = form;
+      const saveData = { ...vehicleData, slug: slug || null };
       if (editingId) {
-        const { error } = await supabase.from("vehicles").update(form).eq("id", editingId);
+        const { error } = await supabase.from("vehicles").update(saveData).eq("id", editingId);
         if (error) throw error;
         // Update tiers
         await supabase.from("vehicle_pricing_tiers").delete().eq("vehicle_id", editingId);
         const tierInserts = tiers.map((t) => ({ vehicle_id: editingId, ...t }));
         const { error: tierErr } = await supabase.from("vehicle_pricing_tiers").insert(tierInserts);
         if (tierErr) throw tierErr;
+        // Update gallery images
+        await supabase.from("vehicle_images").delete().eq("vehicle_id", editingId);
+        if (galleryUrls.filter(Boolean).length > 0) {
+          const imgInserts = galleryUrls.filter(Boolean).map((url, i) => ({ vehicle_id: editingId, image_url: url, sort_order: i }));
+          const { error: imgErr } = await supabase.from("vehicle_images").insert(imgInserts);
+          if (imgErr) throw imgErr;
+        }
       } else {
-        const { data, error } = await supabase.from("vehicles").insert(form as VehicleInsert).select().single();
+        const { data, error } = await supabase.from("vehicles").insert(saveData as VehicleInsert).select().single();
         if (error) throw error;
         const tierInserts = tiers.map((t) => ({ vehicle_id: data.id, ...t }));
         const { error: tierErr } = await supabase.from("vehicle_pricing_tiers").insert(tierInserts);
         if (tierErr) throw tierErr;
+        // Insert gallery images
+        if (galleryUrls.filter(Boolean).length > 0) {
+          const imgInserts = galleryUrls.filter(Boolean).map((url, i) => ({ vehicle_id: data.id, image_url: url, sort_order: i }));
+          const { error: imgErr } = await supabase.from("vehicle_images").insert(imgInserts);
+          if (imgErr) throw imgErr;
+        }
       }
     },
     onSuccess: () => {
@@ -102,16 +119,20 @@ const AdminFleet = () => {
   const resetForm = () => {
     setShowForm(false);
     setEditingId(null);
-    setForm({ name: "", brand: "", model: "", year: new Date().getFullYear(), category: "Sedan", transmission: "Manuelle", fuel: "Diesel", seats: 5, doors: 4, luggage: 3, security_deposit: 0, is_available: true, features: [], has_climatisation: true, has_gps: false, has_bluetooth: false, has_usb: false, has_camera: false });
+    setForm({ name: "", brand: "", model: "", year: new Date().getFullYear(), category: "Sedan", transmission: "Manuelle", fuel: "Diesel", seats: 5, doors: 4, luggage: 3, security_deposit: 0, is_available: true, features: [], has_climatisation: true, has_gps: false, has_bluetooth: false, has_usb: false, has_camera: false, slug: "" });
     setTiers(defaultTiers);
     setFeatureInput("");
+    setGalleryUrls([]);
   };
 
-  const editVehicle = (v: Vehicle) => {
+  const editVehicle = async (v: Vehicle) => {
     setEditingId(v.id);
-    setForm({ name: v.name, brand: v.brand, model: v.model, year: v.year, category: v.category, transmission: v.transmission, fuel: v.fuel, seats: v.seats, doors: v.doors, luggage: v.luggage, security_deposit: Number(v.security_deposit), is_available: v.is_available, image_url: v.image_url, features: v.features ?? [], has_climatisation: (v as any).has_climatisation ?? true, has_gps: (v as any).has_gps ?? false, has_bluetooth: (v as any).has_bluetooth ?? false, has_usb: (v as any).has_usb ?? false, has_camera: (v as any).has_camera ?? false });
+    setForm({ name: v.name, brand: v.brand, model: v.model, year: v.year, category: v.category, transmission: v.transmission, fuel: v.fuel, seats: v.seats, doors: v.doors, luggage: v.luggage, security_deposit: Number(v.security_deposit), is_available: v.is_available, image_url: v.image_url, features: v.features ?? [], has_climatisation: (v as any).has_climatisation ?? true, has_gps: (v as any).has_gps ?? false, has_bluetooth: (v as any).has_bluetooth ?? false, has_usb: (v as any).has_usb ?? false, has_camera: (v as any).has_camera ?? false, slug: (v as any).slug ?? "" });
     const vehicleTiers = allTiers?.filter((t) => t.vehicle_id === v.id) ?? [];
     setTiers(vehicleTiers.length > 0 ? vehicleTiers.map((t) => ({ min_days: t.min_days, max_days: t.max_days, daily_rate: Number(t.daily_rate) })) : defaultTiers);
+    // Load gallery images
+    const { data: imgs } = await supabase.from("vehicle_images").select("*").eq("vehicle_id", v.id).order("sort_order");
+    setGalleryUrls((imgs ?? []).map((img: any) => img.image_url));
     setShowForm(true);
   };
 
@@ -209,9 +230,39 @@ const AdminFleet = () => {
                 <Input type="number" value={form.security_deposit} onChange={(e) => setForm((f) => ({ ...f, security_deposit: parseFloat(e.target.value) }))} />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">URL Image</label>
+                <label className="text-sm font-medium">URL Image (principale)</label>
                 <Input value={form.image_url ?? ""} onChange={(e) => setForm((f) => ({ ...f, image_url: e.target.value }))} placeholder="https://..." />
               </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Slug (URL)</label>
+                <div className="flex gap-2">
+                  <Input value={form.slug ?? ""} onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))} placeholder="renault-clio-2026" />
+                  <Button type="button" variant="outline" size="sm" onClick={() => {
+                    const slug = (form.name || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+                    setForm((f) => ({ ...f, slug }));
+                  }}>Auto</Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Gallery Images */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Images supplémentaires (galerie)</label>
+              {galleryUrls.map((url, i) => (
+                <div key={i} className="flex gap-2 items-center">
+                  <Input
+                    value={url}
+                    onChange={(e) => { const u = [...galleryUrls]; u[i] = e.target.value; setGalleryUrls(u); }}
+                    placeholder="https://..."
+                  />
+                  <Button type="button" variant="ghost" size="icon" onClick={() => setGalleryUrls(galleryUrls.filter((_, idx) => idx !== i))}>
+                    <X size={16} />
+                  </Button>
+                </div>
+              ))}
+              <Button type="button" variant="outline" size="sm" onClick={() => setGalleryUrls([...galleryUrls, ""])}>
+                <Plus size={14} className="mr-1" /> Ajouter une image
+              </Button>
             </div>
 
             {/* Structured Features */}
