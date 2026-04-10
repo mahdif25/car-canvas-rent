@@ -1,21 +1,15 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Car, Shield, Clock, MapPin, ChevronRight, Star, Users, Fuel, Settings2, DoorOpen, Briefcase, Snowflake } from "lucide-react";
+import { Car, Shield, Clock, MapPin, ChevronRight, ChevronLeft, Star, Users, Fuel, Settings2, DoorOpen, Briefcase, Snowflake } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { useLocations } from "@/hooks/useLocations";
 import { useVehicles, usePricingTiers, getStartingPriceFromTiers } from "@/hooks/useVehicles";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { useReviews } from "@/hooks/useReviews";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DatePickerField } from "@/components/ui/date-picker-field";
-
-const REVIEWS = [
-  { name: "Youssef B.", text: "Service excellent, voiture propre et bien entretenue. Je recommande vivement Centre Lux Car pour vos locations.", time: "il y a 2 mois" },
-  { name: "Sarah M.", text: "Très professionnel, prix compétitifs et livraison à l'heure. Une expérience de location sans stress.", time: "il y a 1 mois" },
-  { name: "Ahmed K.", text: "J'ai loué plusieurs fois chez eux, toujours satisfait. Le personnel est aimable et les véhicules sont en parfait état.", time: "il y a 3 mois" },
-  { name: "Fatima Z.", text: "Rapport qualité-prix imbattable. La réservation en ligne est simple et rapide. Je reviendrai sans hésiter.", time: "il y a 2 semaines" },
-];
 
 const Index = () => {
   const navigate = useNavigate();
@@ -27,10 +21,12 @@ const Index = () => {
   const { data: allTiers = [], isLoading: loadingTiers } = usePricingTiers();
   const { data: locations = [], isLoading: loadingLocations } = useLocations();
   const { data: siteSettings } = useSiteSettings();
+  const { data: reviews = [] } = useReviews(true);
 
   const heroType = siteSettings?.hero_bg_type || "color";
   const heroValue = siteSettings?.hero_bg_value || "";
   const overlayOpacity = siteSettings?.hero_overlay_opacity ?? 0.6;
+  const showReviews = siteSettings?.show_reviews_section ?? true;
 
   const handleSearch = () => {
     const params = new URLSearchParams();
@@ -42,6 +38,12 @@ const Index = () => {
 
   const featured = vehicles.filter((v) => v.is_available).slice(0, 3);
   const isLoading = loadingVehicles || loadingTiers || loadingLocations;
+
+  // Reviews carousel state
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollBy = (dir: number) => {
+    scrollRef.current?.scrollBy({ left: dir * 300, behavior: "smooth" });
+  };
 
   return (
     <Layout>
@@ -113,33 +115,60 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Reviews */}
-      <section className="py-16 bg-secondary">
-        <div className="container">
-          <h2 className="text-3xl font-bold text-center mb-3">
-            Ce que disent <span className="text-primary">nos clients</span>
-          </h2>
-          <p className="text-center text-muted-foreground mb-10">
-            Noté <span className="font-semibold text-foreground">5.00 / 5</span> basé sur {REVIEWS.length * 12}+ avis
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {REVIEWS.map((r) => (
-              <div key={r.name} className="bg-background rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow space-y-3">
-                <div className="flex gap-0.5">
-                  {[1, 2, 3, 4, 5].map((s) => (
-                    <Star key={s} size={18} className="text-primary fill-primary" />
-                  ))}
-                </div>
-                <p className="text-sm text-muted-foreground line-clamp-3">{r.text}</p>
-                <div className="pt-2 border-t border-border">
-                  <p className="font-semibold text-sm">{r.name}</p>
-                  <p className="text-xs text-muted-foreground">{r.time}</p>
-                </div>
+      {/* Reviews — compact carousel */}
+      {showReviews && reviews.length > 0 && (
+        <section className="py-10 bg-secondary">
+          <div className="container">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="text-2xl font-bold">
+                  Ce que disent <span className="text-primary">nos clients</span>
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Noté <span className="font-semibold text-foreground">5.00 / 5</span> basé sur {reviews.length * 12}+ avis
+                </p>
               </div>
-            ))}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => scrollBy(-1)}
+                  className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <button
+                  onClick={() => scrollBy(1)}
+                  className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
+            <div
+              ref={scrollRef}
+              className="flex gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2"
+              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            >
+              {reviews.map((r) => (
+                <div
+                  key={r.id}
+                  className="min-w-[260px] max-w-[280px] snap-start bg-background rounded-xl p-4 shadow-sm flex-shrink-0 space-y-2"
+                >
+                  <div className="flex gap-0.5">
+                    {Array.from({ length: r.rating }).map((_, i) => (
+                      <Star key={i} size={14} className="text-primary fill-primary" />
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground line-clamp-3">{r.text}</p>
+                  <div className="pt-1.5 border-t border-border">
+                    <p className="font-semibold text-xs">{r.name}</p>
+                    <p className="text-[10px] text-muted-foreground">{r.time_label}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Featured Vehicles — Sovoy style */}
       <section className="py-16">
@@ -174,7 +203,7 @@ const Index = () => {
                   <Link
                     key={v.id}
                     to={`/fleet/${(v as any).slug || v.id}`}
-                    className="group bg-card rounded-2xl overflow-hidden shadow-sm border border-transparent hover:border-l-4 hover:border-l-primary hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+                    className="group bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
                   >
                     {/* Header */}
                     <div className="p-5 pb-0 space-y-1">
@@ -183,12 +212,14 @@ const Index = () => {
                       <p className="text-xs text-muted-foreground">ou véhicule similaire...</p>
                     </div>
 
-                    {/* Car image */}
-                    <div className="bg-secondary mx-5 mt-4 rounded-xl flex items-center justify-center p-4 h-44 overflow-hidden">
+                    {/* Car image with Sovoy sliding strip */}
+                    <div className="relative mx-5 mt-4 rounded-xl overflow-hidden h-44 bg-secondary">
+                      {/* Sliding primary color strip — right to left on hover */}
+                      <div className="absolute inset-0 bg-primary origin-right scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-out" />
                       <img
                         src={v.image_url || "/placeholder.svg"}
                         alt={v.name}
-                        className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
+                        className="relative z-10 w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300"
                       />
                     </div>
 
