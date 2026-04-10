@@ -85,8 +85,16 @@ const Reservation = () => {
     return Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)));
   }, [formData.pickup_date, formData.return_date]);
 
-  const nextStep = () => setCurrentStep((s) => Math.min(s + 1, 5));
-  const prevStep = () => setCurrentStep((s) => Math.max(s - 1, 1));
+  const nextStep = () => setCurrentStep((s) => {
+    // Skip vehicle selection (step 2) if a vehicle is already pre-selected
+    if (s === 1 && preselectedVehicle) return 3;
+    return Math.min(s + 1, 5);
+  });
+  const prevStep = () => setCurrentStep((s) => {
+    // Skip vehicle selection (step 2) going back if pre-selected
+    if (s === 3 && preselectedVehicle) return 1;
+    return Math.max(s - 1, 1);
+  });
 
   const selectedVehicle = vehicles.find((v) => v.id === formData.vehicle_id);
 
