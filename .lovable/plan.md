@@ -1,47 +1,29 @@
 
 
-# Adjustable Logo Size from Admin Settings
+# Fix Logo: Bigger, More Compact, Less Empty Space
 
-## Overview
-Add a "Logo Size" slider to the admin Appearance settings so you can control how big the logo appears across all pages — homepage, fleet, reservation sidebar, admin panel, and confirmation/receipt.
+## Problem
+The logo image likely has built-in transparent padding, so even at 80px it looks small with too much empty space. The slider max of 80px is also too limiting, and the navbar has a fixed `h-16` height that constrains the visual size.
 
-## Database Change
-Add a `logo_height` integer column to the `site_settings` table (default `48`, in pixels). This maps to the current `h-12` (48px).
+## Changes
 
-```sql
-ALTER TABLE public.site_settings ADD COLUMN logo_height integer NOT NULL DEFAULT 48;
-```
+### 1. Increase slider range and default (`src/pages/admin/AdminSettings.tsx`)
+- Change slider range from `32–80` to `32–120`
+- This allows the logo to be set much larger
 
-## Code Changes
+### 2. Adjust navbar height to accommodate larger logos (`src/components/layout/Navbar.tsx`)
+- Make the header height dynamic: use `max(64px, logoH + 16px)` so the navbar grows with the logo instead of clipping it
+- Change from fixed `h-16` to dynamic `style={{ minHeight: Math.max(64, logoH + 16) }}`
 
-### 1. Update SiteSettings type (`src/hooks/useSiteSettings.ts`)
-Add `logo_height: number` to the `SiteSettings` interface.
+### 3. Trim transparent space from the logo image
+- Use imagemagick to auto-trim the transparent padding from `src/assets/logo.png` so the actual graphic fills more of the allocated space
 
-### 2. Add Logo Size slider to Admin Settings (`src/pages/admin/AdminSettings.tsx`)
-In the Appearance tab, add a "Taille du logo" slider (range 32–80px) with a live preview of the logo. Include `logo_height` in the save call alongside the other appearance fields.
-
-### 3. Update Navbar (`src/components/layout/Navbar.tsx`)
-- Import `useSiteSettings`
-- Apply `style={{ height: settings?.logo_height || 48 }}` on the logo `<img>` instead of the fixed `h-12` class
-
-### 4. Update Footer (`src/components/layout/Footer.tsx`)
-- Import `useSiteSettings`
-- Apply dynamic height (default 56px / `h-14` equivalent) — use `settings?.logo_height ? settings.logo_height + 8 : 56` for a slightly larger footer logo, or same value
-
-### 5. Update AdminLayout (`src/components/admin/AdminLayout.tsx`)
-- Import `useSiteSettings`
-- Apply dynamic height on all 3 logo instances (mobile header, drawer, desktop sidebar)
-
-### 6. Update AdminLogin (`src/pages/admin/AdminLogin.tsx`)
-- Import `useSiteSettings`
-- Apply dynamic height on the login page logo
+### 4. Admin sidebar logo padding (`src/components/admin/AdminLayout.tsx`)
+- Reduce padding around the sidebar logo from `p-4` to `p-2` in the logo container to make it more compact
 
 ### Files
-- `site_settings` table (migration)
-- `src/hooks/useSiteSettings.ts`
-- `src/pages/admin/AdminSettings.tsx`
-- `src/components/layout/Navbar.tsx`
-- `src/components/layout/Footer.tsx`
-- `src/components/admin/AdminLayout.tsx`
-- `src/pages/admin/AdminLogin.tsx`
+- `src/assets/logo.png` (trim whitespace)
+- `src/pages/admin/AdminSettings.tsx` (slider max → 120)
+- `src/components/layout/Navbar.tsx` (dynamic header height)
+- `src/components/admin/AdminLayout.tsx` (tighter padding)
 
