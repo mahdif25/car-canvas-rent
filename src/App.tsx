@@ -17,7 +17,9 @@ import AdminLocations from "./pages/admin/AdminLocations";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminLeads from "./pages/admin/AdminLeads";
 import AdminMarketing from "./pages/admin/AdminMarketing";
+import AdminSettings from "./pages/admin/AdminSettings";
 import NotFound from "./pages/NotFound";
+import TrackingScripts from "./components/TrackingScripts";
 
 const queryClient = new QueryClient();
 
