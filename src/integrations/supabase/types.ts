@@ -656,6 +656,7 @@ export type Database = {
           hero_overlay_opacity: number | null
           id: string
           lead_capture_mode: string
+          logo_height: number
           notification_email: string | null
           send_reservation_emails: boolean | null
           show_reviews_section: boolean | null
@@ -676,6 +677,7 @@ export type Database = {
           hero_overlay_opacity?: number | null
           id?: string
           lead_capture_mode?: string
+          logo_height?: number
           notification_email?: string | null
           send_reservation_emails?: boolean | null
           show_reviews_section?: boolean | null
@@ -696,6 +698,7 @@ export type Database = {
           hero_overlay_opacity?: number | null
           id?: string
           lead_capture_mode?: string
+          logo_height?: number
           notification_email?: string | null
           send_reservation_emails?: boolean | null
           show_reviews_section?: boolean | null
