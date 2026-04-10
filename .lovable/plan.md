@@ -1,30 +1,31 @@
 
 
-# Fix Vehicle Images to Fill Card Area Edge-to-Edge
+# Upload Vehicle Images from Admin Panel
 
-## Problem
-With `object-contain` and `p-2` padding, smaller car images (like Siat) appear much smaller than wider ones (like Tucson) because the browser preserves the aspect ratio and adds empty space. The padding makes it worse.
-
-## Solution
-Remove the `p-2` padding from all vehicle image containers so the image stretches to fill the full area. Keep `object-contain` so no part of the car gets cropped — but the image will now use the maximum available space.
+## Overview
+Replace the URL text inputs for both the main image and gallery images with file upload buttons. Files get uploaded to the existing `vehicle-images` storage bucket, and the resulting public URL is saved to the database.
 
 ## Changes
 
-### 1. Index.tsx (line 219) — Homepage cards
-Remove `p-2` from the image class:
-```tsx
-className="relative z-10 w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+### 1. Add RLS policies for storage bucket (`migration`)
+Add storage policies so authenticated admins can upload/delete files in the `vehicle-images` bucket:
+```sql
+CREATE POLICY "Admins can upload vehicle images" ON storage.objects
+  FOR INSERT TO authenticated WITH CHECK (bucket_id = 'vehicle-images' AND has_role(auth.uid(), 'admin'));
+CREATE POLICY "Admins can delete vehicle images" ON storage.objects
+  FOR DELETE TO authenticated USING (bucket_id = 'vehicle-images' AND has_role(auth.uid(), 'admin'));
+CREATE POLICY "Anyone can view vehicle images" ON storage.objects
+  FOR SELECT TO public USING (bucket_id = 'vehicle-images');
 ```
 
-### 2. Fleet.tsx (line 113) — Fleet page cards
-Remove `p-2`:
-```tsx
-className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
-```
+### 2. Update AdminFleet.tsx
+- Add an `uploadImage` helper function that uploads a file to `vehicle-images/{vehicleId or timestamp}/{filename}` via `supabase.storage` and returns the public URL
+- **Main image**: Replace the URL text input with a file input + upload button. Show a thumbnail preview of the current image. Keep the URL input as a fallback (collapsible "ou coller un lien")
+- **Gallery images**: Replace each URL input with a file upload area. Show thumbnail previews. Keep "coller un lien" as fallback option
+- Add loading states during upload
+- Add a delete button on each thumbnail that removes the file from storage
 
-### 3. ReservationSidebar.tsx (line 31) — Reservation sidebar
-Already has no padding — no change needed.
-
-## Result
-Car PNGs will stretch edge-to-edge within their containers while still showing the full vehicle (no cropping). Both small and large car images will fill the same visual space consistently.
+### Files
+- `supabase/migrations/` (new migration for storage RLS)
+- `src/pages/admin/AdminFleet.tsx`
 
