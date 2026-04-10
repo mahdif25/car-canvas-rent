@@ -573,6 +573,11 @@ export type Database = {
           doors: number
           features: string[] | null
           fuel: string
+          has_bluetooth: boolean
+          has_camera: boolean
+          has_climatisation: boolean
+          has_gps: boolean
+          has_usb: boolean
           id: string
           image_url: string | null
           is_available: boolean
@@ -592,6 +597,11 @@ export type Database = {
           doors?: number
           features?: string[] | null
           fuel?: string
+          has_bluetooth?: boolean
+          has_camera?: boolean
+          has_climatisation?: boolean
+          has_gps?: boolean
+          has_usb?: boolean
           id?: string
           image_url?: string | null
           is_available?: boolean
@@ -611,6 +621,11 @@ export type Database = {
           doors?: number
           features?: string[] | null
           fuel?: string
+          has_bluetooth?: boolean
+          has_camera?: boolean
+          has_climatisation?: boolean
+          has_gps?: boolean
+          has_usb?: boolean
           id?: string
           image_url?: string | null
           is_available?: boolean

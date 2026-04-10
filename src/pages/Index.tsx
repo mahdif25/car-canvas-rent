@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Car, Shield, Clock, MapPin, ChevronRight, Heart, Star, Users, Fuel, Settings2 } from "lucide-react";
+import { getActiveFeatures } from "@/lib/vehicle-features";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { useLocations } from "@/hooks/useLocations";
@@ -172,6 +173,16 @@ const Index = () => {
                         <span className="flex items-center gap-1"><Settings2 size={14} />{v.transmission}</span>
                         <span className="flex items-center gap-1"><Fuel size={14} />{v.fuel}</span>
                         <span className="flex items-center gap-1"><Users size={14} />{v.seats}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {getActiveFeatures(v).map((f) => (
+                          <span key={f.key} className="flex items-center gap-1 text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-full">
+                            <f.icon size={12} className="text-primary" />{f.label}
+                          </span>
+                        ))}
+                        <span className="flex items-center gap-1 text-xs text-primary bg-primary/5 px-2 py-1 rounded-full">
+                          <Shield size={12} />Tous risques
+                        </span>
                       </div>
                       <div className="flex justify-between items-center pt-3 border-t border-border">
                         <div>

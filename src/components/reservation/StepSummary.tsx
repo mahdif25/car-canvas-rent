@@ -3,6 +3,7 @@ import { ReservationFormData } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Check, X, Tag, Truck, Shield, Car, Package } from "lucide-react";
+import { getActiveFeatures } from "@/lib/vehicle-features";
 import { Vehicle, PricingTier, AddonOption, getDailyRateFromTiers } from "@/hooks/useVehicles";
 import { Location, getDeliveryFee } from "@/hooks/useLocations";
 import { supabase } from "@/integrations/supabase/client";
@@ -106,6 +107,17 @@ const StepSummary = ({ formData, updateForm, onConfirm, onBack, rentalDays, vehi
               <p className="text-sm text-muted-foreground">{dailyRate} MAD/jour × {rentalDays} jour{rentalDays > 1 ? "s" : ""}</p>
             </div>
             <span className="font-semibold">{vehicleTotal.toLocaleString()} MAD</span>
+          </div>
+          <div className="flex flex-wrap gap-1.5 mt-1">
+            {getActiveFeatures(vehicle).map((f) => (
+              <span key={f.key} className="flex items-center gap-1 text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
+                <f.icon size={11} className="text-primary" />{f.label}
+              </span>
+            ))}
+          </div>
+          <div className="flex items-center gap-1.5 mt-2 text-xs text-primary">
+            <Shield size={13} />
+            <span className="font-medium">Assurance tous risques incluse</span>
           </div>
         </div>
       )}

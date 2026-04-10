@@ -1,6 +1,7 @@
 import { ReservationFormData } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { Users, Fuel, Settings2 } from "lucide-react";
+import { Users, Fuel, Settings2, Shield } from "lucide-react";
+import { getActiveFeatures } from "@/lib/vehicle-features";
 import { Vehicle, PricingTier, getDailyRateFromTiers } from "@/hooks/useVehicles";
 
 interface Props {
@@ -52,6 +53,16 @@ const StepVehicle = ({ formData, updateForm, rentalDays, onNext, onBack, vehicle
                     <span className="flex items-center gap-1"><Settings2 size={14} />{v.transmission}</span>
                     <span className="flex items-center gap-1"><Fuel size={14} />{v.fuel}</span>
                     <span className="flex items-center gap-1"><Users size={14} />{v.seats} places</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {getActiveFeatures(v).map((f) => (
+                      <span key={f.key} className="flex items-center gap-1 text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
+                        <f.icon size={11} className="text-primary" />{f.label}
+                      </span>
+                    ))}
+                    <span className="flex items-center gap-1 text-xs text-primary bg-primary/5 px-2 py-0.5 rounded-full">
+                      <Shield size={11} />Tous risques
+                    </span>
                   </div>
                 </div>
                 <div className="mt-3 flex justify-between items-end">
