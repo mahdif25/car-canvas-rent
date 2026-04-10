@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { useSiteSettings, useUpdateSiteSettings, SiteSettings } from "@/hooks/useSiteSettings";
+import { useReviews, useCreateReview, useUpdateReview, useDeleteReview, Review } from "@/hooks/useReviews";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,12 +12,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Palette, BarChart3, Mail, MessageCircle, Star } from "lucide-react";
+import { Palette, BarChart3, Mail, MessageCircle, Star, Plus, Pencil, Trash2 } from "lucide-react";
 
 const AdminSettings = () => {
   const { data: settings, isLoading } = useSiteSettings();
   const updateMutation = useUpdateSiteSettings();
   const [form, setForm] = useState<Partial<SiteSettings>>({});
+
+  const { data: reviews = [], isLoading: loadingReviews } = useReviews(false);
+  const createReview = useCreateReview();
+  const updateReview = useUpdateReview();
+  const deleteReview = useDeleteReview();
+
+  const [editingReview, setEditingReview] = useState<string | null>(null);
+  const [reviewForm, setReviewForm] = useState<Partial<Review>>({});
+  const [addingReview, setAddingReview] = useState(false);
+  const [newReview, setNewReview] = useState({ name: "", text: "", rating: 5, time_label: "il y a 1 mois", is_enabled: true, sort_order: 0 });
 
   useEffect(() => {
     if (settings) setForm(settings);
@@ -90,7 +101,6 @@ const AdminSettings = () => {
                   min={0} max={1} step={0.05}
                 />
               </div>
-              {/* Preview */}
               {form.hero_bg_type !== "color" && form.hero_bg_value && (
                 <div className="relative rounded-lg overflow-hidden h-40">
                   {form.hero_bg_type === "image" ? (
@@ -134,7 +144,6 @@ const AdminSettings = () => {
                   )}
                 </div>
               ))}
-
               <div className="space-y-3 pt-2 border-t border-border">
                 <Label>Mode de capture des données</Label>
                 <Select value={form.lead_capture_mode || "blur"} onValueChange={(v) => setForm({ ...form, lead_capture_mode: v })}>
@@ -144,11 +153,7 @@ const AdminSettings = () => {
                     <SelectItem value="submit">Au submit (complet)</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">
-                  « Au blur » capture les données à chaque champ rempli (meilleur pour capturer les abandons). « Au submit » envoie toutes les données en une fois quand l'utilisateur clique Continuer.
-                </p>
               </div>
-
               <Button onClick={() => save(["facebook_pixel_id", "facebook_capi_token", "tiktok_pixel_id", "google_analytics_id", "google_tag_manager_id", "lead_capture_mode"])} disabled={updateMutation.isPending}>
                 Sauvegarder
               </Button>
@@ -216,10 +221,11 @@ const AdminSettings = () => {
 
           {/* Reviews */}
           <TabsContent value="reviews" className="space-y-6">
+            {/* Global settings */}
             <div className="bg-card rounded-xl p-6 space-y-5 border border-border">
               <h2 className="font-semibold text-lg">Avis Google</h2>
               <div className="flex items-center justify-between">
-                <Label>Afficher la section avis</Label>
+                <Label>Afficher la section avis sur la page d'accueil</Label>
                 <Switch
                   checked={form.show_reviews_section ?? true}
                   onCheckedChange={(v) => setForm({ ...form, show_reviews_section: v })}
@@ -236,6 +242,138 @@ const AdminSettings = () => {
               <Button onClick={() => save(["show_reviews_section", "google_reviews_url"])} disabled={updateMutation.isPending}>
                 Sauvegarder
               </Button>
+            </div>
+
+            {/* Reviews list */}
+            <div className="bg-card rounded-xl p-6 space-y-5 border border-border">
+              <div className="flex items-center justify-between">
+                <h2 className="font-semibold text-lg">Gérer les avis ({reviews.length})</h2>
+                <Button size="sm" onClick={() => { setAddingReview(true); setNewReview({ name: "", text: "", rating: 5, time_label: "il y a 1 mois", is_enabled: true, sort_order: reviews.length + 1 }); }}>
+                  <Plus size={14} className="mr-1" /> Ajouter
+                </Button>
+              </div>
+
+              {/* Add form */}
+              {addingReview && (
+                <div className="border border-primary/30 rounded-lg p-4 space-y-3 bg-primary/5">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Nom</Label>
+                      <Input value={newReview.name} onChange={(e) => setNewReview({ ...newReview, name: e.target.value })} placeholder="Nom du client" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Période</Label>
+                      <Input value={newReview.time_label} onChange={(e) => setNewReview({ ...newReview, time_label: e.target.value })} placeholder="il y a 1 mois" />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Texte de l'avis</Label>
+                    <Textarea value={newReview.text} onChange={(e) => setNewReview({ ...newReview, text: e.target.value })} rows={2} />
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-1">
+                      <Label className="text-xs mr-1">Note:</Label>
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <button key={s} onClick={() => setNewReview({ ...newReview, rating: s })}>
+                          <Star size={16} className={s <= newReview.rating ? "text-primary fill-primary" : "text-muted-foreground"} />
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex-1" />
+                    <Button size="sm" variant="ghost" onClick={() => setAddingReview(false)}>Annuler</Button>
+                    <Button size="sm" disabled={!newReview.name || !newReview.text || createReview.isPending} onClick={() => {
+                      createReview.mutate(newReview, {
+                        onSuccess: () => { toast.success("Avis ajouté"); setAddingReview(false); },
+                        onError: () => toast.error("Erreur"),
+                      });
+                    }}>Ajouter</Button>
+                  </div>
+                </div>
+              )}
+
+              {loadingReviews ? (
+                <div className="space-y-3">{[1, 2].map((i) => <Skeleton key={i} className="h-20 w-full" />)}</div>
+              ) : (
+                <div className="space-y-3">
+                  {reviews.map((r) => (
+                    <div key={r.id} className="border border-border rounded-lg p-4 space-y-2">
+                      {editingReview === r.id ? (
+                        <>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <Label className="text-xs">Nom</Label>
+                              <Input value={reviewForm.name ?? r.name} onChange={(e) => setReviewForm({ ...reviewForm, name: e.target.value })} />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Période</Label>
+                              <Input value={reviewForm.time_label ?? r.time_label} onChange={(e) => setReviewForm({ ...reviewForm, time_label: e.target.value })} />
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Texte</Label>
+                            <Textarea value={reviewForm.text ?? r.text} onChange={(e) => setReviewForm({ ...reviewForm, text: e.target.value })} rows={2} />
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-1">
+                              <Label className="text-xs mr-1">Note:</Label>
+                              {[1, 2, 3, 4, 5].map((s) => (
+                                <button key={s} onClick={() => setReviewForm({ ...reviewForm, rating: s })}>
+                                  <Star size={16} className={s <= (reviewForm.rating ?? r.rating) ? "text-primary fill-primary" : "text-muted-foreground"} />
+                                </button>
+                              ))}
+                            </div>
+                            <div className="flex-1" />
+                            <Button size="sm" variant="ghost" onClick={() => { setEditingReview(null); setReviewForm({}); }}>Annuler</Button>
+                            <Button size="sm" disabled={updateReview.isPending} onClick={() => {
+                              updateReview.mutate({ id: r.id, ...reviewForm }, {
+                                onSuccess: () => { toast.success("Avis modifié"); setEditingReview(null); setReviewForm({}); },
+                                onError: () => toast.error("Erreur"),
+                              });
+                            }}>Sauvegarder</Button>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex items-start gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-semibold text-sm">{r.name}</span>
+                              <span className="text-xs text-muted-foreground">· {r.time_label}</span>
+                              <div className="flex gap-0.5 ml-1">
+                                {Array.from({ length: r.rating }).map((_, i) => (
+                                  <Star key={i} size={12} className="text-primary fill-primary" />
+                                ))}
+                              </div>
+                              {!r.is_enabled && <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded">Masqué</span>}
+                            </div>
+                            <p className="text-xs text-muted-foreground line-clamp-2">{r.text}</p>
+                          </div>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <Switch
+                              checked={r.is_enabled}
+                              onCheckedChange={(v) => updateReview.mutate({ id: r.id, is_enabled: v }, {
+                                onSuccess: () => toast.success(v ? "Avis affiché" : "Avis masqué"),
+                              })}
+                            />
+                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => { setEditingReview(r.id); setReviewForm({}); }}>
+                              <Pencil size={14} />
+                            </Button>
+                            <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => {
+                              if (confirm("Supprimer cet avis ?")) {
+                                deleteReview.mutate(r.id, {
+                                  onSuccess: () => toast.success("Avis supprimé"),
+                                  onError: () => toast.error("Erreur"),
+                                });
+                              }
+                            }}>
+                              <Trash2 size={14} />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </TabsContent>
         </Tabs>
