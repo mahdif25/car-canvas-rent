@@ -95,7 +95,7 @@ const Index = () => {
           const ytId = getYouTubeId(heroValue);
           return ytId ? (
             <iframe
-              src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&playlist=${ytId}`}
+              src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&playlist=${ytId}${videoStartTime ? `&start=${videoStartTime}` : ''}`}
               className="absolute inset-0 w-full h-full pointer-events-none"
               style={{ transform: "scale(1.2)", transformOrigin: "center" }}
               allow="autoplay; encrypted-media"
