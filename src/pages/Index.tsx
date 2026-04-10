@@ -5,11 +5,36 @@ import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { useLocations } from "@/hooks/useLocations";
 import { useVehicles, usePricingTiers, getStartingPriceFromTiers } from "@/hooks/useVehicles";
-import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { useSiteSettings, HeroTextStyle } from "@/hooks/useSiteSettings";
 import { useReviews } from "@/hooks/useReviews";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DatePickerField } from "@/components/ui/date-picker-field";
+
+const FONT_SIZE_MAP: Record<string, string> = {
+  xl: "text-xl", "2xl": "text-2xl", "3xl": "text-3xl", "4xl": "text-4xl",
+  "5xl": "text-5xl md:text-5xl", "6xl": "text-5xl md:text-6xl", "7xl": "text-5xl md:text-7xl",
+  lg: "text-lg", base: "text-base", sm: "text-sm",
+};
+
+function getAnimationClass(anim: string, delay = false) {
+  const suffix = delay ? "-delay" : "";
+  const map: Record<string, string> = {
+    "fade-up": `animate-hero-fade-up${suffix}`,
+    "fade-in": `animate-hero-fade-in${suffix}`,
+    "slide-left": `animate-hero-slide-left${suffix}`,
+    "slide-right": `animate-hero-slide-right${suffix}`,
+    "zoom-in": `animate-hero-zoom-in${suffix}`,
+  };
+  return map[anim] || "";
+}
+
+function getStyleClasses(style: HeroTextStyle) {
+  const size = FONT_SIZE_MAP[style?.fontSize] || "text-lg";
+  const weight = style?.fontWeight === "bold" ? "font-bold" : style?.fontWeight === "semibold" ? "font-semibold" : "font-normal";
+  const align = style?.textAlign === "center" ? "text-center" : "text-left";
+  return `${size} ${weight} ${align}`;
+}
 
 function getYouTubeId(url: string): string | null {
   const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/))([a-zA-Z0-9_-]{11})/);
