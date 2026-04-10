@@ -125,11 +125,14 @@ const AdminFleet = () => {
     setGalleryUrls([]);
   };
 
-  const editVehicle = (v: Vehicle) => {
+  const editVehicle = async (v: Vehicle) => {
     setEditingId(v.id);
-    setForm({ name: v.name, brand: v.brand, model: v.model, year: v.year, category: v.category, transmission: v.transmission, fuel: v.fuel, seats: v.seats, doors: v.doors, luggage: v.luggage, security_deposit: Number(v.security_deposit), is_available: v.is_available, image_url: v.image_url, features: v.features ?? [], has_climatisation: (v as any).has_climatisation ?? true, has_gps: (v as any).has_gps ?? false, has_bluetooth: (v as any).has_bluetooth ?? false, has_usb: (v as any).has_usb ?? false, has_camera: (v as any).has_camera ?? false });
+    setForm({ name: v.name, brand: v.brand, model: v.model, year: v.year, category: v.category, transmission: v.transmission, fuel: v.fuel, seats: v.seats, doors: v.doors, luggage: v.luggage, security_deposit: Number(v.security_deposit), is_available: v.is_available, image_url: v.image_url, features: v.features ?? [], has_climatisation: (v as any).has_climatisation ?? true, has_gps: (v as any).has_gps ?? false, has_bluetooth: (v as any).has_bluetooth ?? false, has_usb: (v as any).has_usb ?? false, has_camera: (v as any).has_camera ?? false, slug: (v as any).slug ?? "" });
     const vehicleTiers = allTiers?.filter((t) => t.vehicle_id === v.id) ?? [];
     setTiers(vehicleTiers.length > 0 ? vehicleTiers.map((t) => ({ min_days: t.min_days, max_days: t.max_days, daily_rate: Number(t.daily_rate) })) : defaultTiers);
+    // Load gallery images
+    const { data: imgs } = await supabase.from("vehicle_images").select("*").eq("vehicle_id", v.id).order("sort_order");
+    setGalleryUrls((imgs ?? []).map((img: any) => img.image_url));
     setShowForm(true);
   };
 
