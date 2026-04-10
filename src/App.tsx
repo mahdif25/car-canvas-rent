@@ -21,6 +21,8 @@ import AdminBroadcast from "./pages/admin/AdminBroadcast";
 import AdminSettings from "./pages/admin/AdminSettings";
 import NotFound from "./pages/NotFound";
 import ConditionsGenerales from "./pages/ConditionsGenerales";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import CautionPolicy from "./pages/CautionPolicy";
 import TrackReservation from "./pages/TrackReservation";
 import Unsubscribe from "./pages/Unsubscribe";
 import TrackingScripts from "./components/TrackingScripts";
@@ -41,6 +43,8 @@ const App = () => (
             <Route path="/fleet/:slug" element={<VehicleDetail />} />
             <Route path="/reservation" element={<Reservation />} />
             <Route path="/conditions-generales" element={<ConditionsGenerales />} />
+            <Route path="/politique-confidentialite" element={<PrivacyPolicy />} />
+            <Route path="/politique-caution" element={<CautionPolicy />} />
             <Route path="/suivi-reservation" element={<TrackReservation />} />
             <Route path="/unsubscribe" element={<Unsubscribe />} />
             <Route path="/admin/login" element={<AdminLogin />} />
