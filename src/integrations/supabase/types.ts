@@ -382,6 +382,7 @@ export type Database = {
       }
       leads: {
         Row: {
+          capi_allowed: boolean
           created_at: string | null
           email: string | null
           first_name: string | null
@@ -397,6 +398,7 @@ export type Database = {
           visitor_id: string | null
         }
         Insert: {
+          capi_allowed?: boolean
           created_at?: string | null
           email?: string | null
           first_name?: string | null
@@ -412,6 +414,7 @@ export type Database = {
           visitor_id?: string | null
         }
         Update: {
+          capi_allowed?: boolean
           created_at?: string | null
           email?: string | null
           first_name?: string | null
