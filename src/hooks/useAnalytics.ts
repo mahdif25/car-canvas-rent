@@ -155,7 +155,7 @@ export function useAnalytics() {
   const leadIdRef = useRef<string | null>(null);
 
   const captureLeadField = useCallback(
-    async (fields: Record<string, string>, step: number) => {
+    async (fields: Record<string, string>, step: number, capi_allowed: boolean = true) => {
       try {
         if (leadIdRef.current) {
           await supabase
@@ -163,6 +163,7 @@ export function useAnalytics() {
             .update({
               ...fields,
               last_reservation_step: step,
+              capi_allowed,
               updated_at: new Date().toISOString(),
             })
             .eq("id", leadIdRef.current);
@@ -174,6 +175,7 @@ export function useAnalytics() {
               session_id: sessionId.current,
               ...fields,
               last_reservation_step: step,
+              capi_allowed,
             })
             .select("id")
             .single();

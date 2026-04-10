@@ -1,0 +1,1 @@
+ALTER TABLE public.leads ADD COLUMN capi_allowed boolean NOT NULL DEFAULT true;
