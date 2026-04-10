@@ -4,13 +4,15 @@ import logo from "@/assets/logo.png";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const Footer = () => {
+  const { data: settings } = useSiteSettings();
+  const logoH = (settings?.logo_height || 48) + 8;
   return (
     <footer className="bg-footer text-footer-foreground">
       <div className="container py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Brand */}
           <div className="space-y-4">
-            <img src={logo} alt="Centre Lux Car" className="h-14 w-auto brightness-200" />
+            <img src={logo} alt="Centre Lux Car" style={{ height: logoH }} className="w-auto brightness-200" />
             <p className="text-sm opacity-80">
               Location de voitures de qualité au Maroc. Service professionnel et véhicules bien entretenus.
             </p>
