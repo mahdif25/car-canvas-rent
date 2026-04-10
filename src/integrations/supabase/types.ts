@@ -611,6 +611,39 @@ export type Database = {
           },
         ]
       }
+      reviews: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_enabled: boolean
+          name: string
+          rating: number
+          sort_order: number
+          text: string
+          time_label: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_enabled?: boolean
+          name: string
+          rating?: number
+          sort_order?: number
+          text: string
+          time_label?: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_enabled?: boolean
+          name?: string
+          rating?: number
+          sort_order?: number
+          text?: string
+          time_label?: string
+        }
+        Relationships: []
+      }
       site_settings: {
         Row: {
           facebook_capi_token: string | null
