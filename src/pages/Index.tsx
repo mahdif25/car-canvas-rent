@@ -171,10 +171,10 @@ const Index = () => {
       )}
 
       {/* Featured Vehicles — Sovoy style */}
-      <section className="py-16">
+      <section className="py-10">
         <div className="container">
-          <div className="flex justify-between items-center mb-10">
-            <h2 className="text-3xl font-bold">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold">
               Nos véhicules <span className="text-primary">populaires</span>
             </h2>
             <Link to="/fleet" className="text-primary font-medium flex items-center gap-1 hover:underline">
@@ -182,20 +182,20 @@ const Index = () => {
             </Link>
           </div>
           {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="rounded-2xl overflow-hidden shadow-sm">
-                  <Skeleton className="h-48 w-full" />
-                  <div className="p-5 space-y-3">
-                    <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-36 w-full" />
+                  <div className="p-4 space-y-3">
+                    <Skeleton className="h-5 w-3/4" />
                     <Skeleton className="h-4 w-1/2" />
-                    <Skeleton className="h-8 w-1/3" />
+                    <Skeleton className="h-7 w-1/3" />
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {featured.map((v) => {
                 const vehicleTiers = allTiers.filter((t) => t.vehicle_id === v.id);
                 const startingPrice = getStartingPriceFromTiers(vehicleTiers);
@@ -205,44 +205,39 @@ const Index = () => {
                     to={`/fleet/${(v as any).slug || v.id}`}
                     className="group bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
                   >
-                    {/* Header */}
-                    <div className="p-5 pb-0 space-y-1">
+                    <div className="p-4 pb-0 space-y-1">
                       <span className="text-xs font-semibold text-primary uppercase tracking-wider">{v.category}</span>
-                      <h3 className="font-bold text-lg">{v.name}</h3>
+                      <h3 className="font-bold text-base">{v.name}</h3>
                       <p className="text-xs text-muted-foreground">ou véhicule similaire...</p>
                     </div>
 
-                    {/* Car image with Sovoy sliding strip */}
-                    <div className="relative mx-5 mt-4 rounded-xl overflow-hidden h-44 bg-secondary">
-                      {/* Sliding primary color strip — right to left on hover */}
+                    <div className="relative mx-4 mt-3 rounded-xl overflow-hidden h-36 bg-secondary">
                       <div className="absolute inset-0 bg-primary translate-x-full group-hover:translate-x-0 transition-transform duration-500 ease-out" />
                       <img
                         src={v.image_url || "/placeholder.svg"}
                         alt={v.name}
-                        className="relative z-10 w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300"
+                        className="relative z-10 w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-300"
                       />
                     </div>
 
-                    {/* Features grid */}
-                    <div className="p-5 space-y-4">
-                      <div className="grid grid-cols-3 gap-3 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1.5"><Settings2 size={14} className="text-primary" />{v.transmission}</span>
-                        <span className="flex items-center gap-1.5"><Fuel size={14} className="text-primary" />{v.fuel}</span>
-                        <span className="flex items-center gap-1.5"><Users size={14} className="text-primary" />{v.seats} places</span>
-                        <span className="flex items-center gap-1.5"><DoorOpen size={14} className="text-primary" />{v.doors} portes</span>
-                        <span className="flex items-center gap-1.5"><Briefcase size={14} className="text-primary" />{v.luggage} valises</span>
+                    <div className="p-4 space-y-3">
+                      <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1.5"><Settings2 size={12} className="text-primary" />{v.transmission}</span>
+                        <span className="flex items-center gap-1.5"><Fuel size={12} className="text-primary" />{v.fuel}</span>
+                        <span className="flex items-center gap-1.5"><Users size={12} className="text-primary" />{v.seats} places</span>
+                        <span className="flex items-center gap-1.5"><DoorOpen size={12} className="text-primary" />{v.doors} portes</span>
+                        <span className="flex items-center gap-1.5"><Briefcase size={12} className="text-primary" />{v.luggage} valises</span>
                         {v.has_climatisation && (
-                          <span className="flex items-center gap-1.5"><Snowflake size={14} className="text-primary" />Clim.</span>
+                          <span className="flex items-center gap-1.5"><Snowflake size={12} className="text-primary" />Clim.</span>
                         )}
                       </div>
 
-                      {/* Price + CTA */}
                       <div className="flex justify-between items-center pt-3 border-t border-border">
                         <div>
-                          <span className="text-2xl font-bold text-primary">{startingPrice}</span>
+                          <span className="text-xl font-bold text-primary">{startingPrice}</span>
                           <span className="text-sm text-muted-foreground"> MAD/jour</span>
                         </div>
-                        <span className="border border-primary text-primary px-4 py-2 text-sm font-semibold rounded-xl group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                        <span className="border border-primary text-primary px-3 py-1.5 text-sm font-semibold rounded-xl group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                           Réserver
                         </span>
                       </div>
