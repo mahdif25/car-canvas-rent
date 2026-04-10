@@ -169,10 +169,51 @@ const AdminReservations = () => {
         if (insErr) throw insErr;
       }
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: ["admin-reservations"] });
       qc.invalidateQueries({ queryKey: ["reservation-addons-all"] });
       toast({ title: "Réservation mise à jour" });
+
+      // Send update email to customer
+      const r = reservations?.find((res: any) => res.id === variables.id);
+      if (r) {
+        const ed = variables.edit;
+        const c = variables.calc;
+        const days = Math.max(1, Math.ceil((new Date(ed.return_date).getTime() - new Date(ed.pickup_date).getTime()) / 86400000));
+        const tiers = pricingTiers.filter((t: any) => t.vehicle_id === ed.vehicle_id);
+        const dailyRate = getDailyRateFromTiers(tiers, days);
+        const vehicle = vehicles.find((v: any) => v.id === ed.vehicle_id);
+        const fmtDate = (d: string) => new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+        const addonDetails = ed.addons.map((aid: string) => {
+          const addon = allAddons.find((a: any) => a.id === aid);
+          return addon ? { name: `${addon.name} (${days}j)`, total: Number(addon.price_per_day) * days } : null;
+        }).filter(Boolean);
+
+        supabase.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "reservation-update",
+            recipientEmail: r.customer_email,
+            idempotencyKey: `res-update-${r.id}-${Date.now()}`,
+            templateData: {
+              customerName: r.customer_first_name,
+              confirmationId: r.id.slice(0, 8).toUpperCase(),
+              vehicleName: vehicle?.name || "",
+              pickupDate: fmtDate(ed.pickup_date),
+              returnDate: fmtDate(ed.return_date),
+              pickupLocation: ed.pickup_location,
+              returnLocation: ed.return_location || ed.pickup_location,
+              rentalDays: days,
+              dailyRate,
+              vehicleTotal: dailyRate * days,
+              addonsDetails: addonDetails,
+              deliveryFee: c.deliveryFee,
+              depositAmount: c.depositAmount,
+              totalPrice: c.totalPrice,
+              status: statusLabels[r.status as ReservationStatus] || r.status,
+            },
+          },
+        }).catch(console.error);
+      }
     },
   });
 

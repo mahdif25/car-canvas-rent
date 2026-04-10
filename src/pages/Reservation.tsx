@@ -124,6 +124,7 @@ const Reservation = () => {
           delivery_fee: deliveryFee,
           coupon_id: formData.coupon_id || null,
           discount_amount: formData.discount_amount,
+          marketing_consent: true,
         })
         .select()
         .single();
