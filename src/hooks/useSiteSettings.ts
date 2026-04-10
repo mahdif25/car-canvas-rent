@@ -55,7 +55,7 @@ export function useSiteSettings() {
         .limit(1)
         .single();
       if (error) throw error;
-      return data as SiteSettings;
+      return data as unknown as SiteSettings;
     },
     staleTime: 1000 * 60 * 5,
   });
@@ -74,7 +74,7 @@ export function useUpdateSiteSettings() {
       if (!existing) throw new Error("No site settings row found");
       const { error } = await supabase
         .from("site_settings")
-        .update({ ...updates, updated_at: new Date().toISOString() })
+        .update({ ...updates, updated_at: new Date().toISOString() } as any)
         .eq("id", existing.id);
       if (error) throw error;
     },
