@@ -84,3 +84,36 @@
     @apply bg-background text-foreground font-sans;
   }
 }
+
+/* Hero text animations */
+@keyframes hero-fade-up {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes hero-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes hero-slide-left {
+  from { opacity: 0; transform: translateX(-60px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes hero-slide-right {
+  from { opacity: 0; transform: translateX(60px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes hero-zoom-in {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-hero-fade-up { animation: hero-fade-up 0.8s ease-out both; }
+.animate-hero-fade-in { animation: hero-fade-in 0.8s ease-out both; }
+.animate-hero-slide-left { animation: hero-slide-left 0.8s ease-out both; }
+.animate-hero-slide-right { animation: hero-slide-right 0.8s ease-out both; }
+.animate-hero-zoom-in { animation: hero-zoom-in 0.8s ease-out both; }
+.animate-hero-fade-up-delay { animation: hero-fade-up 0.8s ease-out 0.3s both; }
+.animate-hero-fade-in-delay { animation: hero-fade-in 0.8s ease-out 0.3s both; }
+.animate-hero-slide-left-delay { animation: hero-slide-left 0.8s ease-out 0.3s both; }
+.animate-hero-slide-right-delay { animation: hero-slide-right 0.8s ease-out 0.3s both; }
+.animate-hero-zoom-in-delay { animation: hero-zoom-in 0.8s ease-out 0.3s both; }

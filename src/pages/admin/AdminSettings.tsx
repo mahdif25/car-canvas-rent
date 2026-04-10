@@ -114,7 +114,157 @@ const AdminSettings = () => {
                   <p className="absolute inset-0 flex items-center justify-center text-white font-bold text-lg">Aperçu</p>
                 </div>
               )}
-              <Button onClick={() => save(["hero_bg_type", "hero_bg_value", "hero_overlay_opacity"])} disabled={updateMutation.isPending}>
+              {form.hero_bg_type === "video" && (
+                <div className="space-y-2">
+                  <Label>Temps de départ vidéo (secondes)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={form.hero_video_start_time ?? 0}
+                    onChange={(e) => setForm({ ...form, hero_video_start_time: parseInt(e.target.value) || 0 })}
+                    placeholder="0"
+                  />
+                  <p className="text-xs text-muted-foreground">YouTube ou lien direct .mp4 supporté</p>
+                </div>
+              )}
+              <Button onClick={() => save(["hero_bg_type", "hero_bg_value", "hero_overlay_opacity", "hero_video_start_time"])} disabled={updateMutation.isPending}>
+                Sauvegarder
+              </Button>
+            </div>
+
+            {/* Hero Texts */}
+            <div className="bg-card rounded-xl p-6 space-y-5 border border-border">
+              <h2 className="font-semibold text-lg">Textes du Hero</h2>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Titre principal</Label>
+                  <Input
+                    value={form.hero_title_text || ""}
+                    onChange={(e) => setForm({ ...form, hero_title_text: e.target.value })}
+                    placeholder="Louez votre voiture"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Texte surligné (couleur primaire)</Label>
+                  <Input
+                    value={form.hero_title_highlight || ""}
+                    onChange={(e) => setForm({ ...form, hero_title_highlight: e.target.value })}
+                    placeholder="en toute confiance"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Sous-titre</Label>
+                <Textarea
+                  value={form.hero_subtitle_text || ""}
+                  onChange={(e) => setForm({ ...form, hero_subtitle_text: e.target.value })}
+                  rows={2}
+                />
+              </div>
+
+              {/* Title formatting */}
+              <div className="space-y-3 pt-3 border-t border-border">
+                <Label className="font-semibold">Formatage du titre</Label>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Taille</Label>
+                    <Select value={(form.hero_title_style as any)?.fontSize || "5xl"} onValueChange={(v) => setForm({ ...form, hero_title_style: { ...(form.hero_title_style as any || {}), fontSize: v } })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {["xl", "2xl", "3xl", "4xl", "5xl", "6xl", "7xl"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Poids</Label>
+                    <Select value={(form.hero_title_style as any)?.fontWeight || "bold"} onValueChange={(v) => setForm({ ...form, hero_title_style: { ...(form.hero_title_style as any || {}), fontWeight: v } })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="normal">Normal</SelectItem>
+                        <SelectItem value="semibold">Semi-bold</SelectItem>
+                        <SelectItem value="bold">Bold</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Alignement</Label>
+                    <Select value={(form.hero_title_style as any)?.textAlign || "left"} onValueChange={(v) => setForm({ ...form, hero_title_style: { ...(form.hero_title_style as any || {}), textAlign: v } })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="left">Gauche</SelectItem>
+                        <SelectItem value="center">Centre</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Animation</Label>
+                  <Select value={form.hero_title_animation || "fade-up"} onValueChange={(v) => setForm({ ...form, hero_title_animation: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Aucune</SelectItem>
+                      <SelectItem value="fade-up">Fade Up</SelectItem>
+                      <SelectItem value="fade-in">Fade In</SelectItem>
+                      <SelectItem value="slide-left">Slide Left</SelectItem>
+                      <SelectItem value="slide-right">Slide Right</SelectItem>
+                      <SelectItem value="zoom-in">Zoom In</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Subtitle formatting */}
+              <div className="space-y-3 pt-3 border-t border-border">
+                <Label className="font-semibold">Formatage du sous-titre</Label>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Taille</Label>
+                    <Select value={(form.hero_subtitle_style as any)?.fontSize || "lg"} onValueChange={(v) => setForm({ ...form, hero_subtitle_style: { ...(form.hero_subtitle_style as any || {}), fontSize: v } })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {["sm", "base", "lg", "xl", "2xl", "3xl"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Poids</Label>
+                    <Select value={(form.hero_subtitle_style as any)?.fontWeight || "normal"} onValueChange={(v) => setForm({ ...form, hero_subtitle_style: { ...(form.hero_subtitle_style as any || {}), fontWeight: v } })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="normal">Normal</SelectItem>
+                        <SelectItem value="semibold">Semi-bold</SelectItem>
+                        <SelectItem value="bold">Bold</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Alignement</Label>
+                    <Select value={(form.hero_subtitle_style as any)?.textAlign || "left"} onValueChange={(v) => setForm({ ...form, hero_subtitle_style: { ...(form.hero_subtitle_style as any || {}), textAlign: v } })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="left">Gauche</SelectItem>
+                        <SelectItem value="center">Centre</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Animation</Label>
+                  <Select value={form.hero_subtitle_animation || "fade-up"} onValueChange={(v) => setForm({ ...form, hero_subtitle_animation: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Aucune</SelectItem>
+                      <SelectItem value="fade-up">Fade Up</SelectItem>
+                      <SelectItem value="fade-in">Fade In</SelectItem>
+                      <SelectItem value="slide-left">Slide Left</SelectItem>
+                      <SelectItem value="slide-right">Slide Right</SelectItem>
+                      <SelectItem value="zoom-in">Zoom In</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <Button onClick={() => save(["hero_title_text", "hero_title_highlight", "hero_subtitle_text", "hero_title_animation", "hero_subtitle_animation", "hero_title_style", "hero_subtitle_style"])} disabled={updateMutation.isPending}>
                 Sauvegarder
               </Button>
             </div>

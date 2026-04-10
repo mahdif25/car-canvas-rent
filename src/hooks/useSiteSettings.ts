@@ -1,11 +1,25 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+export interface HeroTextStyle {
+  fontSize: string;
+  fontWeight: string;
+  textAlign: string;
+}
+
 export interface SiteSettings {
   id: string;
   hero_bg_type: string;
   hero_bg_value: string;
   hero_overlay_opacity: number;
+  hero_video_start_time: number;
+  hero_title_text: string;
+  hero_title_highlight: string;
+  hero_subtitle_text: string;
+  hero_title_animation: string;
+  hero_subtitle_animation: string;
+  hero_title_style: HeroTextStyle;
+  hero_subtitle_style: HeroTextStyle;
   facebook_pixel_id: string;
   facebook_capi_token: string;
   tiktok_pixel_id: string;
@@ -41,7 +55,7 @@ export function useSiteSettings() {
         .limit(1)
         .single();
       if (error) throw error;
-      return data as SiteSettings;
+      return data as unknown as SiteSettings;
     },
     staleTime: 1000 * 60 * 5,
   });
@@ -60,7 +74,7 @@ export function useUpdateSiteSettings() {
       if (!existing) throw new Error("No site settings row found");
       const { error } = await supabase
         .from("site_settings")
-        .update({ ...updates, updated_at: new Date().toISOString() })
+        .update({ ...updates, updated_at: new Date().toISOString() } as any)
         .eq("id", existing.id);
       if (error) throw error;
     },

@@ -664,6 +664,14 @@ export type Database = {
           hero_bg_type: string
           hero_bg_value: string | null
           hero_overlay_opacity: number | null
+          hero_subtitle_animation: string
+          hero_subtitle_style: Json
+          hero_subtitle_text: string
+          hero_title_animation: string
+          hero_title_highlight: string
+          hero_title_style: Json
+          hero_title_text: string
+          hero_video_start_time: number
           id: string
           lead_capture_mode: string
           logo_height: number
@@ -693,6 +701,14 @@ export type Database = {
           hero_bg_type?: string
           hero_bg_value?: string | null
           hero_overlay_opacity?: number | null
+          hero_subtitle_animation?: string
+          hero_subtitle_style?: Json
+          hero_subtitle_text?: string
+          hero_title_animation?: string
+          hero_title_highlight?: string
+          hero_title_style?: Json
+          hero_title_text?: string
+          hero_video_start_time?: number
           id?: string
           lead_capture_mode?: string
           logo_height?: number
@@ -722,6 +738,14 @@ export type Database = {
           hero_bg_type?: string
           hero_bg_value?: string | null
           hero_overlay_opacity?: number | null
+          hero_subtitle_animation?: string
+          hero_subtitle_style?: Json
+          hero_subtitle_text?: string
+          hero_title_animation?: string
+          hero_title_highlight?: string
+          hero_title_style?: Json
+          hero_title_text?: string
+          hero_video_start_time?: number
           id?: string
           lead_capture_mode?: string
           logo_height?: number

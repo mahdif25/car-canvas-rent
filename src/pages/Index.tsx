@@ -5,11 +5,36 @@ import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { useLocations } from "@/hooks/useLocations";
 import { useVehicles, usePricingTiers, getStartingPriceFromTiers } from "@/hooks/useVehicles";
-import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { useSiteSettings, HeroTextStyle } from "@/hooks/useSiteSettings";
 import { useReviews } from "@/hooks/useReviews";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DatePickerField } from "@/components/ui/date-picker-field";
+
+const FONT_SIZE_MAP: Record<string, string> = {
+  xl: "text-xl", "2xl": "text-2xl", "3xl": "text-3xl", "4xl": "text-4xl",
+  "5xl": "text-5xl md:text-5xl", "6xl": "text-5xl md:text-6xl", "7xl": "text-5xl md:text-7xl",
+  lg: "text-lg", base: "text-base", sm: "text-sm",
+};
+
+function getAnimationClass(anim: string, delay = false) {
+  const suffix = delay ? "-delay" : "";
+  const map: Record<string, string> = {
+    "fade-up": `animate-hero-fade-up${suffix}`,
+    "fade-in": `animate-hero-fade-in${suffix}`,
+    "slide-left": `animate-hero-slide-left${suffix}`,
+    "slide-right": `animate-hero-slide-right${suffix}`,
+    "zoom-in": `animate-hero-zoom-in${suffix}`,
+  };
+  return map[anim] || "";
+}
+
+function getStyleClasses(style: HeroTextStyle) {
+  const size = FONT_SIZE_MAP[style?.fontSize] || "text-lg";
+  const weight = style?.fontWeight === "bold" ? "font-bold" : style?.fontWeight === "semibold" ? "font-semibold" : "font-normal";
+  const align = style?.textAlign === "center" ? "text-center" : "text-left";
+  return `${size} ${weight} ${align}`;
+}
 
 function getYouTubeId(url: string): string | null {
   const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/))([a-zA-Z0-9_-]{11})/);
@@ -32,6 +57,14 @@ const Index = () => {
   const heroValue = siteSettings?.hero_bg_value || "";
   const overlayOpacity = siteSettings?.hero_overlay_opacity ?? 0.6;
   const showReviews = siteSettings?.show_reviews_section ?? true;
+  const videoStartTime = siteSettings?.hero_video_start_time ?? 0;
+  const titleText = siteSettings?.hero_title_text || "Louez votre voiture";
+  const titleHighlight = siteSettings?.hero_title_highlight || "en toute confiance";
+  const subtitleText = siteSettings?.hero_subtitle_text || "Des véhicules de qualité, un service professionnel et des prix compétitifs partout au Maroc.";
+  const titleAnim = siteSettings?.hero_title_animation || "fade-up";
+  const subtitleAnim = siteSettings?.hero_subtitle_animation || "fade-up";
+  const titleStyle = siteSettings?.hero_title_style || { fontSize: "5xl", fontWeight: "bold", textAlign: "left" };
+  const subtitleStyle = siteSettings?.hero_subtitle_style || { fontSize: "lg", fontWeight: "normal", textAlign: "left" };
 
   const handleSearch = () => {
     const params = new URLSearchParams();
@@ -62,7 +95,7 @@ const Index = () => {
           const ytId = getYouTubeId(heroValue);
           return ytId ? (
             <iframe
-              src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&playlist=${ytId}`}
+              src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&playlist=${ytId}${videoStartTime ? `&start=${videoStartTime}` : ''}`}
               className="absolute inset-0 w-full h-full pointer-events-none"
               style={{ transform: "scale(1.2)", transformOrigin: "center" }}
               allow="autoplay; encrypted-media"
@@ -76,12 +109,12 @@ const Index = () => {
         <div className="absolute inset-0 bg-dark" style={{ opacity: heroType !== "color" ? overlayOpacity : 0 }} />
         <div className="absolute inset-0 bg-gradient-to-r from-dark/95 to-dark/60" style={{ opacity: heroType === "color" ? 1 : 0 }} />
         <div className="container relative z-10 py-20 md:py-32">
-          <div className="max-w-2xl space-y-6">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-              Louez votre voiture <span className="text-primary">en toute confiance</span>
+          <div className={`max-w-2xl space-y-6 ${titleStyle.textAlign === "center" ? "mx-auto" : ""}`}>
+            <h1 className={`${getStyleClasses(titleStyle)} leading-tight ${getAnimationClass(titleAnim)}`}>
+              {titleText} {titleHighlight && <span className="text-primary">{titleHighlight}</span>}
             </h1>
-            <p className="text-lg opacity-80">
-              Des véhicules de qualité, un service professionnel et des prix compétitifs partout au Maroc.
+            <p className={`${getStyleClasses(subtitleStyle)} opacity-80 ${getAnimationClass(subtitleAnim, true)}`}>
+              {subtitleText}
             </p>
           </div>
 
