@@ -1,31 +1,44 @@
 
 
-# WhatsApp Widget: Price Range, Explanatory Pricing + Fix Name Capture
+# Homepage: Sovoy-Style Car Cards + Section Reorder + Reviews
 
-## Changes to `src/components/WhatsAppPopup.tsx`
+## Overview
+Three changes to `src/pages/Index.tsx`:
+1. **Reorder sections**: Hero → Reviews (new) → Featured Cars → Benefits ("Pourquoi choisir...")
+2. **Add a Reviews section** with static Trustpilot-style review cards (similar to Sovoy's layout)
+3. **Restyle vehicle cards** to match Sovoy's featured car template with hover effects
 
-### 1. Vehicle cards (Step 1) — price range
-Replace "À partir de {rate} MAD/jour" with a range showing min–max daily rates:
-- Display `{min} - {max} MAD/jour` when tiers have different rates
-- Display `{rate} MAD/jour` when only one tier or all same rate
-- Add inline helper `getMaxPriceFromTiers(tiers)` using `Math.max()`
+## Section Order (after changes)
+```text
+Hero + Search Bar
+Reviews (new section)
+Nos véhicules populaires (restyled)
+Pourquoi choisir Centre Lux Car ?
+```
 
-### 2. Summary bubble (Step 4) — explain the rate
-Replace the generic "À partir de" line with:
-> Pour une location de {days} jours, le tarif est de **{rate} MAD/jour**
+## 1. Restyle Featured Vehicle Cards — Sovoy-inspired
 
-### 3. WhatsApp message — conversational tone to owner
-Rewrite pre-filled message:
-> Bonjour, je souhaite louer la {vehicle} pour {days} jours. D'après vos tarifs, le prix serait de {rate} MAD/jour. Récupération à {location}. Merci !
+Replace the current card layout with a structure matching the reference:
+- **Top**: Category label in primary green (e.g., "SUV"), bold vehicle name, "ou véhicule similaire..." subtitle in muted text
+- **Middle**: Car image centered on a light gray (`bg-secondary`) background, no aspect-ratio crop — let the image breathe
+- **Bottom**: Feature icons in a 2-row grid (fuel, transmission, doors, seats, luggage, A/C) using small icons + text, then a "Réserver" outlined button in primary green
+- **Hover effect**: Left border accent (4px primary green), slight translateY(-4px) lift, shadow increase — matching Sovoy's card hover behavior
+- Remove the heart icon, star rating badge, and the current price/feature pills
+- Keep the starting price display but move it next to the "Réserver" button
 
-### 4. Fix browser autofill name capture
-The current hidden input approach (`opacity-0 h-0 w-0`) is skipped by most browsers. Fix:
-- Wrap the input in a `<form autoComplete="on">` element (browsers prefer autofilling inside forms)
-- Change hiding to `position: fixed; top: -100px; left: -100px; width: 1px; height: 1px; overflow: hidden` — browsers treat this as autofillable
-- Add `onAnimationStart` handler to detect Chrome's autofill animation event (`onautofillstart`)
-- Replace single timeout with a polling interval (every 500ms for 3s) to catch delayed autofill
-- Keep the greeting logic: show "Bonjour {prénom} ! 👋" if captured, else "Bonjour ! 👋"
+## 2. Add Reviews Section
 
-## File
-- `src/components/WhatsAppPopup.tsx` — all 4 changes in this single file
+Add a new section between Hero and Featured Cars with:
+- Title: "Ce que disent nos clients" with primary accent
+- 4 review cards in a horizontal grid (responsive: 1 col mobile, 2 col tablet, 4 col desktop)
+- Each card: review text (truncated), 5 green stars (using ★ characters styled in primary), reviewer name in bold, "il y a X mois" in muted text
+- Subtitle below: "Noté 5.00 / 5 basé sur X avis"
+- Static data for now (hardcoded array of 4 reviews)
+
+## 3. Move Benefits Section Below Cars
+
+Simply swap the JSX order: Benefits section moves after Featured Vehicles section.
+
+## Files
+- `src/pages/Index.tsx` — reorder sections, add reviews, restyle car cards
 
