@@ -45,10 +45,7 @@ export const getDeliveryFee = (
   const dropoff = locations.find((l) => l.name === returnName);
 
   const pickupFee = pickup && !pickup.is_free ? Number(pickup.delivery_fee) : 0;
-  const dropoffFee =
-    dropoff && dropoff.name !== pickup?.name && !dropoff.is_free
-      ? Number(dropoff.delivery_fee)
-      : 0;
+  const dropoffFee = dropoff && !dropoff.is_free ? Number(dropoff.delivery_fee) : 0;
 
   return pickupFee + dropoffFee;
 };
