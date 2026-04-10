@@ -84,15 +84,37 @@ export function useAnalytics() {
     trackPageView();
   }, [trackPageView]);
 
+  const leadIdRef = useRef<string | null>(null);
+
   const captureLeadField = useCallback(
     async (fields: Record<string, string>, step: number) => {
       try {
-        await supabase.from("leads").insert({
-          visitor_id: visitorId.current,
-          session_id: sessionId.current,
-          ...fields,
-          last_reservation_step: step,
-        });
+        if (leadIdRef.current) {
+          // Update existing lead for this session
+          await supabase
+            .from("leads")
+            .update({
+              ...fields,
+              last_reservation_step: step,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", leadIdRef.current);
+        } else {
+          // First capture this session — insert new row
+          const { data } = await supabase
+            .from("leads")
+            .insert({
+              visitor_id: visitorId.current,
+              session_id: sessionId.current,
+              ...fields,
+              last_reservation_step: step,
+            })
+            .select("id")
+            .single();
+          if (data) {
+            leadIdRef.current = data.id;
+          }
+        }
       } catch {
         // silent
       }
