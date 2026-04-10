@@ -1,26 +1,18 @@
 
 
-# Fix: Sovoy-style hover effect on vehicle cards
+# Make Featured Cars Section More Compact
 
-## Problem
-The current implementation uses `scale-x-0 group-hover:scale-x-100 origin-right` which should work, but there are two issues:
-1. The Tailwind `origin-right` class may not correctly interact with `scale-x-0` (Tailwind's transform origin classes affect both X and Y)
-2. The real Sovoy site actually uses a `scaleY` bottom-to-top sweep, but the user wants a **right-to-left horizontal** primary color strip
+## Changes to `src/pages/Index.tsx`
 
-## What to change in `src/pages/Index.tsx`
+Reduce spacing and sizing throughout the featured vehicles section:
 
-Replace the current sliding strip approach with a **translateX-based** animation that's more reliable:
+1. **Section padding**: `py-16` → `py-10`
+2. **Title margin**: `mb-10` → `mb-6`, title size `text-3xl` → `text-2xl`
+3. **Card header**: `p-5 pb-0` → `p-4 pb-0`, title `text-lg` → `text-base`
+4. **Image area**: `mx-5 mt-4 h-44` → `mx-4 mt-3 h-36`, reduce inner padding `p-4` → `p-2`
+5. **Features + price area**: `p-5 space-y-4` → `p-4 space-y-3`, icon size `14` → `12`, gap `gap-3` → `gap-2`
+6. **Price**: `text-2xl` → `text-xl`, CTA button padding `px-4 py-2` → `px-3 py-1.5`
+7. **Grid gap**: `gap-6` → `gap-4`
 
-**Current** (line ~218):
-```
-<div className="absolute inset-0 bg-primary origin-right scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-out" />
-```
+Single file change, all in `src/pages/Index.tsx`.
 
-**New** — use `translate-x-full` (starts off-screen right) and transitions to `translate-x-0` on hover:
-```
-<div className="absolute inset-0 bg-primary translate-x-full group-hover:translate-x-0 transition-transform duration-500 ease-out" />
-```
-
-This creates a clear sliding motion from right to left behind the car image. The `translate-x-full` positions the colored div 100% to the right (hidden), and on hover it slides to `translate-x-0` (fully visible).
-
-No other files need changes.
