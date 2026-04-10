@@ -28,14 +28,16 @@ const AdminFleet = () => {
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState<Partial<VehicleInsert>>({
+  const [form, setForm] = useState<Partial<VehicleInsert> & { slug?: string }>({
     name: "", brand: "", model: "", year: new Date().getFullYear(),
     category: "Sedan", transmission: "Manuelle", fuel: "Diesel",
     seats: 5, doors: 4, luggage: 3, security_deposit: 0, is_available: true,
     features: [], has_climatisation: true, has_gps: false, has_bluetooth: false, has_usb: false, has_camera: false,
+    slug: "",
   });
   const [tiers, setTiers] = useState(defaultTiers);
   const [featureInput, setFeatureInput] = useState("");
+  const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
 
   const { data: vehicles, isLoading } = useQuery({
     queryKey: ["admin-vehicles"],
