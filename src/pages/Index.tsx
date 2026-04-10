@@ -216,7 +216,7 @@ const Index = () => {
                       <img
                         src={v.image_url || "/placeholder.svg"}
                         alt={v.name}
-                        className="relative z-10 w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-300"
+                        className="relative z-10 w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                       />
                     </div>
 

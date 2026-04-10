@@ -110,7 +110,7 @@ const Fleet = () => {
                       <img
                         src={v.image_url || "/placeholder.svg"}
                         alt={v.name}
-                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-300"
+                        className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                       />
                       <div className="absolute top-3 right-3 w-9 h-9 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center">
                         <Heart size={18} className="text-muted-foreground" />
