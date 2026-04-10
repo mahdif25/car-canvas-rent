@@ -230,9 +230,39 @@ const AdminFleet = () => {
                 <Input type="number" value={form.security_deposit} onChange={(e) => setForm((f) => ({ ...f, security_deposit: parseFloat(e.target.value) }))} />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">URL Image</label>
+                <label className="text-sm font-medium">URL Image (principale)</label>
                 <Input value={form.image_url ?? ""} onChange={(e) => setForm((f) => ({ ...f, image_url: e.target.value }))} placeholder="https://..." />
               </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Slug (URL)</label>
+                <div className="flex gap-2">
+                  <Input value={form.slug ?? ""} onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))} placeholder="renault-clio-2026" />
+                  <Button type="button" variant="outline" size="sm" onClick={() => {
+                    const slug = (form.name || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+                    setForm((f) => ({ ...f, slug }));
+                  }}>Auto</Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Gallery Images */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Images supplémentaires (galerie)</label>
+              {galleryUrls.map((url, i) => (
+                <div key={i} className="flex gap-2 items-center">
+                  <Input
+                    value={url}
+                    onChange={(e) => { const u = [...galleryUrls]; u[i] = e.target.value; setGalleryUrls(u); }}
+                    placeholder="https://..."
+                  />
+                  <Button type="button" variant="ghost" size="icon" onClick={() => setGalleryUrls(galleryUrls.filter((_, idx) => idx !== i))}>
+                    <X size={16} />
+                  </Button>
+                </div>
+              ))}
+              <Button type="button" variant="outline" size="sm" onClick={() => setGalleryUrls([...galleryUrls, ""])}>
+                <Plus size={14} className="mr-1" /> Ajouter une image
+              </Button>
             </div>
 
             {/* Structured Features */}
