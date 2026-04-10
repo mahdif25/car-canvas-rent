@@ -57,6 +57,14 @@ const Index = () => {
   const heroValue = siteSettings?.hero_bg_value || "";
   const overlayOpacity = siteSettings?.hero_overlay_opacity ?? 0.6;
   const showReviews = siteSettings?.show_reviews_section ?? true;
+  const videoStartTime = siteSettings?.hero_video_start_time ?? 0;
+  const titleText = siteSettings?.hero_title_text || "Louez votre voiture";
+  const titleHighlight = siteSettings?.hero_title_highlight || "en toute confiance";
+  const subtitleText = siteSettings?.hero_subtitle_text || "Des véhicules de qualité, un service professionnel et des prix compétitifs partout au Maroc.";
+  const titleAnim = siteSettings?.hero_title_animation || "fade-up";
+  const subtitleAnim = siteSettings?.hero_subtitle_animation || "fade-up";
+  const titleStyle = siteSettings?.hero_title_style || { fontSize: "5xl", fontWeight: "bold", textAlign: "left" };
+  const subtitleStyle = siteSettings?.hero_subtitle_style || { fontSize: "lg", fontWeight: "normal", textAlign: "left" };
 
   const handleSearch = () => {
     const params = new URLSearchParams();
