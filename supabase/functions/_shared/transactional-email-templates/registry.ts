@@ -12,9 +12,11 @@ export interface TemplateEntry {
 import { template as reservationConfirmation } from './reservation-confirmation.tsx'
 import { template as reservationUpdate } from './reservation-update.tsx'
 import { template as welcomeEmail } from './welcome-email.tsx'
+import { template as promotionalEmail } from './promotional-email.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'reservation-confirmation': reservationConfirmation,
   'reservation-update': reservationUpdate,
   'welcome-email': welcomeEmail,
+  'promotional-email': promotionalEmail,
 }

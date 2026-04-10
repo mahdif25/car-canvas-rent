@@ -98,6 +98,61 @@ export type Database = {
         }
         Relationships: []
       }
+      broadcast_recipients: {
+        Row: {
+          broadcast_id: string
+          coupon_id: string | null
+          created_at: string
+          email: string
+          friend_coupon_id: string | null
+          id: string
+          name: string | null
+          status: string
+        }
+        Insert: {
+          broadcast_id: string
+          coupon_id?: string | null
+          created_at?: string
+          email: string
+          friend_coupon_id?: string | null
+          id?: string
+          name?: string | null
+          status?: string
+        }
+        Update: {
+          broadcast_id?: string
+          coupon_id?: string | null
+          created_at?: string
+          email?: string
+          friend_coupon_id?: string | null
+          id?: string
+          name?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "broadcast_recipients_broadcast_id_fkey"
+            columns: ["broadcast_id"]
+            isOneToOne: false
+            referencedRelation: "email_broadcasts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "broadcast_recipients_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "broadcast_recipients_friend_coupon_id_fkey"
+            columns: ["friend_coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coupon_usages: {
         Row: {
           coupon_id: string
@@ -172,6 +227,65 @@ export type Database = {
           max_uses?: number | null
         }
         Relationships: []
+      }
+      email_broadcasts: {
+        Row: {
+          body_html: string
+          coupon_expires_at: string | null
+          coupon_mode: string
+          coupon_prefix: string | null
+          created_at: string
+          discount_amount: number
+          filters_json: Json
+          friend_discount_amount: number
+          id: string
+          recipient_count: number
+          sent_count: number
+          source_coupon_id: string | null
+          status: string
+          subject: string
+        }
+        Insert: {
+          body_html?: string
+          coupon_expires_at?: string | null
+          coupon_mode?: string
+          coupon_prefix?: string | null
+          created_at?: string
+          discount_amount?: number
+          filters_json?: Json
+          friend_discount_amount?: number
+          id?: string
+          recipient_count?: number
+          sent_count?: number
+          source_coupon_id?: string | null
+          status?: string
+          subject: string
+        }
+        Update: {
+          body_html?: string
+          coupon_expires_at?: string | null
+          coupon_mode?: string
+          coupon_prefix?: string | null
+          created_at?: string
+          discount_amount?: number
+          filters_json?: Json
+          friend_discount_amount?: number
+          id?: string
+          recipient_count?: number
+          sent_count?: number
+          source_coupon_id?: string | null
+          status?: string
+          subject?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_broadcasts_source_coupon_id_fkey"
+            columns: ["source_coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       email_send_log: {
         Row: {
