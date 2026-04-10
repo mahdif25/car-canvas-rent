@@ -18,7 +18,7 @@ const Navbar = () => {
 
   return (
     <header className="sticky top-0 z-50 bg-background border-b border-border shadow-sm">
-      <div className="container flex items-center justify-between h-16">
+      <div className="container flex items-center justify-between" style={{ minHeight: Math.max(64, logoH + 16) }}>
         <Link to="/" className="flex items-center gap-2">
           <img src={logo} alt="Centre Lux Car" style={{ height: logoH }} className="w-auto" />
         </Link>

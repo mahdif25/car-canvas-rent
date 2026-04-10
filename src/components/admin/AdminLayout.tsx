@@ -67,7 +67,7 @@ const AdminLayout = ({ children }: Props) => {
             </SheetTrigger>
             <SheetContent side="left" className="bg-dark text-dark-foreground w-64 p-0">
               <SheetTitle className="sr-only">Navigation</SheetTitle>
-              <div className="p-4 border-b border-foreground/10">
+              <div className="p-2 border-b border-foreground/10">
                 <img src={logo} alt="Centre Lux Car" style={{ height: logoH }} className="brightness-200" />
               </div>
               <nav className="p-4 space-y-1">
@@ -147,7 +147,7 @@ const AdminLayout = ({ children }: Props) => {
   return (
     <div className="flex min-h-screen">
       <aside className="w-64 bg-dark text-dark-foreground flex flex-col shrink-0 overflow-hidden">
-        <div className="p-4 border-b border-foreground/10">
+        <div className="p-2 border-b border-foreground/10">
           <Link to="/admin">
             <img src={logo} alt="Centre Lux Car" style={{ height: logoH }} className="brightness-200" />
           </Link>
