@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, X, Upload, Image, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Upload, Image, Loader2, FlipHorizontal } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { STRUCTURED_FEATURES } from "@/lib/vehicle-features";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -127,7 +128,7 @@ const AdminFleet = () => {
     category: "Sedan", transmission: "Manuelle", fuel: "Diesel",
     seats: 5, doors: 4, luggage: 3, security_deposit: 0, is_available: true,
     features: [], has_climatisation: true, has_gps: false, has_bluetooth: false, has_usb: false, has_camera: false,
-    slug: "",
+    slug: "", image_flipped: false, image_scale: 1.0,
   });
   const [tiers, setTiers] = useState(defaultTiers);
   const [featureInput, setFeatureInput] = useState("");
@@ -210,7 +211,7 @@ const AdminFleet = () => {
   const resetForm = () => {
     setShowForm(false);
     setEditingId(null);
-    setForm({ name: "", brand: "", model: "", year: new Date().getFullYear(), category: "Sedan", transmission: "Manuelle", fuel: "Diesel", seats: 5, doors: 4, luggage: 3, security_deposit: 0, is_available: true, features: [], has_climatisation: true, has_gps: false, has_bluetooth: false, has_usb: false, has_camera: false, slug: "" });
+    setForm({ name: "", brand: "", model: "", year: new Date().getFullYear(), category: "Sedan", transmission: "Manuelle", fuel: "Diesel", seats: 5, doors: 4, luggage: 3, security_deposit: 0, is_available: true, features: [], has_climatisation: true, has_gps: false, has_bluetooth: false, has_usb: false, has_camera: false, slug: "", image_flipped: false, image_scale: 1.0 });
     setTiers(defaultTiers);
     setFeatureInput("");
     setGalleryUrls([]);
@@ -218,7 +219,7 @@ const AdminFleet = () => {
 
   const editVehicle = async (v: Vehicle) => {
     setEditingId(v.id);
-    setForm({ name: v.name, brand: v.brand, model: v.model, year: v.year, category: v.category, transmission: v.transmission, fuel: v.fuel, seats: v.seats, doors: v.doors, luggage: v.luggage, security_deposit: Number(v.security_deposit), is_available: v.is_available, image_url: v.image_url, features: v.features ?? [], has_climatisation: v.has_climatisation ?? true, has_gps: v.has_gps ?? false, has_bluetooth: v.has_bluetooth ?? false, has_usb: v.has_usb ?? false, has_camera: v.has_camera ?? false, slug: v.slug ?? "" });
+    setForm({ name: v.name, brand: v.brand, model: v.model, year: v.year, category: v.category, transmission: v.transmission, fuel: v.fuel, seats: v.seats, doors: v.doors, luggage: v.luggage, security_deposit: Number(v.security_deposit), is_available: v.is_available, image_url: v.image_url, features: v.features ?? [], has_climatisation: v.has_climatisation ?? true, has_gps: v.has_gps ?? false, has_bluetooth: v.has_bluetooth ?? false, has_usb: v.has_usb ?? false, has_camera: v.has_camera ?? false, slug: v.slug ?? "", image_flipped: (v as any).image_flipped ?? false, image_scale: Number((v as any).image_scale ?? 1) });
     const vehicleTiers = allTiers?.filter((t) => t.vehicle_id === v.id) ?? [];
     setTiers(vehicleTiers.length > 0 ? vehicleTiers.map((t) => ({ min_days: t.min_days, max_days: t.max_days, daily_rate: Number(t.daily_rate) })) : defaultTiers);
     const { data: imgs } = await supabase.from("vehicle_images").select("*").eq("vehicle_id", v.id).order("sort_order");
@@ -354,6 +355,45 @@ const AdminFleet = () => {
               onChange={(url) => setForm((f) => ({ ...f, image_url: url }))}
               onDelete={handleDeleteMainImage}
             />
+
+            {/* Image Transform Controls */}
+            {form.image_url && (
+              <div className="space-y-4 p-4 border rounded-xl bg-muted/30">
+                <h4 className="text-sm font-medium flex items-center gap-2"><FlipHorizontal size={16} className="text-primary" /> Ajustements de l'image</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm">Inverser l'image (miroir)</label>
+                    <Switch
+                      checked={(form as any).image_flipped ?? false}
+                      onCheckedChange={(checked) => setForm((f) => ({ ...f, image_flipped: checked }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <label className="text-sm">Zoom de l'image</label>
+                      <span className="text-xs text-muted-foreground">{((form as any).image_scale ?? 1).toFixed(2)}x</span>
+                    </div>
+                    <Slider
+                      min={0.5}
+                      max={2}
+                      step={0.05}
+                      value={[(form as any).image_scale ?? 1]}
+                      onValueChange={([val]) => setForm((f) => ({ ...f, image_scale: val }))}
+                    />
+                  </div>
+                </div>
+                <div className="mt-2 rounded-lg overflow-hidden border bg-secondary h-40 flex items-center justify-center">
+                  <img
+                    src={form.image_url}
+                    alt="Aperçu"
+                    className="max-h-full max-w-full object-contain"
+                    style={{
+                      transform: `${(form as any).image_flipped ? 'scaleX(-1)' : ''} scale(${(form as any).image_scale ?? 1})`.trim() || 'none'
+                    }}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Gallery Images */}
             <div className="space-y-2">
