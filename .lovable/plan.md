@@ -1,36 +1,34 @@
 
 
-# Lead CAPI Reporting Flag Based on Capture Mode
+# Fix Hero Video Background
 
-## Overview
-Add a `capi_allowed` column to the `leads` table. When capture mode is "submit", leads captured on blur are saved with `capi_allowed = false` (visible in admin but not reportable to Facebook CAPI). When the user clicks submit, the lead is upgraded to `capi_allowed = true`. When mode is "blur", all leads are saved with `capi_allowed = true` immediately.
+## Problem
+The video URL stored is `https://youtu.be/qdkX33buWTQ` — a YouTube share link. The HTML `<video>` tag cannot play YouTube URLs. It only accepts direct video file URLs (`.mp4`, `.webm`).
 
-## Database Migration
+## Two Options
 
-```sql
-ALTER TABLE public.leads
-  ADD COLUMN capi_allowed boolean NOT NULL DEFAULT true;
-```
+### Option A: Support YouTube embeds (recommended)
+Detect YouTube URLs and render an `<iframe>` embed instead of a `<video>` tag. This lets you paste any YouTube link in admin settings.
 
-## Code Changes
+### Option B: Use a direct MP4 file
+Upload an `.mp4` file to your backend storage and use that direct URL instead. This gives better performance (no YouTube branding, faster load) but requires hosting the file.
 
-### 1. `src/hooks/useAnalytics.ts`
-- Add optional `capi_allowed` parameter to `captureLeadField` (default `true`)
-- Pass it through on both insert and update calls
+## Plan — Implement both: YouTube detection + direct video support
 
-### 2. `src/components/reservation/StepDriverInfo.tsx`
-- **Remove** the early return in `handleBlur` when mode is "submit" — always capture on blur
-- When mode is "submit": call `captureLeadField` with `capi_allowed: false` on blur
-- When mode is "blur": call `captureLeadField` with `capi_allowed: true` on blur (current behavior)
-- In `handleNext` (submit button): always call `captureLeadField` with `capi_allowed: true` to upgrade the flag
+### `src/pages/Index.tsx`
+- Add a helper function to detect YouTube URLs and extract the video ID
+- When `hero_bg_type === "video"` and URL is YouTube: render an `<iframe>` with `youtube.com/embed/{id}?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&playlist={id}` and pointer-events-none
+- When `hero_bg_type === "video"` and URL is a direct file: keep the existing `<video>` tag
 
-### 3. `src/pages/admin/AdminLeads.tsx`
-- Add `capi_allowed` to the `LeadRow` interface and query
-- Display a badge per lead: green "CAPI ✓" when allowed, gray "CAPI ✗" when not
+### `src/pages/admin/AdminSettings.tsx` (optional improvement)
+- Add a hint text under the video URL input: "Paste a YouTube link or a direct .mp4 URL"
 
-### Files
-- `leads` table (migration — add `capi_allowed` column)
-- `src/hooks/useAnalytics.ts`
-- `src/components/reservation/StepDriverInfo.tsx`
-- `src/pages/admin/AdminLeads.tsx`
+## Recommendation for video content
+For a car rental hero, I recommend:
+- A **cinematic aerial shot of a car driving on a scenic Moroccan road** (coastal highway, Atlas mountains, or city boulevard)
+- Search YouTube for royalty-free stock footage like "luxury car driving Morocco" or "car rental cinematic"
+- Alternatively, use a **direct MP4 from a free stock site** like Pexels or Pixabay (search "car driving aerial") — these give you a direct `.mp4` URL that works without the YouTube embed complexity
+
+## Files to change
+- `src/pages/Index.tsx` — add YouTube URL detection and iframe rendering
 
