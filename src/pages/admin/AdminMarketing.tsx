@@ -21,6 +21,8 @@ interface Coupon {
   is_active: boolean;
   expires_at: string | null;
   created_at: string;
+  min_total_price: number | null;
+  min_rental_days: number | null;
 }
 
 interface CouponUsage {
@@ -36,7 +38,7 @@ const AdminMarketing = () => {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [expandedCoupon, setExpandedCoupon] = useState<string | null>(null);
-  const [newCoupon, setNewCoupon] = useState({ code: "", discount_amount: "", max_uses: "", expires_at: "" });
+  const [newCoupon, setNewCoupon] = useState({ code: "", discount_amount: "", max_uses: "", expires_at: "", min_total_price: "", min_rental_days: "" });
 
   const { data: coupons = [], isLoading } = useQuery({
     queryKey: ["coupons"],
@@ -63,13 +65,15 @@ const AdminMarketing = () => {
         discount_amount: Number(newCoupon.discount_amount),
         max_uses: newCoupon.max_uses ? Number(newCoupon.max_uses) : null,
         expires_at: newCoupon.expires_at || null,
+        min_total_price: newCoupon.min_total_price ? Number(newCoupon.min_total_price) : null,
+        min_rental_days: newCoupon.min_rental_days ? Number(newCoupon.min_rental_days) : null,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["coupons"] });
       setDialogOpen(false);
-      setNewCoupon({ code: "", discount_amount: "", max_uses: "", expires_at: "" });
+      setNewCoupon({ code: "", discount_amount: "", max_uses: "", expires_at: "", min_total_price: "", min_rental_days: "" });
       toast.success("Coupon créé avec succès");
     },
     onError: (err: any) => {
@@ -117,6 +121,14 @@ const AdminMarketing = () => {
                   <label className="text-sm font-medium">Date d'expiration</label>
                   <Input type="datetime-local" value={newCoupon.expires_at} onChange={(e) => setNewCoupon((p) => ({ ...p, expires_at: e.target.value }))} />
                 </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium">Montant minimum de réservation (MAD)</label>
+                  <Input type="number" value={newCoupon.min_total_price} onChange={(e) => setNewCoupon((p) => ({ ...p, min_total_price: e.target.value }))} placeholder="Aucun minimum si vide" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium">Nombre minimum de jours</label>
+                  <Input type="number" value={newCoupon.min_rental_days} onChange={(e) => setNewCoupon((p) => ({ ...p, min_rental_days: e.target.value }))} placeholder="Aucun minimum si vide" />
+                </div>
                 <Button onClick={() => createMutation.mutate()} disabled={!newCoupon.code || !newCoupon.discount_amount || createMutation.isPending} className="w-full">
                   {createMutation.isPending ? "Création..." : "Créer le coupon"}
                 </Button>
@@ -155,7 +167,13 @@ const AdminMarketing = () => {
                             <TableCell>{expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</TableCell>
                             <TableCell className="font-mono font-bold">{coupon.code}</TableCell>
                             <TableCell>{Number(coupon.discount_amount).toLocaleString()} MAD</TableCell>
-                            <TableCell>{coupon.current_uses} / {coupon.max_uses ?? "∞"}</TableCell>
+                            <TableCell>
+                              <div className="flex flex-wrap gap-1">
+                                <span>{coupon.current_uses} / {coupon.max_uses ?? "∞"}</span>
+                                {coupon.min_total_price && <Badge variant="outline" className="text-[10px] px-1.5">Min {Number(coupon.min_total_price).toLocaleString()} MAD</Badge>}
+                                {coupon.min_rental_days && <Badge variant="outline" className="text-[10px] px-1.5">Min {coupon.min_rental_days}j</Badge>}
+                              </div>
+                            </TableCell>
                             <TableCell>
                               {isExpired(coupon) ? (
                                 <Badge variant="secondary">Expiré</Badge>

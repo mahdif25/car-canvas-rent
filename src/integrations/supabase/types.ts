@@ -205,6 +205,8 @@ export type Database = {
           id: string
           is_active: boolean
           max_uses: number | null
+          min_rental_days: number | null
+          min_total_price: number | null
         }
         Insert: {
           code: string
@@ -215,6 +217,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           max_uses?: number | null
+          min_rental_days?: number | null
+          min_total_price?: number | null
         }
         Update: {
           code?: string
@@ -225,6 +229,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           max_uses?: number | null
+          min_rental_days?: number | null
+          min_total_price?: number | null
         }
         Relationships: []
       }
