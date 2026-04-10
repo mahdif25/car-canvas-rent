@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { ReservationFormData } from "@/lib/types";
-import { useVehicles, usePricingTiers, useAddons, getDailyRateFromTiers } from "@/hooks/useVehicles";
+import { useVehicles, usePricingTiers, useAddons, getDailyRateFromTiers, type Vehicle } from "@/hooks/useVehicles";
 import { useLocations, getDeliveryFee } from "@/hooks/useLocations";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -148,8 +148,53 @@ const Reservation = () => {
         });
       }
 
-      setConfirmationId(reservation.id.slice(0, 8).toUpperCase());
+      const confId = reservation.id.slice(0, 8).toUpperCase();
+      setConfirmationId(confId);
       analytics.markLeadCompleted(reservation.id);
+
+      // Send confirmation + welcome emails
+      const fmtDate = (d: string) => new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+      const addonDetails = formData.selected_addons.map((id) => {
+        const addon = addons.find((a) => a.id === id);
+        return addon ? { name: `${addon.name} (${rentalDays}j)`, total: Number(addon.price_per_day) * rentalDays } : null;
+      }).filter(Boolean);
+
+      const emailData = {
+        customerName: formData.first_name,
+        confirmationId: confId,
+        vehicleName: selectedVehicle?.name || "",
+        pickupDate: fmtDate(formData.pickup_date),
+        returnDate: fmtDate(formData.return_date),
+        pickupLocation: formData.pickup_location,
+        returnLocation: formData.return_location || formData.pickup_location,
+        rentalDays,
+        dailyRate,
+        vehicleTotal,
+        addonsDetails: addonDetails,
+        deliveryFee,
+        discountAmount: formData.discount_amount,
+        depositAmount,
+        totalPrice: finalTotal,
+      };
+
+      supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "reservation-confirmation",
+          recipientEmail: formData.email,
+          idempotencyKey: `res-confirm-${reservation.id}`,
+          templateData: emailData,
+        },
+      }).catch(console.error);
+
+      supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "welcome-email",
+          recipientEmail: formData.email,
+          idempotencyKey: `welcome-${reservation.id}`,
+          templateData: { customerName: formData.first_name },
+        },
+      }).catch(console.error);
+
       nextStep();
 
     } catch (err: any) {

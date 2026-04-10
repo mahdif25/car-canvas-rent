@@ -22,6 +22,8 @@ const Footer = () => {
               <Link to="/" className="text-sm opacity-80 hover:text-primary transition-colors">Accueil</Link>
               <Link to="/fleet" className="text-sm opacity-80 hover:text-primary transition-colors">Notre Flotte</Link>
               <Link to="/reservation" className="text-sm opacity-80 hover:text-primary transition-colors">Réservation</Link>
+              <Link to="/suivi-reservation" className="text-sm opacity-80 hover:text-primary transition-colors">Suivi de réservation</Link>
+              <Link to="/conditions-generales" className="text-sm opacity-80 hover:text-primary transition-colors">Conditions Générales</Link>
             </nav>
           </div>
 

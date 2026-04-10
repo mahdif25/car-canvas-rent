@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { User, Mail, Phone, CreditCard, Globe, CalendarDays } from "lucide-react";
 import { Vehicle } from "@/hooks/useVehicles";
+import { Link } from "react-router-dom";
 
 interface Props {
   formData: ReservationFormData;
@@ -107,7 +108,11 @@ const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics }: Pro
           onCheckedChange={(checked) => updateForm({ terms_accepted: checked === true })}
         />
         <label className="text-sm">
-          J'accepte les <span className="text-primary font-medium cursor-pointer hover:underline">conditions générales de location</span> et la politique de confidentialité.
+          J'accepte les{" "}
+          <Link to="/conditions-generales" target="_blank" className="text-primary font-medium hover:underline">
+            conditions générales de location
+          </Link>
+          , la politique de confidentialité, et je consens à recevoir des offres et promotions par email.
         </label>
       </div>
 
