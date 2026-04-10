@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { ReservationFormData } from "@/lib/types";
 import { Vehicle, PricingTier, AddonOption, getDailyRateFromTiers } from "@/hooks/useVehicles";
 import { Location, getDeliveryFee } from "@/hooks/useLocations";
-import { CalendarDays, MapPin, Car, Truck } from "lucide-react";
+import { CalendarDays, MapPin, Car, Truck, ChevronUp, ChevronDown } from "lucide-react";
 
 interface Props {
   formData: ReservationFormData;
@@ -13,6 +14,7 @@ interface Props {
 }
 
 const ReservationSidebar = ({ formData, rentalDays, vehicles, pricingTiers, addons, locations }: Props) => {
+  const [mobileExpanded, setMobileExpanded] = useState(false);
   const vehicle = vehicles.find((v) => v.id === formData.vehicle_id);
   const tiers = pricingTiers.filter((t) => t.vehicle_id === formData.vehicle_id);
   const dailyRate = vehicle ? getDailyRateFromTiers(tiers, rentalDays) : 0;
@@ -32,10 +34,8 @@ const ReservationSidebar = ({ formData, rentalDays, vehicles, pricingTiers, addo
   const discount = formData.discount_amount || 0;
   const total = vehicleTotal + addonsTotal + deliveryFee - discount;
 
-  return (
-    <div className="bg-secondary p-6 rounded-pill sticky top-24 space-y-5">
-      <h3 className="font-semibold text-lg">Résumé</h3>
-
+  const content = (
+    <div className="space-y-4">
       {formData.pickup_location && (
         <div className="flex items-start gap-2 text-sm">
           <MapPin size={16} className="text-primary mt-0.5 shrink-0" />
@@ -68,7 +68,7 @@ const ReservationSidebar = ({ formData, rentalDays, vehicles, pricingTiers, addo
             </div>
           </div>
 
-          <div className="border-t border-border pt-4 space-y-2 text-sm">
+          <div className="border-t border-border pt-3 space-y-2 text-sm">
             <div className="flex justify-between">
               <span>Véhicule</span>
               <span>{vehicleTotal.toLocaleString()} MAD</span>
@@ -87,27 +87,16 @@ const ReservationSidebar = ({ formData, rentalDays, vehicles, pricingTiers, addo
 
             {formData.pickup_location && (
               <div className="flex justify-between">
-                <span className="flex items-center gap-1"><Truck size={14} /> Frais de livraison</span>
+                <span className="flex items-center gap-1"><Truck size={14} /> Livraison</span>
                 <span>{deliveryFee > 0 ? `${deliveryFee.toLocaleString()} MAD` : "Gratuit"}</span>
               </div>
             )}
 
             {discount > 0 && (
               <div className="flex justify-between text-primary">
-                <span>Code promo ({formData.promo_code})</span>
+                <span>Promo ({formData.promo_code})</span>
                 <span>-{discount.toLocaleString()} MAD</span>
               </div>
-            )}
-
-            <div className="flex justify-between font-bold text-lg pt-2 border-t border-border">
-              <span>Total</span>
-              <span className="text-primary">{total.toLocaleString()} MAD</span>
-            </div>
-
-            {Number(vehicle.security_deposit) > 0 && (
-              <p className="text-xs text-muted-foreground">
-                + Caution de {Number(vehicle.security_deposit).toLocaleString()} MAD (remboursable)
-              </p>
             )}
           </div>
         </>
@@ -117,6 +106,48 @@ const ReservationSidebar = ({ formData, rentalDays, vehicles, pricingTiers, addo
         <p className="text-sm text-muted-foreground">Commencez par remplir les dates et le lieu.</p>
       )}
     </div>
+  );
+
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <div className="hidden lg:block bg-card border border-border p-6 rounded-2xl sticky top-24 space-y-4">
+        <h3 className="font-semibold text-lg">Résumé</h3>
+        {content}
+        {vehicle && (
+          <div className="pt-3 border-t border-border">
+            <div className="flex justify-between font-bold text-lg">
+              <span>Total</span>
+              <span className="text-primary">{total.toLocaleString()} MAD</span>
+            </div>
+            {Number(vehicle.security_deposit) > 0 && (
+              <p className="text-xs text-muted-foreground mt-1">
+                + Caution de {Number(vehicle.security_deposit).toLocaleString()} MAD (remboursable)
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Mobile sticky bottom bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-card border-t border-border shadow-[0_-4px_12px_rgba(0,0,0,0.1)]">
+        <button
+          onClick={() => setMobileExpanded(!mobileExpanded)}
+          className="w-full flex items-center justify-between px-4 py-3"
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">Total</span>
+            <span className="text-lg font-bold text-primary">{total.toLocaleString()} MAD</span>
+          </div>
+          {mobileExpanded ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
+        </button>
+        {mobileExpanded && (
+          <div className="px-4 pb-4 max-h-[60vh] overflow-y-auto border-t border-border pt-3">
+            {content}
+          </div>
+        )}
+      </div>
+    </>
   );
 };
 

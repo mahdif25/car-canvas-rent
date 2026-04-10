@@ -3,7 +3,7 @@ import { ReservationFormData } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Shield, Tag, Check, X } from "lucide-react";
+import { Shield, Tag, Check, X, User, Mail, Phone, CreditCard, Globe, CalendarDays } from "lucide-react";
 import { Vehicle } from "@/hooks/useVehicles";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -96,39 +96,66 @@ const StepDriverInfo = ({ formData, updateForm, onConfirm, onBack, vehicle, anal
     <div className="space-y-6">
       <h2 className="text-xl font-semibold">Informations du conducteur</h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Prénom *</label>
-          <Input value={formData.first_name} onChange={(e) => updateForm({ first_name: e.target.value })} onBlur={(e) => handleBlur("first_name", e.target.value)} placeholder="Votre prénom" />
+      <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <User size={16} className="text-primary" /> Informations personnelles
         </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Nom *</label>
-          <Input value={formData.last_name} onChange={(e) => updateForm({ last_name: e.target.value })} onBlur={(e) => handleBlur("last_name", e.target.value)} placeholder="Votre nom" />
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Email *</label>
-          <Input type="email" value={formData.email} onChange={(e) => updateForm({ email: e.target.value })} onBlur={(e) => handleBlur("email", e.target.value)} placeholder="email@exemple.com" />
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Téléphone *</label>
-          <Input value={formData.phone} onChange={(e) => updateForm({ phone: e.target.value })} onBlur={(e) => handleBlur("phone", e.target.value)} placeholder="+212 6 00 00 00 00" />
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">N° Permis de conduire *</label>
-          <Input value={formData.license_number} onChange={(e) => updateForm({ license_number: e.target.value })} onBlur={(e) => handleBlur("license_number", e.target.value)} placeholder="Numéro du permis" />
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Nationalité</label>
-          <Input value={formData.nationality} onChange={(e) => updateForm({ nationality: e.target.value })} placeholder="Marocaine" />
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Date de naissance</label>
-          <Input type="date" value={formData.dob} onChange={(e) => updateForm({ dob: e.target.value })} />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Prénom *</label>
+            <div className="relative">
+              <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input className="pl-9" value={formData.first_name} onChange={(e) => updateForm({ first_name: e.target.value })} onBlur={(e) => handleBlur("first_name", e.target.value)} placeholder="Votre prénom" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Nom *</label>
+            <div className="relative">
+              <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input className="pl-9" value={formData.last_name} onChange={(e) => updateForm({ last_name: e.target.value })} onBlur={(e) => handleBlur("last_name", e.target.value)} placeholder="Votre nom" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Email *</label>
+            <div className="relative">
+              <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input className="pl-9" type="email" value={formData.email} onChange={(e) => updateForm({ email: e.target.value })} onBlur={(e) => handleBlur("email", e.target.value)} placeholder="email@exemple.com" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Téléphone *</label>
+            <div className="relative">
+              <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input className="pl-9" value={formData.phone} onChange={(e) => updateForm({ phone: e.target.value })} onBlur={(e) => handleBlur("phone", e.target.value)} placeholder="+212 6 00 00 00 00" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">N° Permis de conduire *</label>
+            <div className="relative">
+              <CreditCard size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input className="pl-9" value={formData.license_number} onChange={(e) => updateForm({ license_number: e.target.value })} onBlur={(e) => handleBlur("license_number", e.target.value)} placeholder="Numéro du permis" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Nationalité</label>
+            <div className="relative">
+              <Globe size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input className="pl-9" value={formData.nationality} onChange={(e) => updateForm({ nationality: e.target.value })} placeholder="Marocaine" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Date de naissance</label>
+            <div className="relative">
+              <CalendarDays size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input className="pl-9" type="date" value={formData.dob} onChange={(e) => updateForm({ dob: e.target.value })} />
+            </div>
+          </div>
         </div>
       </div>
 
       {vehicle && (
-        <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+        <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-2xl">
           <Shield className="text-primary shrink-0 mt-0.5" size={24} />
           <div>
             <p className="font-medium">Caution : {Number(vehicle.security_deposit).toLocaleString()} MAD</p>
@@ -141,10 +168,10 @@ const StepDriverInfo = ({ formData, updateForm, onConfirm, onBack, vehicle, anal
       )}
 
       {/* Promo code section */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium flex items-center gap-1"><Tag size={14} /> Code promo</label>
+      <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
+        <label className="text-sm font-medium flex items-center gap-1"><Tag size={14} className="text-primary" /> Code promo</label>
         {promoApplied ? (
-          <div className="flex items-center gap-2 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+          <div className="flex items-center gap-2 p-3 bg-primary/5 border border-primary/20 rounded-xl">
             <Check size={16} className="text-primary" />
             <span className="text-sm font-medium">{formData.promo_code}</span>
             <span className="text-sm text-primary">-{formData.discount_amount.toLocaleString()} MAD</span>
@@ -153,7 +180,7 @@ const StepDriverInfo = ({ formData, updateForm, onConfirm, onBack, vehicle, anal
         ) : (
           <div className="flex gap-2">
             <Input value={promoInput} onChange={(e) => setPromoInput(e.target.value)} placeholder="Entrez votre code promo" onKeyDown={(e) => e.key === "Enter" && handleApplyPromo()} />
-            <Button type="button" variant="outline" onClick={handleApplyPromo} disabled={promoLoading || !promoInput.trim()} className="shrink-0">
+            <Button type="button" variant="outline" onClick={handleApplyPromo} disabled={promoLoading || !promoInput.trim()} className="shrink-0 rounded-xl">
               {promoLoading ? "..." : "Appliquer"}
             </Button>
           </div>
@@ -170,9 +197,9 @@ const StepDriverInfo = ({ formData, updateForm, onConfirm, onBack, vehicle, anal
         </label>
       </div>
 
-      <div className="flex gap-3">
-        <Button variant="outline" onClick={onBack} className="rounded-pill px-8">Retour</Button>
-        <Button onClick={onConfirm} disabled={!isValid} className="bg-primary text-primary-foreground hover:bg-accent rounded-pill px-8">
+      <div className="flex flex-col-reverse sm:flex-row gap-3">
+        <Button variant="outline" onClick={onBack} className="rounded-xl px-8 w-full sm:w-auto">Retour</Button>
+        <Button onClick={onConfirm} disabled={!isValid} className="bg-primary text-primary-foreground hover:bg-accent rounded-xl px-8 h-12 font-semibold w-full sm:w-auto">
           Confirmer la réservation
         </Button>
       </div>

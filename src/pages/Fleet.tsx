@@ -1,9 +1,8 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Users, Fuel, Settings2 } from "lucide-react";
+import { Users, Fuel, Settings2, Heart, Star } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import { useVehicles, usePricingTiers, getStartingPriceFromTiers } from "@/hooks/useVehicles";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const Fleet = () => {
@@ -33,36 +32,59 @@ const Fleet = () => {
           </h1>
           <p className="text-muted-foreground mb-8">Trouvez le véhicule idéal pour votre voyage</p>
 
-          {/* Filters */}
-          <div className="flex flex-wrap gap-4 mb-8">
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Catégorie" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Toutes catégories</SelectItem>
-                {categories.map((c) => (
-                  <SelectItem key={c} value={c}>{c}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={transmission} onValueChange={setTransmission}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Transmission" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Toutes transmissions</SelectItem>
-                <SelectItem value="Automatique">Automatique</SelectItem>
-                <SelectItem value="Manuelle">Manuelle</SelectItem>
-              </SelectContent>
-            </Select>
+          {/* Chip Filters */}
+          <div className="space-y-4 mb-8">
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setCategory("all")}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                  category === "all"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-foreground hover:bg-secondary/80"
+                }`}
+              >
+                Toutes catégories
+              </button>
+              {categories.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setCategory(c)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                    category === c
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary text-foreground hover:bg-secondary/80"
+                  }`}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { value: "all", label: "Toutes transmissions" },
+                { value: "Automatique", label: "Automatique" },
+                { value: "Manuelle", label: "Manuelle" },
+              ].map((t) => (
+                <button
+                  key={t.value}
+                  onClick={() => setTransmission(t.value)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                    transmission === t.value
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary text-foreground hover:bg-secondary/80"
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Grid */}
           {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="border border-border rounded-pill overflow-hidden">
+                <div key={i} className="rounded-2xl overflow-hidden shadow-sm">
                   <Skeleton className="aspect-video w-full" />
                   <div className="p-5 space-y-3">
                     <Skeleton className="h-6 w-3/4" />
@@ -81,14 +103,21 @@ const Fleet = () => {
                   <Link
                     key={v.id}
                     to={`/fleet/${v.id}`}
-                    className="group border border-border rounded-pill overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                    className="group bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300"
                   >
-                    <div className="aspect-video overflow-hidden">
+                    <div className="aspect-video overflow-hidden relative">
                       <img
                         src={v.image_url || "/placeholder.svg"}
                         alt={v.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
+                      <div className="absolute top-3 right-3 w-9 h-9 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center">
+                        <Heart size={18} className="text-muted-foreground" />
+                      </div>
+                      <div className="absolute top-3 left-3 flex items-center gap-1 bg-background/80 backdrop-blur-sm px-2 py-1 rounded-full">
+                        <Star size={14} className="text-primary fill-primary" />
+                        <span className="text-xs font-semibold">4.8</span>
+                      </div>
                     </div>
                     <div className="p-5 space-y-3">
                       <div className="flex justify-between items-start">
@@ -107,7 +136,7 @@ const Fleet = () => {
                           <span className="text-2xl font-bold text-primary">{startingPrice}</span>
                           <span className="text-sm text-muted-foreground"> MAD/jour</span>
                         </div>
-                        <span className="bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold rounded-pill group-hover:bg-accent transition-colors">
+                        <span className="bg-primary text-primary-foreground px-4 py-2 text-sm font-semibold rounded-xl group-hover:bg-accent transition-colors">
                           Réserver
                         </span>
                       </div>

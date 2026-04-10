@@ -11,6 +11,7 @@ import { useMemo, useState } from "react";
 import { useVehicles, usePricingTiers, getDailyRateFromTiers } from "@/hooks/useVehicles";
 import { useLocations, getDeliveryFee } from "@/hooks/useLocations";
 import { Printer, Save, Pencil, Check, X } from "lucide-react";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import type { Database } from "@/integrations/supabase/types";
 
 type ReservationStatus = Database["public"]["Enums"]["reservation_status"];
@@ -461,11 +462,11 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
             </div>
             <div className="space-y-1">
               <label className="text-sm font-medium">Date départ</label>
-              <Input type="date" value={edit.pickup_date} onChange={(e) => onEdit({ pickup_date: e.target.value })} />
+              <DatePickerField value={edit.pickup_date} onChange={(v) => onEdit({ pickup_date: v })} />
             </div>
             <div className="space-y-1">
               <label className="text-sm font-medium">Date retour</label>
-              <Input type="date" value={edit.return_date} onChange={(e) => onEdit({ return_date: e.target.value })} />
+              <DatePickerField value={edit.return_date} onChange={(v) => onEdit({ return_date: v })} />
             </div>
             <div className="space-y-1">
               <label className="text-sm font-medium">Lieu prise en charge</label>
