@@ -28,7 +28,8 @@ const StepConfirmation = ({ formData, confirmationId, rentalDays, vehicle, prici
     formData.pickup_location,
     formData.return_location || formData.pickup_location
   );
-  const total = vehicleTotal + addonsTotal + deliveryFee;
+  const discount = formData.discount_amount || 0;
+  const total = vehicleTotal + addonsTotal + deliveryFee - discount;
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
@@ -95,6 +96,12 @@ const StepConfirmation = ({ formData, confirmationId, rentalDays, vehicle, prici
               <span>Frais de livraison</span>
               <span>{deliveryFee > 0 ? `${deliveryFee.toLocaleString()} MAD` : "Gratuit"}</span>
             </div>
+            {discount > 0 && (
+              <div className="flex justify-between text-primary">
+                <span>Code promo ({formData.promo_code})</span>
+                <span>-{discount.toLocaleString()} MAD</span>
+              </div>
+            )}
             <div className="flex justify-between font-bold text-base pt-2 border-t border-border">
               <span>Total</span>
               <span className="text-primary">{total.toLocaleString()} MAD</span>
