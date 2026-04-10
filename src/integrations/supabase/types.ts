@@ -488,6 +488,63 @@ export type Database = {
           },
         ]
       }
+      site_settings: {
+        Row: {
+          facebook_pixel_id: string | null
+          google_analytics_id: string | null
+          google_reviews_url: string | null
+          google_tag_manager_id: string | null
+          hero_bg_type: string
+          hero_bg_value: string | null
+          hero_overlay_opacity: number | null
+          id: string
+          notification_email: string | null
+          send_reservation_emails: boolean | null
+          show_reviews_section: boolean | null
+          tiktok_pixel_id: string | null
+          updated_at: string | null
+          whatsapp_enabled: boolean | null
+          whatsapp_message: string | null
+          whatsapp_number: string | null
+        }
+        Insert: {
+          facebook_pixel_id?: string | null
+          google_analytics_id?: string | null
+          google_reviews_url?: string | null
+          google_tag_manager_id?: string | null
+          hero_bg_type?: string
+          hero_bg_value?: string | null
+          hero_overlay_opacity?: number | null
+          id?: string
+          notification_email?: string | null
+          send_reservation_emails?: boolean | null
+          show_reviews_section?: boolean | null
+          tiktok_pixel_id?: string | null
+          updated_at?: string | null
+          whatsapp_enabled?: boolean | null
+          whatsapp_message?: string | null
+          whatsapp_number?: string | null
+        }
+        Update: {
+          facebook_pixel_id?: string | null
+          google_analytics_id?: string | null
+          google_reviews_url?: string | null
+          google_tag_manager_id?: string | null
+          hero_bg_type?: string
+          hero_bg_value?: string | null
+          hero_overlay_opacity?: number | null
+          id?: string
+          notification_email?: string | null
+          send_reservation_emails?: boolean | null
+          show_reviews_section?: boolean | null
+          tiktok_pixel_id?: string | null
+          updated_at?: string | null
+          whatsapp_enabled?: boolean | null
+          whatsapp_message?: string | null
+          whatsapp_number?: string | null
+        }
+        Relationships: []
+      }
       suppressed_emails: {
         Row: {
           created_at: string
