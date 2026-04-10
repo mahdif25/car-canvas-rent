@@ -57,20 +57,35 @@ const AdminFleet = () => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      const { slug, ...vehicleData } = form;
+      const saveData = { ...vehicleData, slug: slug || null };
       if (editingId) {
-        const { error } = await supabase.from("vehicles").update(form).eq("id", editingId);
+        const { error } = await supabase.from("vehicles").update(saveData).eq("id", editingId);
         if (error) throw error;
         // Update tiers
         await supabase.from("vehicle_pricing_tiers").delete().eq("vehicle_id", editingId);
         const tierInserts = tiers.map((t) => ({ vehicle_id: editingId, ...t }));
         const { error: tierErr } = await supabase.from("vehicle_pricing_tiers").insert(tierInserts);
         if (tierErr) throw tierErr;
+        // Update gallery images
+        await supabase.from("vehicle_images").delete().eq("vehicle_id", editingId);
+        if (galleryUrls.filter(Boolean).length > 0) {
+          const imgInserts = galleryUrls.filter(Boolean).map((url, i) => ({ vehicle_id: editingId, image_url: url, sort_order: i }));
+          const { error: imgErr } = await supabase.from("vehicle_images").insert(imgInserts);
+          if (imgErr) throw imgErr;
+        }
       } else {
-        const { data, error } = await supabase.from("vehicles").insert(form as VehicleInsert).select().single();
+        const { data, error } = await supabase.from("vehicles").insert(saveData as VehicleInsert).select().single();
         if (error) throw error;
         const tierInserts = tiers.map((t) => ({ vehicle_id: data.id, ...t }));
         const { error: tierErr } = await supabase.from("vehicle_pricing_tiers").insert(tierInserts);
         if (tierErr) throw tierErr;
+        // Insert gallery images
+        if (galleryUrls.filter(Boolean).length > 0) {
+          const imgInserts = galleryUrls.filter(Boolean).map((url, i) => ({ vehicle_id: data.id, image_url: url, sort_order: i }));
+          const { error: imgErr } = await supabase.from("vehicle_images").insert(imgInserts);
+          if (imgErr) throw imgErr;
+        }
       }
     },
     onSuccess: () => {
