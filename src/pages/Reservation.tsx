@@ -8,8 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import StepDates from "@/components/reservation/StepDates";
 import StepVehicle from "@/components/reservation/StepVehicle";
-import StepAddons from "@/components/reservation/StepAddons";
 import StepDriverInfo from "@/components/reservation/StepDriverInfo";
+import StepSummary from "@/components/reservation/StepSummary";
 import StepConfirmation from "@/components/reservation/StepConfirmation";
 import ReservationSidebar from "@/components/reservation/ReservationSidebar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,8 +19,8 @@ import { Check } from "lucide-react";
 const steps = [
   { label: "Dates", number: 1 },
   { label: "Véhicule", number: 2 },
-  { label: "Options", number: 3 },
-  { label: "Infos", number: 4 },
+  { label: "Infos", number: 3 },
+  { label: "Résumé", number: 4 },
 ];
 
 const Reservation = () => {
@@ -190,8 +190,8 @@ const Reservation = () => {
             <span className="text-primary">Réservation</span>
           </h1>
 
-          {/* Figma-style stepper: connected dots */}
-          {currentStep < 5 && (
+          {/* Stepper: connected dots */}
+          {currentStep <= 4 && (
             <div className="flex items-center justify-center mb-10 px-4">
               {steps.map((step, idx) => (
                 <div key={step.number} className="flex items-center">
@@ -214,7 +214,6 @@ const Reservation = () => {
                     >
                       {step.label}
                     </span>
-                    {/* Mobile: show only active label */}
                     {currentStep === step.number && (
                       <span className="text-xs mt-1 font-semibold sm:hidden">{step.label}</span>
                     )}
@@ -231,8 +230,8 @@ const Reservation = () => {
             </div>
           )}
 
-          <div className={currentStep < 5 ? "grid grid-cols-1 lg:grid-cols-3 gap-8" : ""}>
-            <div className={currentStep < 5 ? "lg:col-span-2" : ""}>
+          <div className={currentStep <= 4 ? "grid grid-cols-1 lg:grid-cols-3 gap-8" : ""}>
+            <div className={currentStep <= 4 ? "lg:col-span-2" : ""}>
               {currentStep === 1 && (
                 <StepDates formData={formData} updateForm={updateForm} onNext={nextStep} locations={locations} />
               )}
@@ -240,19 +239,19 @@ const Reservation = () => {
                 <StepVehicle formData={formData} updateForm={updateForm} rentalDays={rentalDays} onNext={nextStep} onBack={prevStep} vehicles={vehicles} pricingTiers={pricingTiers} />
               )}
               {currentStep === 3 && (
-                <StepAddons formData={formData} updateForm={updateForm} onNext={nextStep} onBack={prevStep} addons={addons} />
+                <StepDriverInfo formData={formData} updateForm={updateForm} onNext={nextStep} onBack={prevStep} rentalDays={rentalDays} vehicle={selectedVehicle} analytics={analytics} />
               )}
               {currentStep === 4 && (
-                <StepDriverInfo formData={formData} updateForm={updateForm} onConfirm={handleConfirm} onBack={prevStep} rentalDays={rentalDays} vehicle={selectedVehicle} analytics={analytics} />
+                <StepSummary formData={formData} updateForm={updateForm} onConfirm={handleConfirm} onBack={prevStep} rentalDays={rentalDays} vehicles={vehicles} pricingTiers={pricingTiers} addons={addons} locations={locations} isSubmitting={isSubmitting} />
               )}
               {currentStep === 5 && (
                 <StepConfirmation formData={formData} confirmationId={confirmationId} rentalDays={rentalDays} vehicle={selectedVehicle} pricingTiers={pricingTiers} addons={addons} locations={locations} />
               )}
             </div>
 
-            {currentStep < 5 && (
+            {currentStep <= 4 && (
               <div className="lg:col-span-1">
-                <ReservationSidebar formData={formData} rentalDays={rentalDays} vehicles={vehicles} pricingTiers={pricingTiers} addons={addons} locations={locations} />
+                <ReservationSidebar formData={formData} rentalDays={rentalDays} vehicles={vehicles} pricingTiers={pricingTiers} addons={addons} locations={locations} currentStep={currentStep} />
               </div>
             )}
           </div>
