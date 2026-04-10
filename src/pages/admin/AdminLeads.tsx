@@ -27,6 +27,7 @@ interface LeadRow {
   last_reservation_step: number | null;
   reservation_completed: boolean | null;
   reservation_id: string | null;
+  capi_allowed: boolean;
   created_at: string | null;
   updated_at: string | null;
 }
@@ -222,9 +223,14 @@ const AdminLeads = () => {
                               {entry.phone && <div><span className="text-muted-foreground">Tél:</span> {entry.phone}</div>}
                               {entry.license_number && <div><span className="text-muted-foreground">Permis:</span> {entry.license_number}</div>}
                             </div>
-                            {entry.reservation_completed && (
-                              <span className="text-xs text-green-600 font-medium">✓ Réservation complétée</span>
-                            )}
+                            <div className="flex gap-2 flex-wrap">
+                              {entry.reservation_completed && (
+                                <span className="text-xs text-green-600 font-medium">✓ Réservation complétée</span>
+                              )}
+                              <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${entry.capi_allowed ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}>
+                                {entry.capi_allowed ? "CAPI ✓" : "CAPI ✗"}
+                              </span>
+                            </div>
                             <div className="text-xs text-muted-foreground font-mono truncate">
                               Session: {entry.session_id?.slice(0, 8)}… | Visitor: {entry.visitor_id?.slice(0, 8)}…
                             </div>

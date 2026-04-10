@@ -32,17 +32,18 @@ const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadC
   };
 
   const handleBlur = (field: string, value: string) => {
-    if (leadCaptureMode !== "blur" || !value || !analytics) return;
+    if (!value || !analytics) return;
     const fields: Record<string, string> = { [field]: value, ...collectAllFields() };
-    analytics.captureLeadField(fields, 3);
+    const capiAllowed = leadCaptureMode !== "submit";
+    analytics.captureLeadField(fields, 3, capiAllowed);
     analytics.trackFieldCapture(fields);
   };
 
   const handleNext = () => {
-    if (leadCaptureMode === "submit" && analytics) {
+    if (analytics) {
       const fields = collectAllFields();
       if (Object.keys(fields).length > 0) {
-        analytics.captureLeadField(fields, 3);
+        analytics.captureLeadField(fields, 3, true);
         analytics.trackFieldCapture(fields);
       }
     }
