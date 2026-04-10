@@ -27,8 +27,8 @@ const ReservationSidebar = ({ formData, rentalDays, vehicles, pricingTiers, curr
   const content = (
     <div className="space-y-4">
       {vehicle?.image_url && (
-        <div className="w-full h-28 bg-secondary rounded-lg p-2">
-          <img src={vehicle.image_url} alt={vehicle.name} className="w-full h-full object-contain" />
+        <div className="w-full h-28 bg-secondary rounded-lg overflow-hidden">
+          <img src={vehicle.image_url} alt={vehicle.name} className="w-full h-full object-cover" />
         </div>
       )}
       {formData.pickup_location && (
