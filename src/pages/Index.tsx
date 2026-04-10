@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Calendar, Car, Shield, Clock, MapPin, ChevronRight } from "lucide-react";
+import { Car, Shield, Clock, MapPin, ChevronRight, Heart, Star, Users, Fuel, Settings2 } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { useLocations } from "@/hooks/useLocations";
 import { useVehicles, usePricingTiers, getStartingPriceFromTiers } from "@/hooks/useVehicles";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -46,10 +46,12 @@ const Index = () => {
           </div>
 
           {/* Search Bar */}
-          <div className="mt-10 bg-background text-foreground p-6 rounded-pill shadow-xl max-w-4xl">
+          <div className="mt-10 bg-background text-foreground p-6 md:p-8 rounded-2xl shadow-xl max-w-4xl">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Lieu de prise en charge</label>
+                <label className="text-sm font-medium flex items-center gap-1.5">
+                  <MapPin size={14} className="text-primary" /> Lieu de prise en charge
+                </label>
                 <Select value={pickupLocation} onValueChange={setPickupLocation}>
                   <SelectTrigger>
                     <SelectValue placeholder="Sélectionner" />
@@ -63,15 +65,25 @@ const Index = () => {
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Date de départ</label>
-                <Input type="date" value={pickupDate} onChange={(e) => setPickupDate(e.target.value)} />
+                <DatePickerField
+                  value={pickupDate}
+                  onChange={setPickupDate}
+                  placeholder="Choisir"
+                  minDate={new Date()}
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Date de retour</label>
-                <Input type="date" value={returnDate} onChange={(e) => setReturnDate(e.target.value)} />
+                <DatePickerField
+                  value={returnDate}
+                  onChange={setReturnDate}
+                  placeholder="Choisir"
+                  minDate={pickupDate ? new Date(pickupDate) : new Date()}
+                />
               </div>
               <Button
                 onClick={handleSearch}
-                className="bg-primary text-primary-foreground hover:bg-accent rounded-pill h-10 font-semibold"
+                className="bg-primary text-primary-foreground hover:bg-accent rounded-xl h-10 font-semibold"
               >
                 Rechercher
               </Button>
@@ -86,15 +98,15 @@ const Index = () => {
           <h2 className="text-3xl font-bold text-center mb-12">
             Pourquoi choisir <span className="text-primary">Centre Lux Car</span> ?
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {[
               { icon: Car, title: "Flotte récente", desc: "Des véhicules neufs et bien entretenus" },
               { icon: Shield, title: "Dépôt sécurisé", desc: "Caution transparente et remboursable" },
               { icon: Clock, title: "Disponibilité 24/7", desc: "Service disponible à tout moment" },
               { icon: MapPin, title: "Multi-villes", desc: "Disponible dans les principales villes du Maroc" },
             ].map((b) => (
-              <div key={b.title} className="text-center space-y-3 p-6 bg-background rounded-pill shadow-sm">
-                <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+              <div key={b.title} className="text-center space-y-4 p-6 bg-background rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+                <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
                   <b.icon className="text-primary" size={28} />
                 </div>
                 <h3 className="font-semibold text-lg">{b.title}</h3>
@@ -119,7 +131,7 @@ const Index = () => {
           {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="border border-border rounded-pill overflow-hidden">
+                <div key={i} className="rounded-2xl overflow-hidden shadow-sm">
                   <Skeleton className="aspect-video w-full" />
                   <div className="p-5 space-y-3">
                     <Skeleton className="h-6 w-3/4" />
@@ -138,31 +150,36 @@ const Index = () => {
                   <Link
                     key={v.id}
                     to={`/fleet/${v.id}`}
-                    className="group border border-border rounded-pill overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                    className="group bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300"
                   >
-                    <div className="aspect-video overflow-hidden">
+                    <div className="aspect-video overflow-hidden relative">
                       <img
                         src={v.image_url || "/placeholder.svg"}
                         alt={v.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
+                      <div className="absolute top-3 right-3 w-9 h-9 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center">
+                        <Heart size={18} className="text-muted-foreground" />
+                      </div>
+                      <div className="absolute top-3 left-3 flex items-center gap-1 bg-background/80 backdrop-blur-sm px-2 py-1 rounded-full">
+                        <Star size={14} className="text-primary fill-primary" />
+                        <span className="text-xs font-semibold">4.8</span>
+                      </div>
                     </div>
                     <div className="p-5 space-y-3">
                       <h3 className="font-semibold text-lg">{v.name}</h3>
-                      <div className="flex gap-3 text-sm text-muted-foreground">
-                        <span>{v.transmission}</span>
-                        <span>•</span>
-                        <span>{v.fuel}</span>
-                        <span>•</span>
-                        <span>{v.seats} places</span>
+                      <div className="flex gap-4 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1"><Settings2 size={14} />{v.transmission}</span>
+                        <span className="flex items-center gap-1"><Fuel size={14} />{v.fuel}</span>
+                        <span className="flex items-center gap-1"><Users size={14} />{v.seats}</span>
                       </div>
-                      <div className="flex justify-between items-center pt-2 border-t border-border">
+                      <div className="flex justify-between items-center pt-3 border-t border-border">
                         <div>
                           <span className="text-2xl font-bold text-primary">{startingPrice}</span>
                           <span className="text-sm text-muted-foreground"> MAD/jour</span>
                         </div>
-                        <span className="text-sm text-primary font-medium group-hover:underline">
-                          Détails →
+                        <span className="bg-primary text-primary-foreground px-4 py-2 text-sm font-semibold rounded-xl group-hover:bg-accent transition-colors">
+                          Réserver
                         </span>
                       </div>
                     </div>

@@ -14,13 +14,13 @@ import StepConfirmation from "@/components/reservation/StepConfirmation";
 import ReservationSidebar from "@/components/reservation/ReservationSidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAnalytics } from "@/hooks/useAnalytics";
+import { Check } from "lucide-react";
 
 const steps = [
-  { label: "Dates & Lieu", number: 1 },
+  { label: "Dates", number: 1 },
   { label: "Véhicule", number: 2 },
   { label: "Options", number: 3 },
-  { label: "Informations", number: 4 },
-  { label: "Confirmation", number: 5 },
+  { label: "Infos", number: 4 },
 ];
 
 const Reservation = () => {
@@ -54,7 +54,6 @@ const Reservation = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const analytics = useAnalytics();
 
-  // Track reservation step changes
   useEffect(() => {
     analytics.trackReservationStep(currentStep, {
       vehicle_id: formData.vehicle_id || undefined,
@@ -140,7 +139,6 @@ const Reservation = () => {
         if (addonError) console.error("Addon insert error:", addonError);
       }
 
-      // Record coupon usage if applicable
       if (formData.coupon_id) {
         await supabase.from("coupon_usages").insert({
           coupon_id: formData.coupon_id,
@@ -186,34 +184,47 @@ const Reservation = () => {
 
   return (
     <Layout>
-      <section className="py-10">
+      <section className="py-10 pb-28 lg:pb-10">
         <div className="container">
           <h1 className="text-3xl font-bold mb-8">
             <span className="text-primary">Réservation</span>
           </h1>
 
+          {/* Figma-style stepper: connected dots */}
           {currentStep < 5 && (
-            <div className="flex items-center gap-2 mb-8 overflow-x-auto">
-              {steps.slice(0, 4).map((step) => (
-                <div key={step.number} className="flex items-center gap-2">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 ${
-                      currentStep >= step.number
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-secondary text-muted-foreground"
-                    }`}
-                  >
-                    {step.number}
+            <div className="flex items-center justify-center mb-10 px-4">
+              {steps.map((step, idx) => (
+                <div key={step.number} className="flex items-center">
+                  <div className="flex flex-col items-center">
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
+                        currentStep > step.number
+                          ? "bg-primary text-primary-foreground"
+                          : currentStep === step.number
+                          ? "bg-primary text-primary-foreground ring-4 ring-primary/20"
+                          : "bg-secondary text-muted-foreground"
+                      }`}
+                    >
+                      {currentStep > step.number ? <Check size={18} /> : step.number}
+                    </div>
+                    <span
+                      className={`text-xs mt-2 hidden sm:block ${
+                        currentStep >= step.number ? "font-semibold text-foreground" : "text-muted-foreground"
+                      }`}
+                    >
+                      {step.label}
+                    </span>
+                    {/* Mobile: show only active label */}
+                    {currentStep === step.number && (
+                      <span className="text-xs mt-1 font-semibold sm:hidden">{step.label}</span>
+                    )}
                   </div>
-                  <span
-                    className={`text-sm whitespace-nowrap ${
-                      currentStep >= step.number ? "font-medium" : "text-muted-foreground"
-                    }`}
-                  >
-                    {step.label}
-                  </span>
-                  {step.number < 4 && (
-                    <div className={`w-8 h-px ${currentStep > step.number ? "bg-primary" : "bg-border"}`} />
+                  {idx < steps.length - 1 && (
+                    <div
+                      className={`w-8 sm:w-16 h-0.5 mx-1 sm:mx-2 ${
+                        currentStep > step.number ? "bg-primary" : "bg-border"
+                      }`}
+                    />
                   )}
                 </div>
               ))}
