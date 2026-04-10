@@ -79,6 +79,9 @@ const VehicleDetail = () => {
                   src={allImages[activeIndex]}
                   alt={vehicle.name}
                   className="w-full h-full object-cover aspect-video"
+                  style={activeIndex === 0 ? {
+                    transform: `${(vehicle as any).image_flipped ? 'scaleX(-1)' : ''} scale(${(vehicle as any).image_scale ?? 1})`.trim() || 'none'
+                  } : undefined}
                 />
               </div>
               {/* Thumbnails */}

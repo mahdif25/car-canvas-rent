@@ -42,7 +42,7 @@ const StepVehicle = ({ formData, updateForm, rentalDays, onNext, onBack, vehicle
                 isSelected ? "border-primary bg-primary/5 shadow-sm" : "border-border hover:border-primary/50"
               }`}
             >
-              <img src={v.image_url || "/placeholder.svg"} alt={v.name} className="w-full md:w-48 h-32 object-cover rounded-md" />
+              <img src={v.image_url || "/placeholder.svg"} alt={v.name} className="w-full md:w-48 h-32 object-cover rounded-md" style={{ transform: `${(v as any).image_flipped ? 'scaleX(-1)' : ''} scale(${(v as any).image_scale ?? 1})`.trim() || 'none' }} />
               <div className="flex-1 flex flex-col justify-between">
                 <div>
                   <div className="flex justify-between items-start">
