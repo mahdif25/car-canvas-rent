@@ -126,7 +126,7 @@ const AdminSettings = () => {
                 <Slider
                   value={[form.logo_height ?? 48]}
                   onValueChange={([v]) => setForm({ ...form, logo_height: v })}
-                  min={32} max={80} step={2}
+                  min={32} max={120} step={2}
                 />
               </div>
               <div className="flex items-center gap-4 p-4 bg-secondary rounded-lg">
