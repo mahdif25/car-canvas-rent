@@ -613,6 +613,7 @@ export type Database = {
       }
       site_settings: {
         Row: {
+          facebook_capi_token: string | null
           facebook_pixel_id: string | null
           google_analytics_id: string | null
           google_reviews_url: string | null
@@ -621,6 +622,7 @@ export type Database = {
           hero_bg_value: string | null
           hero_overlay_opacity: number | null
           id: string
+          lead_capture_mode: string
           notification_email: string | null
           send_reservation_emails: boolean | null
           show_reviews_section: boolean | null
@@ -631,6 +633,7 @@ export type Database = {
           whatsapp_number: string | null
         }
         Insert: {
+          facebook_capi_token?: string | null
           facebook_pixel_id?: string | null
           google_analytics_id?: string | null
           google_reviews_url?: string | null
@@ -639,6 +642,7 @@ export type Database = {
           hero_bg_value?: string | null
           hero_overlay_opacity?: number | null
           id?: string
+          lead_capture_mode?: string
           notification_email?: string | null
           send_reservation_emails?: boolean | null
           show_reviews_section?: boolean | null
@@ -649,6 +653,7 @@ export type Database = {
           whatsapp_number?: string | null
         }
         Update: {
+          facebook_capi_token?: string | null
           facebook_pixel_id?: string | null
           google_analytics_id?: string | null
           google_reviews_url?: string | null
@@ -657,6 +662,7 @@ export type Database = {
           hero_bg_value?: string | null
           hero_overlay_opacity?: number | null
           id?: string
+          lead_capture_mode?: string
           notification_email?: string | null
           send_reservation_emails?: boolean | null
           show_reviews_section?: boolean | null
