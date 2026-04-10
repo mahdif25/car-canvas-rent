@@ -20,6 +20,14 @@ export interface SiteSettings {
   show_reviews_section: boolean;
   lead_capture_mode: string;
   logo_height: number;
+  footer_description: string;
+  footer_phone: string;
+  footer_email: string;
+  footer_address: string;
+  footer_copyright: string;
+  conditions_generales_html: string;
+  privacy_policy_html: string;
+  caution_policy_html: string;
   updated_at: string;
 }
 

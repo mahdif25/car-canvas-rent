@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Palette, BarChart3, Mail, MessageCircle, Star, Plus, Pencil, Trash2 } from "lucide-react";
+import { Palette, BarChart3, Mail, MessageCircle, Star, Plus, Pencil, Trash2, FileText } from "lucide-react";
 import logo from "@/assets/logo.png";
 
 const AdminSettings = () => {
@@ -61,12 +61,13 @@ const AdminSettings = () => {
       <div className="space-y-6">
         <h1 className="text-2xl font-bold">Paramètres</h1>
         <Tabs defaultValue="appearance" className="space-y-6">
-          <TabsList className="w-full grid grid-cols-5 h-auto bg-card border border-border">
+          <TabsList className="w-full grid grid-cols-6 h-auto bg-card border border-border">
             <TabsTrigger value="appearance" className="gap-2 text-foreground"><Palette size={16} />Apparence</TabsTrigger>
             <TabsTrigger value="tracking" className="gap-2 text-foreground"><BarChart3 size={16} />Tracking</TabsTrigger>
             <TabsTrigger value="emails" className="gap-2 text-foreground"><Mail size={16} />Emails</TabsTrigger>
             <TabsTrigger value="whatsapp" className="gap-2 text-foreground"><MessageCircle size={16} />WhatsApp</TabsTrigger>
             <TabsTrigger value="reviews" className="gap-2 text-foreground"><Star size={16} />Avis</TabsTrigger>
+            <TabsTrigger value="content" className="gap-2 text-foreground"><FileText size={16} />Contenu</TabsTrigger>
           </TabsList>
 
           {/* Appearance */}
@@ -395,6 +396,90 @@ const AdminSettings = () => {
                   ))}
                 </div>
               )}
+            </div>
+          </TabsContent>
+
+          {/* Content */}
+          <TabsContent value="content" className="space-y-6">
+            {/* Footer */}
+            <div className="bg-card rounded-xl p-6 space-y-5 border border-border">
+              <h2 className="font-semibold text-lg">Pied de page (Footer)</h2>
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <Textarea
+                  value={form.footer_description || ""}
+                  onChange={(e) => setForm({ ...form, footer_description: e.target.value })}
+                  rows={2}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Téléphone</Label>
+                  <Input value={form.footer_phone || ""} onChange={(e) => setForm({ ...form, footer_phone: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <Input value={form.footer_email || ""} onChange={(e) => setForm({ ...form, footer_email: e.target.value })} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Adresse</Label>
+                  <Input value={form.footer_address || ""} onChange={(e) => setForm({ ...form, footer_address: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Copyright</Label>
+                  <Input value={form.footer_copyright || ""} onChange={(e) => setForm({ ...form, footer_copyright: e.target.value })} />
+                </div>
+              </div>
+              <Button onClick={() => save(["footer_description", "footer_phone", "footer_email", "footer_address", "footer_copyright"])} disabled={updateMutation.isPending}>
+                Sauvegarder
+              </Button>
+            </div>
+
+            {/* Conditions Générales */}
+            <div className="bg-card rounded-xl p-6 space-y-5 border border-border">
+              <h2 className="font-semibold text-lg">Conditions Générales</h2>
+              <p className="text-xs text-muted-foreground">Contenu HTML affiché sur la page /conditions-generales. Laissez vide pour le contenu par défaut.</p>
+              <Textarea
+                value={form.conditions_generales_html || ""}
+                onChange={(e) => setForm({ ...form, conditions_generales_html: e.target.value })}
+                rows={10}
+                placeholder="<h2>1. Objet</h2><p>...</p>"
+              />
+              <Button onClick={() => save(["conditions_generales_html"])} disabled={updateMutation.isPending}>
+                Sauvegarder
+              </Button>
+            </div>
+
+            {/* Politique de Confidentialité */}
+            <div className="bg-card rounded-xl p-6 space-y-5 border border-border">
+              <h2 className="font-semibold text-lg">Politique de Confidentialité</h2>
+              <p className="text-xs text-muted-foreground">Contenu HTML affiché sur la page /politique-confidentialite.</p>
+              <Textarea
+                value={form.privacy_policy_html || ""}
+                onChange={(e) => setForm({ ...form, privacy_policy_html: e.target.value })}
+                rows={10}
+                placeholder="<h2>Protection des données</h2><p>...</p>"
+              />
+              <Button onClick={() => save(["privacy_policy_html"])} disabled={updateMutation.isPending}>
+                Sauvegarder
+              </Button>
+            </div>
+
+            {/* Politique de Caution */}
+            <div className="bg-card rounded-xl p-6 space-y-5 border border-border">
+              <h2 className="font-semibold text-lg">Politique de Caution</h2>
+              <p className="text-xs text-muted-foreground">Contenu HTML affiché sur la page /politique-caution.</p>
+              <Textarea
+                value={form.caution_policy_html || ""}
+                onChange={(e) => setForm({ ...form, caution_policy_html: e.target.value })}
+                rows={10}
+                placeholder="<h2>Dépôt de garantie</h2><p>...</p>"
+              />
+              <Button onClick={() => save(["caution_policy_html"])} disabled={updateMutation.isPending}>
+                Sauvegarder
+              </Button>
             </div>
           </TabsContent>
         </Tabs>

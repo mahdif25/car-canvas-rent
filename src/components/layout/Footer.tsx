@@ -14,7 +14,7 @@ const Footer = () => {
           <div className="space-y-4">
             <img src={logo} alt="Centre Lux Car" style={{ height: logoH }} className="w-auto brightness-200" />
             <p className="text-sm opacity-80">
-              Location de voitures de qualité au Maroc. Service professionnel et véhicules bien entretenus.
+              {settings?.footer_description || "Location de voitures de qualité au Maroc. Service professionnel et véhicules bien entretenus."}
             </p>
           </div>
 
@@ -27,6 +27,8 @@ const Footer = () => {
               <Link to="/reservation" className="text-sm opacity-80 hover:text-primary transition-colors">Réservation</Link>
               <Link to="/suivi-reservation" className="text-sm opacity-80 hover:text-primary transition-colors">Suivi de réservation</Link>
               <Link to="/conditions-generales" className="text-sm opacity-80 hover:text-primary transition-colors">Conditions Générales</Link>
+              <Link to="/politique-confidentialite" className="text-sm opacity-80 hover:text-primary transition-colors">Politique de Confidentialité</Link>
+              <Link to="/politique-caution" className="text-sm opacity-80 hover:text-primary transition-colors">Politique de Caution</Link>
             </nav>
           </div>
 
@@ -36,15 +38,15 @@ const Footer = () => {
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2 text-sm opacity-80">
                 <Phone size={16} className="text-primary" />
-                <span>+212 6 00 00 00 00</span>
+                <span>{settings?.footer_phone || "+212 6 00 00 00 00"}</span>
               </div>
               <div className="flex items-center gap-2 text-sm opacity-80">
                 <Mail size={16} className="text-primary" />
-                <span>contact@centreluxcar.ma</span>
+                <span>{settings?.footer_email || "contact@centreluxcar.ma"}</span>
               </div>
               <div className="flex items-center gap-2 text-sm opacity-80">
                 <MapPin size={16} className="text-primary" />
-                <span>Casablanca, Maroc</span>
+                <span>{settings?.footer_address || "Casablanca, Maroc"}</span>
               </div>
             </div>
           </div>
@@ -53,7 +55,7 @@ const Footer = () => {
 
       <div className="border-t border-foreground/10">
         <div className="container py-4 text-center text-sm opacity-60">
-          © {new Date().getFullYear()} Centre Lux Car. Tous droits réservés.
+          © {new Date().getFullYear()} {settings?.footer_copyright || "Centre Lux Car. Tous droits réservés."}
         </div>
       </div>
     </footer>

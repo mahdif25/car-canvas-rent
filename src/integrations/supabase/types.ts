@@ -646,8 +646,15 @@ export type Database = {
       }
       site_settings: {
         Row: {
+          caution_policy_html: string
+          conditions_generales_html: string
           facebook_capi_token: string | null
           facebook_pixel_id: string | null
+          footer_address: string
+          footer_copyright: string
+          footer_description: string
+          footer_email: string
+          footer_phone: string
           google_analytics_id: string | null
           google_reviews_url: string | null
           google_tag_manager_id: string | null
@@ -658,6 +665,7 @@ export type Database = {
           lead_capture_mode: string
           logo_height: number
           notification_email: string | null
+          privacy_policy_html: string
           send_reservation_emails: boolean | null
           show_reviews_section: boolean | null
           tiktok_pixel_id: string | null
@@ -667,8 +675,15 @@ export type Database = {
           whatsapp_number: string | null
         }
         Insert: {
+          caution_policy_html?: string
+          conditions_generales_html?: string
           facebook_capi_token?: string | null
           facebook_pixel_id?: string | null
+          footer_address?: string
+          footer_copyright?: string
+          footer_description?: string
+          footer_email?: string
+          footer_phone?: string
           google_analytics_id?: string | null
           google_reviews_url?: string | null
           google_tag_manager_id?: string | null
@@ -679,6 +694,7 @@ export type Database = {
           lead_capture_mode?: string
           logo_height?: number
           notification_email?: string | null
+          privacy_policy_html?: string
           send_reservation_emails?: boolean | null
           show_reviews_section?: boolean | null
           tiktok_pixel_id?: string | null
@@ -688,8 +704,15 @@ export type Database = {
           whatsapp_number?: string | null
         }
         Update: {
+          caution_policy_html?: string
+          conditions_generales_html?: string
           facebook_capi_token?: string | null
           facebook_pixel_id?: string | null
+          footer_address?: string
+          footer_copyright?: string
+          footer_description?: string
+          footer_email?: string
+          footer_phone?: string
           google_analytics_id?: string | null
           google_reviews_url?: string | null
           google_tag_manager_id?: string | null
@@ -700,6 +723,7 @@ export type Database = {
           lead_capture_mode?: string
           logo_height?: number
           notification_email?: string | null
+          privacy_policy_html?: string
           send_reservation_emails?: boolean | null
           show_reviews_section?: boolean | null
           tiktok_pixel_id?: string | null
