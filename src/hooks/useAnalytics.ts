@@ -87,27 +87,12 @@ export function useAnalytics() {
   const captureLeadField = useCallback(
     async (fields: Record<string, string>, step: number) => {
       try {
-        // Upsert lead by visitor_id
-        const { data: existing } = await supabase
-          .from("leads")
-          .select("id")
-          .eq("visitor_id", visitorId.current)
-          .order("created_at", { ascending: false })
-          .limit(1);
-
-        if (existing && existing.length > 0) {
-          await supabase
-            .from("leads")
-            .update({ ...fields, last_reservation_step: step, updated_at: new Date().toISOString() })
-            .eq("id", existing[0].id);
-        } else {
-          await supabase.from("leads").insert({
-            visitor_id: visitorId.current,
-            session_id: sessionId.current,
-            ...fields,
-            last_reservation_step: step,
-          });
-        }
+        await supabase.from("leads").insert({
+          visitor_id: visitorId.current,
+          session_id: sessionId.current,
+          ...fields,
+          last_reservation_step: step,
+        });
       } catch {
         // silent
       }

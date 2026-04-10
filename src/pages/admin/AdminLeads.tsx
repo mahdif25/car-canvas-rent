@@ -15,10 +15,42 @@ const stepLabels: Record<number, string> = {
   5: "Confirmation",
 };
 
+interface LeadRow {
+  id: string;
+  visitor_id: string | null;
+  session_id: string | null;
+  email: string | null;
+  phone: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  license_number: string | null;
+  last_reservation_step: number | null;
+  reservation_completed: boolean | null;
+  reservation_id: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+interface GroupedLead {
+  key: string;
+  latestEmail: string | null;
+  latestPhone: string | null;
+  latestFirstName: string | null;
+  latestLastName: string | null;
+  latestLicense: string | null;
+  maxStep: number;
+  completed: boolean;
+  entryCount: number;
+  resCount: number;
+  status: string;
+  entries: LeadRow[];
+  latestUpdated: string;
+}
+
 const AdminLeads = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
   const { data: leads = [], isLoading } = useQuery({
     queryKey: ["admin-leads"],
@@ -26,12 +58,11 @@ const AdminLeads = () => {
       const { data } = await supabase
         .from("leads")
         .select("*")
-        .order("updated_at", { ascending: false });
-      return data ?? [];
+        .order("created_at", { ascending: false });
+      return (data ?? []) as LeadRow[];
     },
   });
 
-  // Count reservations per email
   const { data: reservations = [] } = useQuery({
     queryKey: ["admin-reservations-for-leads"],
     queryFn: async () => {
@@ -40,54 +71,63 @@ const AdminLeads = () => {
     },
   });
 
-  // Visitor sessions for expanded detail
-  const { data: events = [] } = useQuery({
-    queryKey: ["analytics-events-for-leads"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("analytics_events")
-        .select("visitor_id, session_id, page_path, device_type, browser, os, country, city, created_at")
-        .order("created_at", { ascending: false })
-        .limit(1000);
-      return data ?? [];
-    },
-  });
+  const grouped: GroupedLead[] = useMemo(() => {
+    const map = new Map<string, LeadRow[]>();
+    for (const lead of leads) {
+      const key = lead.email?.toLowerCase() || lead.visitor_id || lead.id;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(lead);
+    }
 
-  const enrichedLeads = useMemo(() => {
-    return leads.map((lead: any) => {
-      const email = lead.email?.toLowerCase();
+    return Array.from(map.entries()).map(([key, entries]) => {
+      const latest = entries[0]; // already sorted desc
+      const maxStep = Math.max(...entries.map((e) => e.last_reservation_step ?? 0));
+      const completed = entries.some((e) => e.reservation_completed);
+      const email = latest.email?.toLowerCase() ?? null;
       const matchingRes = email
         ? reservations.filter((r: any) => r.customer_email?.toLowerCase() === email)
         : [];
-      const resCount = matchingRes.length;
-      const hasActiveRes = matchingRes.some((r: any) => ["pending", "confirmed", "active"].includes(r.status));
 
       let status: string;
-      if (lead.reservation_completed) status = "client";
-      else if (lead.last_reservation_step >= 2) status = "abandonné";
+      if (completed) status = "client";
+      else if (maxStep >= 2) status = "abandonné";
       else status = "lead";
 
-      return { ...lead, resCount, hasActiveRes, status };
-    });
+      return {
+        key,
+        latestEmail: latest.email,
+        latestPhone: latest.phone,
+        latestFirstName: latest.first_name,
+        latestLastName: latest.last_name,
+        latestLicense: latest.license_number,
+        maxStep,
+        completed,
+        entryCount: entries.length,
+        resCount: matchingRes.length,
+        status,
+        entries,
+        latestUpdated: latest.updated_at || latest.created_at || "",
+      };
+    }).sort((a, b) => new Date(b.latestUpdated).getTime() - new Date(a.latestUpdated).getTime());
   }, [leads, reservations]);
 
   const filtered = useMemo(() => {
-    let result = enrichedLeads;
+    let result = grouped;
     if (statusFilter !== "all") {
-      result = result.filter((l: any) => l.status === statusFilter);
+      result = result.filter((g) => g.status === statusFilter);
     }
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter(
-        (l: any) =>
-          l.email?.toLowerCase().includes(q) ||
-          l.phone?.includes(q) ||
-          l.first_name?.toLowerCase().includes(q) ||
-          l.last_name?.toLowerCase().includes(q)
+        (g) =>
+          g.latestEmail?.toLowerCase().includes(q) ||
+          g.latestPhone?.includes(q) ||
+          g.latestFirstName?.toLowerCase().includes(q) ||
+          g.latestLastName?.toLowerCase().includes(q)
       );
     }
     return result;
-  }, [enrichedLeads, statusFilter, search]);
+  }, [grouped, statusFilter, search]);
 
   const statusBadge = (status: string) => {
     const map: Record<string, string> = {
@@ -100,11 +140,12 @@ const AdminLeads = () => {
       abandonné: "Abandonné",
       lead: "Lead",
     };
-    return <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${map[status] || "bg-secondary text-muted-foreground"}`}>{labels[status] || status}</span>;
+    return (
+      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${map[status] || "bg-secondary text-muted-foreground"}`}>
+        {labels[status] || status}
+      </span>
+    );
   };
-
-  const getVisitorEvents = (visitorId: string) =>
-    events.filter((e: any) => e.visitor_id === visitorId).slice(0, 20);
 
   return (
     <AdminLayout>
@@ -113,12 +154,7 @@ const AdminLeads = () => {
         <div className="flex gap-2 flex-wrap">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-            <Input
-              placeholder="Rechercher..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 w-52"
-            />
+            <Input placeholder="Rechercher..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 w-52" />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-36"><SelectValue placeholder="Statut" /></SelectTrigger>
@@ -138,64 +174,63 @@ const AdminLeads = () => {
             <p className="text-center py-8 text-muted-foreground">Chargement...</p>
           ) : filtered.length > 0 ? (
             <div className="space-y-2">
-              {/* Header */}
               <div className="hidden md:grid grid-cols-7 gap-2 px-4 py-2 text-xs font-medium text-muted-foreground uppercase">
                 <span>Nom</span>
                 <span>Email</span>
                 <span>Téléphone</span>
-                <span>Permis</span>
-                <span>Dernière étape</span>
+                <span>Étape max</span>
+                <span>Entrées</span>
                 <span>Réservations</span>
                 <span>Statut</span>
               </div>
-              {filtered.map((lead: any) => (
-                <div key={lead.id} className="border rounded-lg">
+              {filtered.map((group) => (
+                <div key={group.key} className="border rounded-lg">
                   <div
                     className="grid grid-cols-1 md:grid-cols-7 gap-2 px-4 py-3 cursor-pointer hover:bg-secondary/50 items-center text-sm"
-                    onClick={() => setExpandedId(expandedId === lead.id ? null : lead.id)}
+                    onClick={() => setExpandedKey(expandedKey === group.key ? null : group.key)}
                   >
-                    <span className="font-medium">{[lead.first_name, lead.last_name].filter(Boolean).join(" ") || "—"}</span>
-                    <span className="break-all text-muted-foreground">{lead.email || "—"}</span>
-                    <span className="text-muted-foreground">{lead.phone || "—"}</span>
-                    <span className="text-muted-foreground">{lead.license_number || "—"}</span>
-                    <span>{stepLabels[lead.last_reservation_step] || `Étape ${lead.last_reservation_step}`}</span>
-                    <span>{lead.resCount}</span>
+                    <span className="font-medium">{[group.latestFirstName, group.latestLastName].filter(Boolean).join(" ") || "—"}</span>
+                    <span className="break-all text-muted-foreground">{group.latestEmail || "—"}</span>
+                    <span className="text-muted-foreground">{group.latestPhone || "—"}</span>
+                    <span>{stepLabels[group.maxStep] || `Étape ${group.maxStep}`}</span>
+                    <span>{group.entryCount}</span>
+                    <span>{group.resCount}</span>
                     <div className="flex items-center gap-2">
-                      {statusBadge(lead.status)}
-                      {expandedId === lead.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                      {statusBadge(group.status)}
+                      {expandedKey === group.key ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                     </div>
                   </div>
 
-                  {expandedId === lead.id && (
+                  {expandedKey === group.key && (
                     <div className="border-t p-4 bg-secondary/30 space-y-3 text-sm">
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        <div><p className="text-muted-foreground text-xs">Visitor ID</p><p className="font-mono text-xs break-all">{lead.visitor_id}</p></div>
-                        <div><p className="text-muted-foreground text-xs">Session ID</p><p className="font-mono text-xs break-all">{lead.session_id}</p></div>
-                        <div><p className="text-muted-foreground text-xs">Créé le</p><p>{new Date(lead.created_at).toLocaleDateString("fr-FR")}</p></div>
-                        <div><p className="text-muted-foreground text-xs">Mis à jour</p><p>{new Date(lead.updated_at).toLocaleDateString("fr-FR")}</p></div>
-                      </div>
-
-                      {lead.visitor_id && (
-                        <div>
-                          <p className="font-medium text-xs text-muted-foreground mb-2">Dernières pages visitées</p>
-                          <div className="space-y-1 max-h-40 overflow-auto">
-                            {getVisitorEvents(lead.visitor_id).map((ev: any, i: number) => (
-                              <div key={i} className="flex justify-between text-xs py-1 border-b last:border-0">
-                                <span className="font-mono">{ev.page_path}</span>
-                                <div className="flex gap-3 text-muted-foreground">
-                                  <span>{ev.device_type}</span>
-                                  <span>{ev.browser}</span>
-                                  <span>{[ev.country, ev.city].filter(Boolean).join(", ")}</span>
-                                  <span>{new Date(ev.created_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</span>
-                                </div>
-                              </div>
-                            ))}
-                            {getVisitorEvents(lead.visitor_id).length === 0 && (
-                              <p className="text-muted-foreground text-xs">Aucune activité.</p>
+                      <p className="font-medium text-xs text-muted-foreground mb-2">Historique des captures ({group.entryCount} entrées)</p>
+                      <div className="space-y-2 max-h-64 overflow-auto">
+                        {group.entries.map((entry) => (
+                          <div key={entry.id} className="border rounded-md p-3 bg-background space-y-1">
+                            <div className="flex justify-between items-center">
+                              <span className="text-xs text-muted-foreground">
+                                {entry.created_at ? new Date(entry.created_at).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" }) : "—"}
+                              </span>
+                              <span className="text-xs font-medium">
+                                {stepLabels[entry.last_reservation_step ?? 0] || `Étape ${entry.last_reservation_step}`}
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                              {entry.first_name && <div><span className="text-muted-foreground">Prénom:</span> {entry.first_name}</div>}
+                              {entry.last_name && <div><span className="text-muted-foreground">Nom:</span> {entry.last_name}</div>}
+                              {entry.email && <div><span className="text-muted-foreground">Email:</span> {entry.email}</div>}
+                              {entry.phone && <div><span className="text-muted-foreground">Tél:</span> {entry.phone}</div>}
+                              {entry.license_number && <div><span className="text-muted-foreground">Permis:</span> {entry.license_number}</div>}
+                            </div>
+                            {entry.reservation_completed && (
+                              <span className="text-xs text-green-600 font-medium">✓ Réservation complétée</span>
                             )}
+                            <div className="text-xs text-muted-foreground font-mono truncate">
+                              Session: {entry.session_id?.slice(0, 8)}… | Visitor: {entry.visitor_id?.slice(0, 8)}…
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
