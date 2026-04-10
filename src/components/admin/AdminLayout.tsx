@@ -2,6 +2,7 @@ import { ReactNode, useState } from "react";
 import { Link, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { Car, Settings, CalendarDays, LayoutDashboard, LogOut, MapPin, Menu, MoreHorizontal, BarChart3, Users, Tag, Puzzle, Mail } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import logo from "@/assets/logo.png";

@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { Palette, BarChart3, Mail, MessageCircle, Star, Plus, Pencil, Trash2 } from "lucide-react";
+import logo from "@/assets/logo.png";
 
 const AdminSettings = () => {
   const { data: settings, isLoading } = useSiteSettings();

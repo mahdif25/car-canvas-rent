@@ -19,6 +19,7 @@ export interface SiteSettings {
   google_reviews_url: string;
   show_reviews_section: boolean;
   lead_capture_mode: string;
+  logo_height: number;
   updated_at: string;
 }
 
