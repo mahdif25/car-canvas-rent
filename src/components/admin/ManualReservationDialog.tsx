@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { getDailyRateFromTiers } from "@/hooks/useVehicles";
 import { getDeliveryFee, type Location } from "@/hooks/useLocations";
+import { useAvailablePlates } from "@/hooks/useFleetPlates";
 import { Plus } from "lucide-react";
 
 interface Props {
@@ -44,6 +45,9 @@ export default function ManualReservationDialog({ open, onOpenChange, vehicles, 
   const [nationality, setNationality] = useState("");
   const [dob, setDob] = useState("");
   const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
+  const [assignedPlateId, setAssignedPlateId] = useState("");
+
+  const { data: availablePlates } = useAvailablePlates(vehicleId || undefined, pickupDate, returnDate);
 
   // Additional driver
   const [hasAdditionalDriver, setHasAdditionalDriver] = useState(false);
@@ -86,6 +90,7 @@ export default function ManualReservationDialog({ open, onOpenChange, vehicles, 
     setNationality("");
     setDob("");
     setSelectedAddons([]);
+    setAssignedPlateId("");
     setHasAdditionalDriver(false);
     setAddFirstName("");
     setAddLastName("");
@@ -122,6 +127,7 @@ export default function ManualReservationDialog({ open, onOpenChange, vehicles, 
         delivery_fee: calc.deliveryFee,
         deposit_amount: calc.depositAmount,
         discount_amount: 0,
+        assigned_plate_id: assignedPlateId || null,
         status: "confirmed",
         is_manual: true,
         payment_method: "cash",
@@ -188,6 +194,21 @@ export default function ManualReservationDialog({ open, onOpenChange, vehicles, 
               </SelectContent>
             </Select>
           </div>
+
+          {/* Plate assignment */}
+          {vehicleId && (
+            <div className="space-y-1">
+              <Label>Véhicule du parc (immatriculation)</Label>
+              <Select value={assignedPlateId} onValueChange={setAssignedPlateId}>
+                <SelectTrigger><SelectValue placeholder="Aucune plaque assignée" /></SelectTrigger>
+                <SelectContent>
+                  {(availablePlates ?? []).map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.plate_number} — {p.brand} {p.model}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Dates & times */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
