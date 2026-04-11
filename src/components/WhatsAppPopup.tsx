@@ -126,7 +126,7 @@ const WhatsAppPopup = () => {
 
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 left-6 z-50 w-14 h-14 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
+        className="fixed bottom-[72px] lg:bottom-6 left-6 z-50 w-14 h-14 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
         aria-label="Chat WhatsApp"
       >
         {isOpen ? <X size={24} /> : <WhatsAppIcon size={28} />}
