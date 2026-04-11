@@ -158,18 +158,19 @@ const EmailBuilder = ({ value, onChange, couponMode = 'none', discountAmount = '
   const renderBlockEditor = (block: EmailBlock) => {
     const isSelected = selectedBlockId === block.id;
     const idx = blocks.findIndex(b => b.id === block.id);
+    const isCoupon = block.type === 'coupon';
 
     return (
       <div
         key={block.id}
-        className={`border rounded-lg transition-colors ${isSelected ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground/30'}`}
-        onClick={() => setSelectedBlockId(block.id)}
+        className={`border rounded-lg transition-colors ${isCoupon ? 'border-primary/40 bg-primary/5' : isSelected ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground/30'}`}
+        onClick={() => !isCoupon && setSelectedBlockId(block.id)}
       >
         {/* Block header */}
         <div className="flex items-center gap-1 px-2 py-1.5 bg-muted/30 rounded-t-lg">
-          <GripVertical size={14} className="text-muted-foreground shrink-0" />
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex-1">
-            {BLOCK_TYPE_OPTIONS.find(o => o.type === block.type)?.label || block.type}
+          {isCoupon ? <Ticket size={14} className="text-primary shrink-0" /> : <GripVertical size={14} className="text-muted-foreground shrink-0" />}
+          <span className={`text-xs font-medium uppercase tracking-wider flex-1 ${isCoupon ? 'text-primary' : 'text-muted-foreground'}`}>
+            {isCoupon ? 'Coupon' : (BLOCK_TYPE_OPTIONS.find(o => o.type === block.type)?.label || block.type)}
           </span>
           <div className="flex items-center gap-0.5">
             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); moveBlock(block.id, -1); }} disabled={idx === 0}>
@@ -178,11 +179,13 @@ const EmailBuilder = ({ value, onChange, couponMode = 'none', discountAmount = '
             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); moveBlock(block.id, 1); }} disabled={idx === blocks.length - 1}>
               <ChevronDown size={12} />
             </Button>
-            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); duplicateBlock(block.id); }}>
-              <Copy size={12} />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); removeBlock(block.id); }}>
-              <Trash2 size={12} />
+            {!isCoupon && (
+              <>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); duplicateBlock(block.id); }}>
+                  <Copy size={12} />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); removeBlock(block.id); }}>
+                  <Trash2 size={12} />
             </Button>
           </div>
         </div>
