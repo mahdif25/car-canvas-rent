@@ -1,51 +1,26 @@
 
 
-# Per-Device Video Controls with MP4 Upload
+# Fix Mobile Preview Height
 
-## Current state
-- 3 zoom sliders (mobile/tablet/desktop) but only 1 shared X offset and 1 shared Y offset
-- MP4 videos use `object-cover` with shared `objectPosition` — no per-device control
-- No file upload for MP4 — only URL input
+## Problem
+The preview height is calculated as `device.height * 0.55` for all devices (line 210), producing a 375×367 preview for mobile. The actual hero section uses `min-h-[85vh]` on mobile (375×567) — so the preview is far too short and looks like a "story" crop.
 
-## Plan
+## Fix — single line change in `src/pages/admin/AdminSettings.tsx`
 
-### 1. Database migration
-Replace the shared `hero_video_offset_x` (int) and `hero_video_offset_y` (int) with per-device columns:
-- `hero_video_mobile_offset_x` (int, default 50)
-- `hero_video_mobile_offset_y` (int, default 50)
-- `hero_video_tablet_offset_x` (int, default 50)
-- `hero_video_tablet_offset_y` (int, default 50)
-- `hero_video_desktop_offset_x` (int, default 50)
-- `hero_video_desktop_offset_y` (int, default 50)
+**Line 210**: Replace the fixed `0.55` multiplier with a per-device ratio matching the actual hero CSS:
 
-Keep the old columns for backward compat (they'll be ignored in code).
+```typescript
+// Before
+const previewH = (device.height * 0.55) * scaleFactor;
 
-### 2. Add a `hero-videos` storage bucket
-Create a public storage bucket so users can upload MP4 files directly instead of pasting URLs.
+// After  
+const heroRatio = previewDevice === "mobile" ? 0.85 : 0.70;
+const previewH = (device.height * heroRatio) * scaleFactor;
+```
 
-### 3. Update `src/hooks/useSiteSettings.ts`
-Add the 6 new offset fields to the interface.
+- Mobile: 375 × (667 × 0.85) = 375 × 567 — matches `min-h-[85vh]`
+- Tablet: 768 × (1024 × 0.70) = 768 × 717 — matches `min-h-[70vh]`
+- Desktop: 1280 × (800 × 0.70) = 1280 × 560 — matches `min-h-[70vh]`
 
-### 4. Update `src/pages/Index.tsx`
-- For YouTube iframes: each breakpoint (mobile/tablet/desktop) uses its own scale + offsetX + offsetY in the `transform` style
-- For native `<video>`: render 3 separate `<video>` tags (like iframes) with breakpoint classes, each using `object-cover` + per-device `objectPosition` and `transform: scale()` for zoom control
-- This gives native MP4 videos the same per-device zoom and position control as YouTube
-
-### 5. Update `src/pages/admin/AdminSettings.tsx`
-- Add an **Upload MP4** button next to the URL input (uploads to `hero-videos` bucket, sets the URL automatically)
-- Replace the shared X/Y sliders with per-device controls: when a device tab is selected, show that device's zoom, X position, and Y position sliders together
-- The live preview updates to reflect the active device's settings
-- Save button includes all 6 new offset fields
-
-### Files to change
-- `supabase/migrations/...` — new columns + storage bucket
-- `src/hooks/useSiteSettings.ts` — add per-device offset fields
-- `src/pages/Index.tsx` — per-device offsets for both YouTube and MP4
-- `src/pages/admin/AdminSettings.tsx` — upload button + per-device control panel
-
-### Result
-- Each device (mobile/tablet/desktop) has independent zoom, horizontal position, and vertical position
-- MP4 files can be uploaded directly from admin
-- Native MP4 videos get the same granular control as YouTube embeds
-- Live preview reflects changes per device in real-time
+This is a one-line change. No other files affected.
 
