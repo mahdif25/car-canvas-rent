@@ -1,51 +1,44 @@
 
 
-# Persist Reservation Form & Allow Vehicle Change at Any Stage
+# Browser Autofill Detection & Comprehensive Tracking Events
 
-## Overview
-Two changes: (1) persist all form data + current step to `sessionStorage` so a page refresh restores the user's progress; (2) remove the skip-step-2 logic when a vehicle is preselected, so users can always change their vehicle.
+## Problems
+1. Browser autofill populates fields but React state doesn't update until user interacts — the form appears empty despite filled inputs
+2. `InitiateCheckout` fires on step 4 (Summary) instead of step 3 (Info) where the user actually enters checkout info
+3. No `Purchase` event for TikTok/Google; no `PageView` events per step for other platforms; missing `AddToCart` and `ViewContent` events
 
 ## Changes
 
-### 1. `src/pages/Reservation.tsx` — Session persistence
+### 1. `src/components/reservation/StepDriverInfo.tsx` — Autofill detection
 
-- **Initialize state from sessionStorage**: On mount, read `reservation_form` and `reservation_step` from `sessionStorage`. If found, use those values as initial state instead of defaults. URL search params (location, pickup, return, vehicle) override only if they differ from what's stored (i.e., fresh navigation with new params takes priority).
-- **Persist on every update**: Add a `useEffect` that writes `formData` and `currentStep` to `sessionStorage` whenever they change.
-- **Clear on confirmation**: After successful reservation (step 5), clear sessionStorage keys.
+- Add a polling mechanism using `requestAnimationFrame` or a short `setInterval` (500ms, 3 attempts) that reads the actual DOM input values via refs after mount
+- If DOM values differ from React state (autofill happened), call `updateForm()` with those values
+- Use `onAnimationStart` on inputs to detect Chrome's autofill CSS animation (`:-webkit-autofill`) as a trigger to read DOM values immediately
+- Add a shared `useAutofillDetect` effect that checks all main fields (fname, lname, email, phone) and syncs to state
 
-### 2. `src/pages/Reservation.tsx` — Allow vehicle change at any step
+### 2. `src/pages/Reservation.tsx` — Fix event timing & add multi-platform events
 
-- Remove the `preselectedVehicle` skip logic in `nextStep` and `prevStep` (lines 98-107). Users always go through step 2.
-- Add a "Changer de véhicule" button visible on steps 3 and 4 (near the vehicle info in the sidebar or in the step content) that sets `currentStep` to 2.
+Current tracking in the `useEffect` on `currentStep`:
+- **Step 1**: `PageView` (already via `useAnalytics`), add TikTok `ttq.page()`, GA `page_view`
+- **Step 2**: Track `ViewContent` (FB) / `ViewContent` (TikTok) when viewing vehicle selection  
+- **Step 3**: Fire `InitiateCheckout` (FB Pixel + CAPI), TikTok `InitiateCheckout`, GA `begin_checkout` — move from step 4 to step 3
+- **Step 4**: Fire `AddPaymentInfo` (FB) when reaching summary
+- On confirm (step 5): Keep `Purchase` (FB), add TikTok `CompletePayment`, GA `purchase`
 
-### 3. `src/components/reservation/ReservationSidebar.tsx` — Change vehicle button
+### 3. `src/components/reservation/StepDriverInfo.tsx` — Track on Continue click
 
-- Add an optional `onChangeVehicle` callback prop
-- When a vehicle is selected and `onChangeVehicle` is provided, show a small "Modifier" link/button next to the vehicle name that calls `onChangeVehicle`
+- In `handleNext`, after saving fb_* to sessionStorage:
+  - Fire `Lead` event via `trackFacebookEvent("Lead", ...)` when lead capture mode is "submit"
+  - This ensures CAPI sends the lead with user data populated in sessionStorage
 
-## Technical Details
+### 4. `src/hooks/useAnalytics.ts` — Add TikTok & GA event helpers
 
-```typescript
-// Session storage keys
-const STORAGE_KEY = "reservation_form";
-const STEP_KEY = "reservation_step";
-
-// On mount: merge sessionStorage with URL params
-const saved = sessionStorage.getItem(STORAGE_KEY);
-const savedData = saved ? JSON.parse(saved) : null;
-// URL params take priority only when explicitly provided
-const initialData = { ...defaultForm, ...savedData, ...urlOverrides };
-
-// Persist effect
-useEffect(() => {
-  if (currentStep < 5) {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
-    sessionStorage.setItem(STEP_KEY, String(currentStep));
-  }
-}, [formData, currentStep]);
-```
+- Add `trackTikTokEvent(eventName, params)` — calls `window.ttq.track(eventName, params)` if available
+- Add `trackGAEvent(eventName, params)` — calls `window.gtag('event', eventName, params)` if available
+- Export both alongside existing methods
 
 ## Files to Modify
-- `src/pages/Reservation.tsx` — persistence logic + remove skip-step-2
-- `src/components/reservation/ReservationSidebar.tsx` — add "Modifier" vehicle button
+- `src/components/reservation/StepDriverInfo.tsx` — autofill detection + Lead event on submit
+- `src/pages/Reservation.tsx` — fix InitiateCheckout timing, add multi-platform events per step
+- `src/hooks/useAnalytics.ts` — add TikTok and GA tracking helpers, declare window types
 
