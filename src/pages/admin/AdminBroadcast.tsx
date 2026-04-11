@@ -5,6 +5,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import EmailBuilder from "@/components/admin/EmailBuilder";
+import { EmailBuilderData, DEFAULT_GLOBAL_STYLES, renderBlocksToHtml } from "@/lib/email-builder-utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -70,6 +72,10 @@ const AdminBroadcast = () => {
   // Step 2: Content
   const [subject, setSubject] = useState("");
   const [bodyHtml, setBodyHtml] = useState("");
+  const [emailBuilderData, setEmailBuilderData] = useState<EmailBuilderData>({
+    blocks: [],
+    globalStyles: { ...DEFAULT_GLOBAL_STYLES },
+  });
   const [couponMode, setCouponMode] = useState<CouponMode>("none");
   const [sourceCouponId, setSourceCouponId] = useState("");
   const [couponPrefix, setCouponPrefix] = useState("");
@@ -165,9 +171,14 @@ const AdminBroadcast = () => {
     if (!canSend) return;
     setSending(true);
     try {
+      // Render blocks to HTML for sending
+      const renderedHtml = emailBuilderData.blocks.length > 0
+        ? renderBlocksToHtml(emailBuilderData.blocks, emailBuilderData.globalStyles)
+        : bodyHtml;
+
       const broadcastData: Record<string, any> = {
         subject,
-        body_html: bodyHtml,
+        body_html: renderedHtml,
         coupon_mode: couponMode,
         discount_amount: Number(discountAmount) || 0,
         friend_discount_amount: Number(friendDiscountAmount) || 0,
@@ -347,14 +358,15 @@ const AdminBroadcast = () => {
         {/* Step 2: Content */}
         {step === 2 && (
           <div className="space-y-6">
-            <div className="space-y-4 max-w-2xl">
-              <div className="space-y-1">
+            <div className="space-y-4">
+              <div className="space-y-1 max-w-2xl">
                 <label className="text-sm font-medium">Objet de l'email *</label>
                 <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Ex: Offre spéciale rentrée 🚗" />
               </div>
+
               <div className="space-y-1">
-                <label className="text-sm font-medium">Contenu du message</label>
-                <Textarea value={bodyHtml} onChange={(e) => setBodyHtml(e.target.value)} placeholder="Rédigez votre message promotionnel..." rows={5} />
+                <label className="text-sm font-medium">Contenu de l'email</label>
+                <EmailBuilder value={emailBuilderData} onChange={setEmailBuilderData} />
               </div>
 
               <div className="space-y-3 border rounded-lg p-4 bg-card">
@@ -428,8 +440,10 @@ const AdminBroadcast = () => {
                     </p>
                   </>
                 )}
-              </div>
             </div>
+            </div>
+
+            <div className="max-w-2xl">
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <Button variant="outline" onClick={() => setStep(1)} className="gap-2 w-full sm:w-auto">
