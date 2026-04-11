@@ -240,6 +240,7 @@ const AdminFleet = () => {
     setFeatureInput("");
     setGalleryUrls([]);
     setColorVariants([]);
+  };
 
   const editVehicle = async (v: Vehicle) => {
     setEditingId(v.id);
