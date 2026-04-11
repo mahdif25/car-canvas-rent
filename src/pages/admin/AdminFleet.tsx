@@ -510,11 +510,11 @@ const AdminFleet = () => {
               </div>
             </div>
 
-            <div className="flex gap-3">
-              <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !form.name || !form.brand || !form.model} className="bg-primary text-primary-foreground hover:bg-accent rounded-pill">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !form.name || !form.brand || !form.model} className="bg-primary text-primary-foreground hover:bg-accent rounded-pill w-full sm:w-auto">
                 {saveMutation.isPending ? "Enregistrement..." : editingId ? "Modifier" : "Ajouter"}
               </Button>
-              <Button variant="outline" onClick={resetForm} className="rounded-pill">Annuler</Button>
+              <Button variant="outline" onClick={resetForm} className="rounded-pill w-full sm:w-auto">Annuler</Button>
             </div>
           </CardContent>
         </Card>
