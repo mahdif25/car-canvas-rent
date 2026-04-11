@@ -385,7 +385,9 @@ const EmailBuilder = ({ value, onChange, couponMode = 'none', discountAmount = '
             </div>
           )}
         </div>
+        )}
       </div>
+    );
     );
   };
 
