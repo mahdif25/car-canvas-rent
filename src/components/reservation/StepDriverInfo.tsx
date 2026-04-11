@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { ReservationFormData } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,34 @@ interface Props {
 }
 
 const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadCaptureMode = "blur" }: Props) => {
+  const prevFieldsRef = useRef<Record<string, string>>({});
+
+  // Detect autofill: when multiple fields populate in one render cycle
+  useEffect(() => {
+    const watched = ["first_name", "last_name", "email", "phone"] as const;
+    const prev = prevFieldsRef.current;
+    const nowFilled: Record<string, string> = {};
+    let newlyFilledCount = 0;
+
+    for (const key of watched) {
+      const val = formData[key];
+      if (val) {
+        nowFilled[key] = val;
+        if (!prev[key]) newlyFilledCount++;
+      }
+    }
+
+    prevFieldsRef.current = nowFilled;
+
+    // If 2+ fields went from empty→filled simultaneously, it's likely autofill
+    if (newlyFilledCount >= 2 && analytics) {
+      const allFields = collectAllFields();
+      const capiAllowed = leadCaptureMode !== "submit";
+      analytics.captureLeadField(allFields, 3, capiAllowed);
+      analytics.trackFieldCapture(allFields);
+    }
+  }, [formData.first_name, formData.last_name, formData.email, formData.phone]);
+
   const collectAllFields = (): Record<string, string> => {
     const fields: Record<string, string> = {};
     if (formData.first_name) fields.first_name = formData.first_name;
@@ -64,7 +93,7 @@ const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadC
     formData.terms_accepted;
 
   return (
-    <div className="space-y-6">
+    <form autoComplete="on" onSubmit={(e) => e.preventDefault()} className="space-y-6">
       <h2 className="text-xl font-semibold">Informations du conducteur</h2>
 
       <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
@@ -105,14 +134,14 @@ const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadC
             <label className="text-sm font-medium">N° Permis de conduire *</label>
             <div className="relative">
               <CreditCard size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input className="pl-9" value={formData.license_number} onChange={(e) => updateForm({ license_number: e.target.value })} onBlur={(e) => handleBlur("license_number", e.target.value)} placeholder="Numéro du permis" />
+              <Input className="pl-9" name="license" autoComplete="off" value={formData.license_number} onChange={(e) => updateForm({ license_number: e.target.value })} onBlur={(e) => handleBlur("license_number", e.target.value)} placeholder="Numéro du permis" />
             </div>
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Nationalité</label>
             <div className="relative">
               <Globe size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input className="pl-9" value={formData.nationality} onChange={(e) => updateForm({ nationality: e.target.value })} placeholder="Marocaine" />
+              <Input className="pl-9" name="nationality" autoComplete="country-name" value={formData.nationality} onChange={(e) => updateForm({ nationality: e.target.value })} placeholder="Marocaine" />
             </div>
           </div>
           <div className="space-y-2">
@@ -145,7 +174,7 @@ const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadC
           Continuer
         </Button>
       </div>
-    </div>
+    </form>
   );
 };
 
