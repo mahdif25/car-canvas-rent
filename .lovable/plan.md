@@ -1,20 +1,20 @@
 
 
-# Autofill Support for Reservation Driver Info
+# Fix Hero Video Background for All Screen Sizes
 
 ## Problem
-The form already has `autoComplete` attributes on most fields, but two issues exist:
-1. The **license number** and **nationality** fields are missing `name` and `autoComplete` attributes, reducing browser autofill effectiveness
-2. When the browser autofills multiple fields at once, `onChange` fires for each but `onBlur` does **not** — so lead capture never triggers until the user manually interacts with a field
+The YouTube iframe uses `scale(1.2)` which is insufficient on mobile (16:9 video in a tall/narrow viewport leaves black bars on sides). Direct MP4 videos use `object-cover` which works fine, but the iframe approach cannot use `object-cover` since iframes don't support it.
 
-## Plan
+## Solution
+Replace the fixed `scale(1.2)` with a CSS technique that forces the iframe to always cover the container regardless of aspect ratio — the same approach used by professional video backgrounds.
 
-### `src/components/reservation/StepDriverInfo.tsx`
-1. **Wrap inputs in a `<form>` tag** with `autoComplete="on"` to maximize browser autofill triggering (prevent default submit)
-2. **Add missing autocomplete attributes**: `name="nationality"` / `autoComplete="country-name"` for nationality
-3. **Detect autofill via a `useEffect`** that watches the form fields (`first_name`, `last_name`, `email`, `phone`). When multiple fields become populated (e.g., 2+ fields go from empty to filled in the same render cycle), fire `captureLeadField` once with all collected data — using `capi_allowed: false` when mode is "submit", `true` when mode is "blur"
-4. Keep existing `handleBlur` and `handleNext` logic unchanged — the autofill detection is an additional trigger, not a replacement
+### `src/pages/Index.tsx`
+- Replace the YouTube iframe's inline `style={{ transform: "scale(1.2)" }}` with a responsive cover technique:
+  - Use `min-w-[100%] min-h-[100%]` with `w-[177.78vh] h-[56.25vw]` (16:9 ratio math) to ensure the video always exceeds the container in both dimensions
+  - Center it with `absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2`
+  - This mimics `object-cover` behavior for iframes — on tall screens (mobile) the video stretches wider and crops sides; on wide screens it stretches taller and crops top/bottom
+- Keep the direct `<video>` tag unchanged (it already uses `object-cover` correctly)
 
-### Files to change
-- `src/components/reservation/StepDriverInfo.tsx` — add `<form>` wrapper, missing autocomplete attrs, and autofill detection effect
+### Single file change
+- `src/pages/Index.tsx` — update iframe className and remove the inline transform style
 
