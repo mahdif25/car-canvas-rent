@@ -3,7 +3,7 @@ import { ReservationFormData } from "@/lib/types";
 import { Vehicle, PricingTier, AddonOption, getDailyRateFromTiers } from "@/hooks/useVehicles";
 import { Location } from "@/hooks/useLocations";
 import { CalendarDays, MapPin, Car, ChevronUp, ChevronDown, Palette } from "lucide-react";
-import { useDeviceScale } from "@/hooks/useDeviceScale";
+import { useDeviceScale, getScaleForColorOnDevice, useDeviceType } from "@/hooks/useDeviceScale";
 import { useAllVehicleColors, getColorById, getDefaultColor } from "@/hooks/useVehicleColors";
 
 interface Props {
