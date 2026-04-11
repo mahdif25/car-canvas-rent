@@ -219,6 +219,7 @@ const AdminBroadcast = () => {
       setSelectedIds(new Set());
       setSubject("");
       setBodyHtml("");
+      setEmailBuilderData({ blocks: [], globalStyles: { ...DEFAULT_GLOBAL_STYLES } });
       setCouponMode("none");
       setSourceCouponId("");
       setCouponPrefix("");

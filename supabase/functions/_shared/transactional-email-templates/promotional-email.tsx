@@ -9,6 +9,7 @@ const SITE_NAME = "Centre Lux Car"
 interface Props {
   recipientName?: string
   bodyHtml?: string
+  renderedBodyHtml?: string
   couponCode?: string
   discountAmount?: number
   expiresAt?: string
@@ -22,6 +23,7 @@ const PromotionalEmail = (props: Props) => {
   const {
     recipientName = 'Client',
     bodyHtml = '',
+    renderedBodyHtml = '',
     couponCode,
     discountAmount = 0,
     expiresAt,
@@ -30,6 +32,8 @@ const PromotionalEmail = (props: Props) => {
     minTotalPrice,
     minRentalDays,
   } = props
+
+  const hasCustomHtml = renderedBodyHtml.length > 0
 
   const fmt = (n: number) => n.toLocaleString('fr-FR')
 
