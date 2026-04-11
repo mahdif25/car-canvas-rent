@@ -438,8 +438,9 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
 
   return (
     <div className="border rounded-lg">
+      {/* Desktop row */}
       <div
-        className="flex flex-wrap items-center justify-between p-4 cursor-pointer hover:bg-secondary/50 gap-2"
+        className="hidden sm:flex flex-wrap items-center justify-between p-4 cursor-pointer hover:bg-secondary/50 gap-2"
         onClick={onToggle}
       >
         <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
@@ -452,6 +453,24 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
         <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
           <span className="text-xs sm:text-sm">{r.pickup_date} → {r.return_date}</span>
           <span className="font-semibold text-primary text-sm">{Number(r.total_price).toLocaleString()} MAD</span>
+        </div>
+      </div>
+
+      {/* Mobile row */}
+      <div
+        className="sm:hidden p-3 cursor-pointer hover:bg-secondary/50"
+        onClick={onToggle}
+      >
+        <div className="flex items-center justify-between mb-1">
+          <span className="font-medium text-sm">{r.customer_first_name} {r.customer_last_name}</span>
+          <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${statusColors[r.status as ReservationStatus]}`}>
+            {statusLabels[r.status as ReservationStatus]}
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground">{(r as any).vehicles?.name}</p>
+        <div className="flex items-center justify-between mt-1.5 text-xs">
+          <span className="text-muted-foreground">{r.pickup_date} → {r.return_date}</span>
+          <span className="font-semibold text-primary">{Number(r.total_price).toLocaleString()} MAD</span>
         </div>
       </div>
 
