@@ -3,7 +3,7 @@ import { ReservationFormData } from "@/lib/types";
 import { Vehicle, PricingTier, AddonOption, getDailyRateFromTiers } from "@/hooks/useVehicles";
 import { Location } from "@/hooks/useLocations";
 import { CalendarDays, MapPin, Car, ChevronUp, ChevronDown, Palette } from "lucide-react";
-import { useDeviceScale } from "@/hooks/useDeviceScale";
+import { useDeviceScale, getScaleForColorOnDevice, useDeviceType } from "@/hooks/useDeviceScale";
 import { useAllVehicleColors, getColorById, getDefaultColor } from "@/hooks/useVehicleColors";
 
 interface Props {
@@ -21,6 +21,7 @@ const ReservationSidebar = ({ formData, rentalDays, vehicles, pricingTiers, curr
   const [mobileExpanded, setMobileExpanded] = useState(false);
   const vehicle = vehicles.find((v) => v.id === formData.vehicle_id);
   const sidebarScale = useDeviceScale(vehicle, "sidebar");
+  const deviceType = useDeviceType();
   const tiers = pricingTiers.filter((t) => t.vehicle_id === formData.vehicle_id);
   const dailyRate = vehicle ? getDailyRateFromTiers(tiers, rentalDays) : 0;
   const vehicleTotal = dailyRate * rentalDays;
@@ -30,6 +31,8 @@ const ReservationSidebar = ({ formData, rentalDays, vehicles, pricingTiers, curr
     ? getColorById(allColors, formData.selected_color_id)
     : vehicle ? getDefaultColor(allColors, vehicle.id) : undefined;
   const sidebarImage = selectedColor?.image_url || vehicle?.image_url;
+  const imageFlipped = selectedColor ? selectedColor.image_flipped : vehicle?.image_flipped;
+  const imageScale = selectedColor ? getScaleForColorOnDevice(selectedColor, 'sidebar', deviceType) : sidebarScale;
 
   // Only show vehicle price in sidebar (no delivery fees, no addons — those appear in step 4)
   const total = vehicleTotal;
@@ -38,7 +41,7 @@ const ReservationSidebar = ({ formData, rentalDays, vehicles, pricingTiers, curr
     <div className="space-y-4">
       {sidebarImage && (
         <div className="w-full h-28 bg-secondary rounded-lg overflow-hidden">
-          <img src={sidebarImage} alt={vehicle?.name} className="w-full h-full object-contain" style={{ transform: `${vehicle?.image_flipped ? 'scaleX(-1)' : ''} scale(${sidebarScale})`.trim() || 'none' }} />
+          <img src={sidebarImage} alt={vehicle?.name} className="w-full h-full object-contain" style={{ transform: `${imageFlipped ? 'scaleX(-1)' : ''} scale(${imageScale})`.trim() || 'none' }} />
         </div>
       )}
       {formData.pickup_location && (

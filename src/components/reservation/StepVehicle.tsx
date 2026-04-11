@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Users, Fuel, Settings2, Shield } from "lucide-react";
 import { getActiveFeatures } from "@/lib/vehicle-features";
 import { Vehicle, PricingTier, getDailyRateFromTiers } from "@/hooks/useVehicles";
-import { useDeviceType, getScaleForDevice } from "@/hooks/useDeviceScale";
+import { useDeviceType, getScaleForDevice, getScaleForColorOnDevice } from "@/hooks/useDeviceScale";
 import { useAllVehicleColors, getDefaultColor, VehicleColor } from "@/hooks/useVehicleColors";
 import VehicleColorPicker from "@/components/VehicleColorPicker";
 import { useState, useEffect } from "react";
@@ -55,6 +55,13 @@ const StepVehicle = ({ formData, updateForm, rentalDays, onNext, onBack, vehicle
     return defaultImage || "/placeholder.svg";
   };
 
+  const getImageTransform = (vehicleId: string, vehicle: any) => {
+    const activeColor = localColors[vehicleId] || getDefaultColor(allColors, vehicleId);
+    const flipped = activeColor ? activeColor.image_flipped : vehicle.image_flipped;
+    const scale = activeColor ? getScaleForColorOnDevice(activeColor, 'reservation', deviceType) : getScaleForDevice(vehicle, 'reservation', deviceType);
+    return { flipped, scale };
+  };
+
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold">Choisissez votre véhicule</h2>
@@ -69,6 +76,7 @@ const StepVehicle = ({ formData, updateForm, rentalDays, onNext, onBack, vehicle
           const isSelected = formData.vehicle_id === v.id;
           const vehicleColors = allColors.filter((c) => c.vehicle_id === v.id);
           const displayImage = getDisplayImage(v.id, v.image_url);
+          const { flipped: imgFlipped, scale: imgScale } = getImageTransform(v.id, v);
           const selectedColorId = localColors[v.id]?.id || getDefaultColor(allColors, v.id)?.id;
 
           return (
@@ -80,7 +88,7 @@ const StepVehicle = ({ formData, updateForm, rentalDays, onNext, onBack, vehicle
               }`}
             >
               <div className="w-full md:w-48 h-32 rounded-md overflow-hidden bg-secondary shrink-0">
-                <img src={displayImage} alt={v.name} className="w-full h-full object-contain" style={{ transform: `${v.image_flipped ? 'scaleX(-1)' : ''} scale(${getScaleForDevice(v, 'reservation', deviceType)})`.trim() || 'none' }} />
+                <img src={displayImage} alt={v.name} className="w-full h-full object-contain" style={{ transform: `${imgFlipped ? 'scaleX(-1)' : ''} scale(${imgScale})`.trim() || 'none' }} />
               </div>
               <div className="flex-1 flex flex-col justify-between">
                 <div>

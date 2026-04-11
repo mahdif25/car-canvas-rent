@@ -197,6 +197,22 @@ const AdminFleet = () => {
             image_url: c.image_url!,
             is_default: c.is_default ?? i === 0,
             sort_order: i,
+            image_flipped: c.image_flipped ?? false,
+            image_scale_home: Number(c.image_scale_home ?? 1),
+            image_scale_home_mobile: Number(c.image_scale_home_mobile ?? 1),
+            image_scale_home_tablet: Number(c.image_scale_home_tablet ?? 1),
+            image_scale_fleet: Number(c.image_scale_fleet ?? 1),
+            image_scale_fleet_mobile: Number(c.image_scale_fleet_mobile ?? 1),
+            image_scale_fleet_tablet: Number(c.image_scale_fleet_tablet ?? 1),
+            image_scale_detail: Number(c.image_scale_detail ?? 1),
+            image_scale_detail_mobile: Number(c.image_scale_detail_mobile ?? 1),
+            image_scale_detail_tablet: Number(c.image_scale_detail_tablet ?? 1),
+            image_scale_reservation: Number(c.image_scale_reservation ?? 1),
+            image_scale_reservation_mobile: Number(c.image_scale_reservation_mobile ?? 1),
+            image_scale_reservation_tablet: Number(c.image_scale_reservation_tablet ?? 1),
+            image_scale_sidebar: Number(c.image_scale_sidebar ?? 1),
+            image_scale_sidebar_mobile: Number(c.image_scale_sidebar_mobile ?? 1),
+            image_scale_sidebar_tablet: Number(c.image_scale_sidebar_tablet ?? 1),
           }));
           const { error: colorErr } = await supabase.from("vehicle_colors").insert(colorInserts);
           if (colorErr) throw colorErr;
@@ -483,7 +499,7 @@ const AdminFleet = () => {
                   type="button"
                   size="sm"
                   variant="outline"
-                  onClick={() => setColorVariants([...colorVariants, { color_name: "", color_hex: "#000000", image_url: "", is_default: colorVariants.length === 0, _new: true }])}
+                  onClick={() => setColorVariants([...colorVariants, { color_name: "", color_hex: "#000000", image_url: "", is_default: colorVariants.length === 0, _new: true, image_flipped: false, image_scale_home: 1, image_scale_home_mobile: 1, image_scale_home_tablet: 1, image_scale_fleet: 1, image_scale_fleet_mobile: 1, image_scale_fleet_tablet: 1, image_scale_detail: 1, image_scale_detail_mobile: 1, image_scale_detail_tablet: 1, image_scale_reservation: 1, image_scale_reservation_mobile: 1, image_scale_reservation_tablet: 1, image_scale_sidebar: 1, image_scale_sidebar_mobile: 1, image_scale_sidebar_tablet: 1 }])}
                   className="gap-1"
                 >
                   <Plus size={14} /> Ajouter une couleur
@@ -494,65 +510,146 @@ const AdminFleet = () => {
               )}
               <div className="space-y-4">
                 {colorVariants.map((color, idx) => (
-                  <div key={idx} className="flex flex-col sm:flex-row gap-3 p-3 border rounded-lg bg-background">
-                    <div className="flex-1 space-y-2">
-                      <div className="flex gap-2">
-                        <Input
-                          value={color.color_name || ""}
-                          onChange={(e) => {
-                            const updated = [...colorVariants];
-                            updated[idx] = { ...updated[idx], color_name: e.target.value };
-                            setColorVariants(updated);
-                          }}
-                          placeholder="Nom (ex: Rouge)"
-                          className="flex-1"
-                        />
-                        <input
-                          type="color"
-                          value={color.color_hex || "#000000"}
-                          onChange={(e) => {
-                            const updated = [...colorVariants];
-                            updated[idx] = { ...updated[idx], color_hex: e.target.value };
-                            setColorVariants(updated);
-                          }}
-                          className="w-10 h-10 rounded cursor-pointer border border-border"
-                        />
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <label className="flex items-center gap-2 text-xs">
-                          <Switch
-                            checked={color.is_default ?? false}
-                            onCheckedChange={(checked) => {
-                              const updated = colorVariants.map((c, i) => ({
-                                ...c,
-                                is_default: i === idx ? checked : checked ? false : c.is_default,
-                              }));
+                  <div key={idx} className="p-3 border rounded-lg bg-background space-y-3">
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <div className="flex-1 space-y-2">
+                        <div className="flex gap-2">
+                          <Input
+                            value={color.color_name || ""}
+                            onChange={(e) => {
+                              const updated = [...colorVariants];
+                              updated[idx] = { ...updated[idx], color_name: e.target.value };
                               setColorVariants(updated);
                             }}
+                            placeholder="Nom (ex: Rouge)"
+                            className="flex-1"
                           />
-                          Par défaut
-                        </label>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          className="text-destructive h-7"
-                          onClick={() => setColorVariants(colorVariants.filter((_, i) => i !== idx))}
-                        >
-                          <Trash2 size={14} />
-                        </Button>
+                          <input
+                            type="color"
+                            value={color.color_hex || "#000000"}
+                            onChange={(e) => {
+                              const updated = [...colorVariants];
+                              updated[idx] = { ...updated[idx], color_hex: e.target.value };
+                              setColorVariants(updated);
+                            }}
+                            className="w-10 h-10 rounded cursor-pointer border border-border"
+                          />
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <label className="flex items-center gap-2 text-xs">
+                            <Switch
+                              checked={color.is_default ?? false}
+                              onCheckedChange={(checked) => {
+                                const updated = colorVariants.map((c, i) => ({
+                                  ...c,
+                                  is_default: i === idx ? checked : checked ? false : c.is_default,
+                                }));
+                                setColorVariants(updated);
+                              }}
+                            />
+                            Par défaut
+                          </label>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="text-destructive h-7"
+                            onClick={() => setColorVariants(colorVariants.filter((_, i) => i !== idx))}
+                          >
+                            <Trash2 size={14} />
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="w-full sm:w-40 shrink-0">
+                        <ImageUploadField
+                          value={color.image_url || ""}
+                          onChange={(url) => {
+                            const updated = [...colorVariants];
+                            updated[idx] = { ...updated[idx], image_url: url };
+                            setColorVariants(updated);
+                          }}
+                        />
                       </div>
                     </div>
-                    <div className="w-full sm:w-40 shrink-0">
-                      <ImageUploadField
-                        value={color.image_url || ""}
-                        onChange={(url) => {
-                          const updated = [...colorVariants];
-                          updated[idx] = { ...updated[idx], image_url: url };
-                          setColorVariants(updated);
-                        }}
-                      />
-                    </div>
+
+                    {/* Per-color image adjustments */}
+                    {color.image_url && (
+                      <Collapsible>
+                        <CollapsibleTrigger className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                          <FlipHorizontal size={12} /> Ajustements image pour cette couleur
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="mt-3 space-y-4 p-3 border rounded-lg bg-muted/20">
+                          <div className="flex items-center justify-between">
+                            <label className="text-xs">Inverser l'image (miroir)</label>
+                            <Switch
+                              checked={color.image_flipped ?? false}
+                              onCheckedChange={(checked) => {
+                                const updated = [...colorVariants];
+                                updated[idx] = { ...updated[idx], image_flipped: checked };
+                                setColorVariants(updated);
+                              }}
+                            />
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                            {([
+                              { base: "image_scale_home", label: "Accueil", w: 240, h: 135, objFit: "object-contain", bg: "bg-secondary" },
+                              { base: "image_scale_fleet", label: "Flotte", w: 240, h: 135, objFit: "object-contain", bg: "bg-secondary" },
+                              { base: "image_scale_detail", label: "Détail", w: 280, h: 158, objFit: "object-cover", bg: "bg-background" },
+                              { base: "image_scale_reservation", label: "Réservation", w: 210, h: 120, objFit: "object-contain", bg: "bg-secondary" },
+                              { base: "image_scale_sidebar", label: "Sidebar", w: 160, h: 100, objFit: "object-contain", bg: "bg-secondary" },
+                            ] as const).map((placement) => {
+                              const devices = [
+                                { suffix: "", label: "Desktop", icon: Monitor },
+                                { suffix: "_tablet", label: "Tablet", icon: Tablet },
+                                { suffix: "_mobile", label: "Mobile", icon: Smartphone },
+                              ];
+                              return (
+                                <div key={placement.base} className="space-y-1.5">
+                                  <label className="text-xs font-medium">{placement.label}</label>
+                                  {devices.map((device) => {
+                                    const key = `${placement.base}${device.suffix}` as string;
+                                    const scaleVal = Number((color as any)[key] ?? 1);
+                                    const DeviceIcon = device.icon;
+                                    return (
+                                      <div key={key} className="space-y-0.5">
+                                        <div className="flex items-center justify-between">
+                                          <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                                            <DeviceIcon size={10} />{device.label}
+                                          </span>
+                                          <span className="text-[10px] text-muted-foreground">{scaleVal.toFixed(2)}x</span>
+                                        </div>
+                                        <Slider
+                                          min={0.5} max={2} step={0.05}
+                                          value={[scaleVal]}
+                                          onValueChange={([val]) => {
+                                            const updated = [...colorVariants];
+                                            updated[idx] = { ...updated[idx], [key]: val };
+                                            setColorVariants(updated);
+                                          }}
+                                        />
+                                      </div>
+                                    );
+                                  })}
+                                  <div
+                                    className={`rounded-lg overflow-hidden border ${placement.bg} flex items-center justify-center`}
+                                    style={{ width: placement.w, height: placement.h, maxWidth: "100%" }}
+                                  >
+                                    <img
+                                      src={color.image_url}
+                                      alt={placement.label}
+                                      className={`w-full h-full ${placement.objFit}`}
+                                      style={{
+                                        transform: `${color.image_flipped ? 'scaleX(-1)' : ''} scale(${Number((color as any)[placement.base] ?? 1)})`.trim() || 'none'
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    )}
                   </div>
                 ))}
               </div>

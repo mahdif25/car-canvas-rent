@@ -5,7 +5,7 @@ import { getActiveFeatures } from "@/lib/vehicle-features";
 import Layout from "@/components/layout/Layout";
 import { useVehicles, usePricingTiers, getStartingPriceFromTiers } from "@/hooks/useVehicles";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useDeviceType, getScaleForDevice } from "@/hooks/useDeviceScale";
+import { useDeviceType, getScaleForDevice, getScaleForColorOnDevice } from "@/hooks/useDeviceScale";
 import { useAllVehicleColors, getDefaultColor, VehicleColor } from "@/hooks/useVehicleColors";
 import VehicleColorPicker from "@/components/VehicleColorPicker";
 
@@ -30,12 +30,14 @@ const Fleet = () => {
   const categories = [...new Set(vehicles.map((v) => v.category))];
   const isLoading = loadingVehicles || loadingTiers;
 
-  const getDisplayImage = (vehicleId: string, defaultImage: string | null) => {
+  const getDisplayInfo = (vehicleId: string, vehicle: any) => {
     const selected = selectedColors[vehicleId];
-    if (selected) return selected.image_url;
     const def = getDefaultColor(allColors, vehicleId);
-    if (def) return def.image_url;
-    return defaultImage || "/placeholder.svg";
+    const activeColor = selected || def;
+    const image = activeColor?.image_url || vehicle.image_url || "/placeholder.svg";
+    const flipped = activeColor ? activeColor.image_flipped : vehicle.image_flipped;
+    const scale = activeColor ? getScaleForColorOnDevice(activeColor, 'fleet', deviceType) : getScaleForDevice(vehicle, 'fleet', deviceType);
+    return { image, flipped, scale };
   };
 
   return (
@@ -115,7 +117,7 @@ const Fleet = () => {
                 const vehicleTiers = allTiers.filter((t) => t.vehicle_id === v.id);
                 const startingPrice = getStartingPriceFromTiers(vehicleTiers);
                 const vehicleColors = allColors.filter((c) => c.vehicle_id === v.id);
-                const displayImage = getDisplayImage(v.id, v.image_url);
+                const { image: displayImage, flipped: imageFlipped, scale: imageScale } = getDisplayInfo(v.id, v);
                 const selectedColorId = selectedColors[v.id]?.id || getDefaultColor(allColors, v.id)?.id;
 
                 return (
@@ -130,7 +132,7 @@ const Fleet = () => {
                         alt={v.name}
                         className="w-full h-full object-contain transition-transform duration-300"
                         style={{
-                          transform: `${v.image_flipped ? 'scaleX(-1)' : ''} scale(${getScaleForDevice(v, 'fleet', deviceType)})`.trim() || 'none'
+                          transform: `${imageFlipped ? 'scaleX(-1)' : ''} scale(${imageScale})`.trim() || 'none'
                         }}
                       />
                       <div className="absolute top-3 right-3 w-9 h-9 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center">

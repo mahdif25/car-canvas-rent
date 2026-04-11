@@ -948,6 +948,22 @@ export type Database = {
           color_name: string
           created_at: string
           id: string
+          image_flipped: boolean
+          image_scale_detail: number
+          image_scale_detail_mobile: number
+          image_scale_detail_tablet: number
+          image_scale_fleet: number
+          image_scale_fleet_mobile: number
+          image_scale_fleet_tablet: number
+          image_scale_home: number
+          image_scale_home_mobile: number
+          image_scale_home_tablet: number
+          image_scale_reservation: number
+          image_scale_reservation_mobile: number
+          image_scale_reservation_tablet: number
+          image_scale_sidebar: number
+          image_scale_sidebar_mobile: number
+          image_scale_sidebar_tablet: number
           image_url: string
           is_default: boolean
           sort_order: number
@@ -958,6 +974,22 @@ export type Database = {
           color_name: string
           created_at?: string
           id?: string
+          image_flipped?: boolean
+          image_scale_detail?: number
+          image_scale_detail_mobile?: number
+          image_scale_detail_tablet?: number
+          image_scale_fleet?: number
+          image_scale_fleet_mobile?: number
+          image_scale_fleet_tablet?: number
+          image_scale_home?: number
+          image_scale_home_mobile?: number
+          image_scale_home_tablet?: number
+          image_scale_reservation?: number
+          image_scale_reservation_mobile?: number
+          image_scale_reservation_tablet?: number
+          image_scale_sidebar?: number
+          image_scale_sidebar_mobile?: number
+          image_scale_sidebar_tablet?: number
           image_url: string
           is_default?: boolean
           sort_order?: number
@@ -968,6 +1000,22 @@ export type Database = {
           color_name?: string
           created_at?: string
           id?: string
+          image_flipped?: boolean
+          image_scale_detail?: number
+          image_scale_detail_mobile?: number
+          image_scale_detail_tablet?: number
+          image_scale_fleet?: number
+          image_scale_fleet_mobile?: number
+          image_scale_fleet_tablet?: number
+          image_scale_home?: number
+          image_scale_home_mobile?: number
+          image_scale_home_tablet?: number
+          image_scale_reservation?: number
+          image_scale_reservation_mobile?: number
+          image_scale_reservation_tablet?: number
+          image_scale_sidebar?: number
+          image_scale_sidebar_mobile?: number
+          image_scale_sidebar_tablet?: number
           image_url?: string
           is_default?: boolean
           sort_order?: number

@@ -10,6 +10,22 @@ export interface VehicleColor {
   is_default: boolean;
   sort_order: number;
   created_at: string;
+  image_flipped: boolean;
+  image_scale_home: number;
+  image_scale_home_mobile: number;
+  image_scale_home_tablet: number;
+  image_scale_fleet: number;
+  image_scale_fleet_mobile: number;
+  image_scale_fleet_tablet: number;
+  image_scale_detail: number;
+  image_scale_detail_mobile: number;
+  image_scale_detail_tablet: number;
+  image_scale_reservation: number;
+  image_scale_reservation_mobile: number;
+  image_scale_reservation_tablet: number;
+  image_scale_sidebar: number;
+  image_scale_sidebar_mobile: number;
+  image_scale_sidebar_tablet: number;
 }
 
 export const useVehicleColors = (vehicleId?: string) =>
