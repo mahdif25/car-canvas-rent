@@ -5,7 +5,7 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, FunnelChart, Funnel, LabelList } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { Users, Eye, Monitor, Globe } from "lucide-react";
 
 const COLORS = ["hsl(var(--primary))", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"];
@@ -37,7 +37,6 @@ const AdminAnalytics = () => {
     const totalSessions = new Set(events.map((e: any) => e.session_id)).size;
     const reservationSteps = events.filter((e: any) => e.event_type === "reservation_step");
 
-    // Pages
     const pageCounts: Record<string, number> = {};
     events.filter((e: any) => e.event_type === "page_view").forEach((e: any) => {
       pageCounts[e.page_path || "/"] = (pageCounts[e.page_path || "/"] || 0) + 1;
@@ -46,28 +45,24 @@ const AdminAnalytics = () => {
       .map(([path, count]) => ({ path, count }))
       .sort((a, b) => b.count - a.count);
 
-    // Devices
     const deviceCounts: Record<string, number> = {};
     events.forEach((e: any) => {
       deviceCounts[e.device_type || "unknown"] = (deviceCounts[e.device_type || "unknown"] || 0) + 1;
     });
     const devices = Object.entries(deviceCounts).map(([name, value]) => ({ name, value }));
 
-    // Browsers
     const browserCounts: Record<string, number> = {};
     events.forEach((e: any) => {
       browserCounts[e.browser || "unknown"] = (browserCounts[e.browser || "unknown"] || 0) + 1;
     });
     const browsers = Object.entries(browserCounts).map(([name, value]) => ({ name, value }));
 
-    // OS
     const osCounts: Record<string, number> = {};
     events.forEach((e: any) => {
       osCounts[e.os || "unknown"] = (osCounts[e.os || "unknown"] || 0) + 1;
     });
     const osList = Object.entries(osCounts).map(([name, value]) => ({ name, value }));
 
-    // Locations
     const locCounts: Record<string, number> = {};
     events.forEach((e: any) => {
       const loc = [e.country, e.city].filter(Boolean).join(", ") || "Inconnu";
@@ -77,7 +72,6 @@ const AdminAnalytics = () => {
       .map(([location, count]) => ({ location, count }))
       .sort((a, b) => b.count - a.count);
 
-    // Referrers
     const refCounts: Record<string, number> = {};
     events.filter((e: any) => e.referrer).forEach((e: any) => {
       try {
@@ -91,7 +85,6 @@ const AdminAnalytics = () => {
       .map(([source, count]) => ({ source, count }))
       .sort((a, b) => b.count - a.count);
 
-    // Funnel
     const stepLabels = ["Dates & Lieu", "Véhicule", "Options", "Informations", "Confirmation"];
     const stepCounts = [1, 2, 3, 4, 5].map((step) => {
       const visitors = new Set(
@@ -102,7 +95,6 @@ const AdminAnalytics = () => {
       return { name: stepLabels[step - 1], value: visitors, step };
     });
 
-    // Daily views chart
     const dailyMap: Record<string, number> = {};
     events.filter((e: any) => e.event_type === "page_view").forEach((e: any) => {
       const day = new Date(e.created_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" });
@@ -133,10 +125,10 @@ const AdminAnalytics = () => {
       ) : (
         <>
           {/* Overview cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
             <Card>
-              <CardContent className="pt-6 flex items-center gap-4">
-                <Users className="text-primary" size={28} />
+              <CardContent className="pt-4 sm:pt-6 flex items-center gap-4">
+                <Users className="text-primary shrink-0" size={28} />
                 <div>
                   <p className="text-2xl font-bold">{stats.uniqueVisitors}</p>
                   <p className="text-sm text-muted-foreground">Visiteurs uniques</p>
@@ -144,8 +136,8 @@ const AdminAnalytics = () => {
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="pt-6 flex items-center gap-4">
-                <Eye className="text-primary" size={28} />
+              <CardContent className="pt-4 sm:pt-6 flex items-center gap-4">
+                <Eye className="text-primary shrink-0" size={28} />
                 <div>
                   <p className="text-2xl font-bold">{stats.totalPageViews}</p>
                   <p className="text-sm text-muted-foreground">Pages vues</p>
@@ -153,8 +145,8 @@ const AdminAnalytics = () => {
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="pt-6 flex items-center gap-4">
-                <Monitor className="text-primary" size={28} />
+              <CardContent className="pt-4 sm:pt-6 flex items-center gap-4">
+                <Monitor className="text-primary shrink-0" size={28} />
                 <div>
                   <p className="text-2xl font-bold">{stats.totalSessions}</p>
                   <p className="text-sm text-muted-foreground">Sessions</p>
@@ -168,11 +160,11 @@ const AdminAnalytics = () => {
             <Card className="mb-6">
               <CardHeader><CardTitle className="text-base">Pages vues par jour</CardTitle></CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={250}>
+                <ResponsiveContainer width="100%" height={200}>
                   <BarChart data={stats.dailyViews}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="day" fontSize={12} />
-                    <YAxis fontSize={12} />
+                    <XAxis dataKey="day" fontSize={11} />
+                    <YAxis fontSize={11} />
                     <Tooltip />
                     <Bar dataKey="views" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                   </BarChart>
@@ -182,13 +174,15 @@ const AdminAnalytics = () => {
           )}
 
           <Tabs defaultValue="funnel" className="space-y-4">
-            <TabsList className="flex-wrap bg-secondary text-foreground">
-              <TabsTrigger value="funnel">Entonnoir</TabsTrigger>
-              <TabsTrigger value="pages">Pages</TabsTrigger>
-              <TabsTrigger value="devices">Appareils</TabsTrigger>
-              <TabsTrigger value="locations">Géographie</TabsTrigger>
-              <TabsTrigger value="referrers">Sources</TabsTrigger>
-            </TabsList>
+            <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+              <TabsList className="bg-secondary text-foreground inline-flex w-auto">
+                <TabsTrigger value="funnel">Entonnoir</TabsTrigger>
+                <TabsTrigger value="pages">Pages</TabsTrigger>
+                <TabsTrigger value="devices">Appareils</TabsTrigger>
+                <TabsTrigger value="locations">Géographie</TabsTrigger>
+                <TabsTrigger value="referrers">Sources</TabsTrigger>
+              </TabsList>
+            </div>
 
             <TabsContent value="funnel">
               <Card>
@@ -201,11 +195,11 @@ const AdminAnalytics = () => {
                         const pct = maxVal > 0 ? Math.round((step.value / maxVal) * 100) : 0;
                         return (
                           <div key={step.step} className="space-y-1">
-                            <div className="flex justify-between text-sm">
+                            <div className="flex justify-between text-xs sm:text-sm">
                               <span>Étape {step.step}: {step.name}</span>
                               <span className="font-medium">{step.value} ({pct}%)</span>
                             </div>
-                            <div className="h-6 bg-secondary rounded overflow-hidden">
+                            <div className="h-5 sm:h-6 bg-secondary rounded overflow-hidden">
                               <div
                                 className="h-full rounded transition-all"
                                 style={{ width: `${pct}%`, backgroundColor: COLORS[i % COLORS.length] }}
@@ -229,7 +223,7 @@ const AdminAnalytics = () => {
                   <div className="space-y-2">
                     {stats.pages.map((p) => (
                       <div key={p.path} className="flex justify-between text-sm py-1 border-b last:border-0">
-                        <span className="font-mono">{p.path}</span>
+                        <span className="font-mono text-xs sm:text-sm truncate max-w-[70%]">{p.path}</span>
                         <span className="font-medium">{p.count}</span>
                       </div>
                     ))}
@@ -276,7 +270,7 @@ const AdminAnalytics = () => {
                   <div className="space-y-2">
                     {stats.locationsList.map((l) => (
                       <div key={l.location} className="flex justify-between text-sm py-1 border-b last:border-0">
-                        <span>{l.location}</span>
+                        <span className="truncate max-w-[70%]">{l.location}</span>
                         <span className="font-medium">{l.count}</span>
                       </div>
                     ))}
@@ -293,7 +287,7 @@ const AdminAnalytics = () => {
                   <div className="space-y-2">
                     {stats.referrers.map((r) => (
                       <div key={r.source} className="flex justify-between text-sm py-1 border-b last:border-0">
-                        <span>{r.source}</span>
+                        <span className="truncate max-w-[70%]">{r.source}</span>
                         <span className="font-medium">{r.count}</span>
                       </div>
                     ))}
