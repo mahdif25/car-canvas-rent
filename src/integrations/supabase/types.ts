@@ -419,6 +419,47 @@ export type Database = {
         }
         Relationships: []
       }
+      fleet_plates: {
+        Row: {
+          brand: string
+          created_at: string
+          id: string
+          is_active: boolean
+          model: string
+          notes: string | null
+          plate_number: string
+          vehicle_id: string
+        }
+        Insert: {
+          brand: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          model: string
+          notes?: string | null
+          plate_number: string
+          vehicle_id: string
+        }
+        Update: {
+          brand?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          model?: string
+          notes?: string | null
+          plate_number?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fleet_plates_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           capi_allowed: boolean
@@ -556,6 +597,7 @@ export type Database = {
       }
       reservations: {
         Row: {
+          assigned_plate_id: string | null
           coupon_id: string | null
           created_at: string
           customer_dob: string | null
@@ -585,6 +627,7 @@ export type Database = {
           vehicle_id: string
         }
         Insert: {
+          assigned_plate_id?: string | null
           coupon_id?: string | null
           created_at?: string
           customer_dob?: string | null
@@ -614,6 +657,7 @@ export type Database = {
           vehicle_id: string
         }
         Update: {
+          assigned_plate_id?: string | null
           coupon_id?: string | null
           created_at?: string
           customer_dob?: string | null
@@ -643,6 +687,13 @@ export type Database = {
           vehicle_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "reservations_assigned_plate_id_fkey"
+            columns: ["assigned_plate_id"]
+            isOneToOne: false
+            referencedRelation: "fleet_plates"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "reservations_coupon_id_fkey"
             columns: ["coupon_id"]
