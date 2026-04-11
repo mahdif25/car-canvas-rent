@@ -23,7 +23,12 @@ const navItems = [
   { label: "Leads", path: "/admin/leads", icon: Users },
 ];
 
-const bottomNavItems = navItems.slice(0, 4);
+const bottomNavItems = [
+  navItems[0], // Dashboard
+  navItems[1], // Flotte
+  navItems[3], // Réservations
+  navItems[8], // Leads
+];
 
 const AdminLayout = ({ children }: Props) => {
   const { user, isAdmin, loading, signOut } = useAuth();
@@ -113,29 +118,29 @@ const AdminLayout = ({ children }: Props) => {
         </header>
 
         {/* Main content */}
-        <main className="flex-1 p-4 pb-20 overflow-auto">
+        <main className="flex-1 p-4 pb-24 overflow-auto">
           {children}
         </main>
 
-        {/* Bottom navigation */}
-        <nav className="fixed bottom-0 left-0 right-0 bg-dark text-dark-foreground border-t border-foreground/10 flex items-center justify-around h-16 z-50">
+        {/* Bottom navigation - 5 items */}
+        <nav className="fixed bottom-0 left-0 right-0 bg-dark text-dark-foreground border-t border-foreground/10 flex items-center justify-around h-[68px] z-50 pb-[env(safe-area-inset-bottom)]">
           {bottomNavItems.map((item) => (
             <Link
               key={item.path}
               to={item.path}
-              className={`flex flex-col items-center gap-1 px-2 py-1 text-xs ${
+              className={`flex flex-col items-center gap-0.5 px-3 py-2 text-[11px] min-h-[44px] justify-center ${
                 location.pathname === item.path ? "text-primary" : "text-foreground/60"
               }`}
             >
-              <item.icon size={20} />
+              <item.icon size={22} />
               <span>{item.label}</span>
             </Link>
           ))}
           <button
             onClick={() => setDrawerOpen(true)}
-            className="flex flex-col items-center gap-1 px-2 py-1 text-xs text-foreground/60"
+            className="flex flex-col items-center gap-0.5 px-3 py-2 text-[11px] text-foreground/60 min-h-[44px] justify-center"
           >
-            <MoreHorizontal size={20} />
+            <MoreHorizontal size={22} />
             <span>Plus</span>
           </button>
         </nav>
