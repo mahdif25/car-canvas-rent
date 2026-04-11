@@ -5,7 +5,7 @@ import { getActiveFeatures } from "@/lib/vehicle-features";
 import Layout from "@/components/layout/Layout";
 import { useVehicles, usePricingTiers, getStartingPriceFromTiers } from "@/hooks/useVehicles";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useDeviceType, getScaleForDevice } from "@/hooks/useDeviceScale";
+import { useDeviceType, getScaleForDevice, getScaleForColorOnDevice } from "@/hooks/useDeviceScale";
 import { useAllVehicleColors, getDefaultColor, VehicleColor } from "@/hooks/useVehicleColors";
 import VehicleColorPicker from "@/components/VehicleColorPicker";
 

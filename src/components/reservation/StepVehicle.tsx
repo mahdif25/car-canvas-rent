@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Users, Fuel, Settings2, Shield } from "lucide-react";
 import { getActiveFeatures } from "@/lib/vehicle-features";
 import { Vehicle, PricingTier, getDailyRateFromTiers } from "@/hooks/useVehicles";
-import { useDeviceType, getScaleForDevice } from "@/hooks/useDeviceScale";
+import { useDeviceType, getScaleForDevice, getScaleForColorOnDevice } from "@/hooks/useDeviceScale";
 import { useAllVehicleColors, getDefaultColor, VehicleColor } from "@/hooks/useVehicleColors";
 import VehicleColorPicker from "@/components/VehicleColorPicker";
 import { useState, useEffect } from "react";
