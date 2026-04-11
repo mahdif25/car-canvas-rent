@@ -497,6 +497,8 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
           <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[r.status as ReservationStatus]}`}>
             {statusLabels[r.status as ReservationStatus]}
           </span>
+          {r.is_manual && <Badge variant="outline" className="text-[10px] px-1.5 py-0">Manuel</Badge>}
+          {r.payment_method === "cash" && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Cash</Badge>}
           <span className="font-medium text-sm">{r.customer_first_name} {r.customer_last_name}</span>
           <span className="text-sm text-muted-foreground">{(r as any).vehicles?.name}</span>
         </div>
