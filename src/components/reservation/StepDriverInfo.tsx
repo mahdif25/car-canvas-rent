@@ -168,7 +168,7 @@ const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadC
   ) : null;
 
   return (
-    <form autoComplete="on" onSubmit={(e) => e.preventDefault()} className="space-y-6">
+    <form ref={formRef} autoComplete="on" onSubmit={(e) => e.preventDefault()} className="space-y-6">
       <h2 className="text-xl font-semibold">Informations du conducteur</h2>
 
       <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
