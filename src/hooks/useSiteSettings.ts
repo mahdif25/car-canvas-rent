@@ -47,6 +47,12 @@ export interface SiteSettings {
   hero_video_tablet_scale: number;
   hero_video_offset_y: number;
   hero_video_offset_x: number;
+  hero_video_mobile_offset_x: number;
+  hero_video_mobile_offset_y: number;
+  hero_video_tablet_offset_x: number;
+  hero_video_tablet_offset_y: number;
+  hero_video_desktop_offset_x: number;
+  hero_video_desktop_offset_y: number;
   updated_at: string;
 }
 

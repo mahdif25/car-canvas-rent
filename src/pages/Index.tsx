@@ -98,46 +98,37 @@ const Index = () => {
             const mobileScale = siteSettings?.hero_video_mobile_scale ?? 1.5;
             const tabletScale = siteSettings?.hero_video_tablet_scale ?? 1.3;
             const desktopScale = siteSettings?.hero_video_desktop_scale ?? 1.2;
-            const offsetY = siteSettings?.hero_video_offset_y ?? 50;
-            const offsetX = siteSettings?.hero_video_offset_x ?? 50;
+            const mobileOffsetX = siteSettings?.hero_video_mobile_offset_x ?? 50;
+            const mobileOffsetY = siteSettings?.hero_video_mobile_offset_y ?? 50;
+            const tabletOffsetX = siteSettings?.hero_video_tablet_offset_x ?? 50;
+            const tabletOffsetY = siteSettings?.hero_video_tablet_offset_y ?? 50;
+            const desktopOffsetX = siteSettings?.hero_video_desktop_offset_x ?? 50;
+            const desktopOffsetY = siteSettings?.hero_video_desktop_offset_y ?? 50;
             const ytSrc = `https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&playlist=${ytId}${videoStartTime ? `&start=${videoStartTime}` : ''}`;
             return ytId ? (
               <>
-                {/* Mobile YouTube */}
-                <iframe
-                  src={ytSrc}
-                  className="absolute inset-0 w-full h-full pointer-events-none md:hidden"
-                  style={{ transform: `scale(${mobileScale}) translate(${offsetX - 50}%, ${offsetY - 50}%)` }}
-                  allow="autoplay; encrypted-media"
-                  frameBorder="0"
-                  title="Hero video"
-                />
-                {/* Tablet YouTube */}
-                <iframe
-                  src={ytSrc}
-                  className="absolute inset-0 w-full h-full pointer-events-none hidden md:block lg:hidden"
-                  style={{ transform: `scale(${tabletScale}) translate(${offsetX - 50}%, ${offsetY - 50}%)` }}
-                  allow="autoplay; encrypted-media"
-                  frameBorder="0"
-                  title="Hero video"
-                />
-                {/* Desktop YouTube */}
-                <iframe
-                  src={ytSrc}
-                  className="absolute inset-0 w-full h-full pointer-events-none hidden lg:block"
-                  style={{ transform: `scale(${desktopScale}) translate(${offsetX - 50}%, ${offsetY - 50}%)` }}
-                  allow="autoplay; encrypted-media"
-                  frameBorder="0"
-                  title="Hero video"
-                />
+                <iframe src={ytSrc} className="absolute inset-0 w-full h-full pointer-events-none md:hidden"
+                  style={{ transform: `scale(${mobileScale}) translate(${mobileOffsetX - 50}%, ${mobileOffsetY - 50}%)` }}
+                  allow="autoplay; encrypted-media" frameBorder="0" title="Hero video" />
+                <iframe src={ytSrc} className="absolute inset-0 w-full h-full pointer-events-none hidden md:block lg:hidden"
+                  style={{ transform: `scale(${tabletScale}) translate(${tabletOffsetX - 50}%, ${tabletOffsetY - 50}%)` }}
+                  allow="autoplay; encrypted-media" frameBorder="0" title="Hero video" />
+                <iframe src={ytSrc} className="absolute inset-0 w-full h-full pointer-events-none hidden lg:block"
+                  style={{ transform: `scale(${desktopScale}) translate(${desktopOffsetX - 50}%, ${desktopOffsetY - 50}%)` }}
+                  allow="autoplay; encrypted-media" frameBorder="0" title="Hero video" />
               </>
             ) : (
-              <video
-                src={heroValue}
-                className="absolute inset-0 w-full h-full object-cover"
-                style={{ objectPosition: `${offsetX}% ${offsetY}%` }}
-                autoPlay muted loop playsInline
-              />
+              <>
+                <video src={heroValue} className="absolute inset-0 w-full h-full object-cover md:hidden"
+                  style={{ objectPosition: `${mobileOffsetX}% ${mobileOffsetY}%`, transform: `scale(${mobileScale})` }}
+                  autoPlay muted loop playsInline />
+                <video src={heroValue} className="absolute inset-0 w-full h-full object-cover hidden md:block lg:hidden"
+                  style={{ objectPosition: `${tabletOffsetX}% ${tabletOffsetY}%`, transform: `scale(${tabletScale})` }}
+                  autoPlay muted loop playsInline />
+                <video src={heroValue} className="absolute inset-0 w-full h-full object-cover hidden lg:block"
+                  style={{ objectPosition: `${desktopOffsetX}% ${desktopOffsetY}%`, transform: `scale(${desktopScale})` }}
+                  autoPlay muted loop playsInline />
+              </>
             );
           })()}
           <div className="absolute inset-0 bg-dark" style={{ opacity: heroType !== "color" ? overlayOpacity : 0 }} />
