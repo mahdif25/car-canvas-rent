@@ -7,17 +7,24 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Plus, Trash2, ChevronUp, ChevronDown, Copy, Type, AlignLeft, AlignCenter, AlignRight,
-  Image, MousePointerClick, Minus, Space, Code, Palette, Eye, Pencil, Settings2, GripVertical,
+  Image, MousePointerClick, Minus, Space, Code, Palette, Eye, Pencil, Settings2, GripVertical, Ticket,
 } from "lucide-react";
 import {
   EmailBlock, GlobalStyles, EmailBuilderData, DEFAULT_GLOBAL_STYLES,
-  createBlock, renderBlocksToHtml, getStarterTemplates,
+  createBlock, renderBlocksToHtml, renderCouponPreviewHtml, getStarterTemplates,
 } from "@/lib/email-builder-utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface EmailBuilderProps {
   value: EmailBuilderData;
   onChange: (data: EmailBuilderData) => void;
+  couponMode?: string;
+  discountAmount?: string;
+  couponPrefix?: string;
+  friendDiscountAmount?: string;
+  couponExpiresAt?: string;
+  minTotalPrice?: string;
+  minRentalDays?: string;
 }
 
 const BLOCK_TYPE_OPTIONS: { type: EmailBlock['type']; label: string; icon: React.ReactNode }[] = [
@@ -37,13 +44,15 @@ const FONT_OPTIONS = [
   { value: "monospace", label: "Monospace" },
 ];
 
-const EmailBuilder = ({ value, onChange }: EmailBuilderProps) => {
+const EmailBuilder = ({ value, onChange, couponMode = 'none', discountAmount = '', couponPrefix = '', friendDiscountAmount = '', couponExpiresAt = '', minTotalPrice = '', minRentalDays = '' }: EmailBuilderProps) => {
   const isMobile = useIsMobile();
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [mobileView, setMobileView] = useState<'editor' | 'preview'>('editor');
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [globalOpen, setGlobalOpen] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const scrollViewportRef = useRef<HTMLDivElement>(null);
+  const prevBlockCount = useRef(value.blocks.length);
 
   const { blocks, globalStyles } = value;
 
@@ -55,8 +64,36 @@ const EmailBuilder = ({ value, onChange }: EmailBuilderProps) => {
     onChange({ ...value, globalStyles: { ...value.globalStyles, ...partial } });
   }, [value, onChange]);
 
+  // Auto-scroll when blocks are added
+  useEffect(() => {
+    if (blocks.length > prevBlockCount.current) {
+      setTimeout(() => {
+        scrollViewportRef.current?.scrollTo({ top: scrollViewportRef.current.scrollHeight, behavior: 'smooth' });
+      }, 50);
+    }
+    prevBlockCount.current = blocks.length;
+  }, [blocks.length]);
+
+  // Auto-insert/remove coupon block when couponMode changes
+  useEffect(() => {
+    const hasCouponBlock = blocks.some(b => b.type === 'coupon');
+    if (couponMode !== 'none' && !hasCouponBlock) {
+      updateBlocks([...blocks, createBlock('coupon')]);
+    } else if (couponMode === 'none' && hasCouponBlock) {
+      updateBlocks(blocks.filter(b => b.type !== 'coupon'));
+    }
+  }, [couponMode]); // intentionally only couponMode
+
   const addBlock = (type: EmailBlock['type']) => {
-    updateBlocks([...blocks, createBlock(type)]);
+    // Insert before coupon block if present
+    const couponIdx = blocks.findIndex(b => b.type === 'coupon');
+    if (couponIdx >= 0) {
+      const arr = [...blocks];
+      arr.splice(couponIdx, 0, createBlock(type));
+      updateBlocks(arr);
+    } else {
+      updateBlocks([...blocks, createBlock(type)]);
+    }
     setShowAddMenu(false);
   };
 
