@@ -88,6 +88,14 @@ const AdminReservations = () => {
     },
   });
 
+  const { data: additionalDrivers = [] } = useQuery({
+    queryKey: ["additional-drivers-all"],
+    queryFn: async () => {
+      const { data } = await supabase.from("additional_drivers").select("*");
+      return data ?? [];
+    },
+  });
+
   const initEdit = (r: any): EditState => {
     const currentAddons = reservationAddons.filter((ra) => ra.reservation_id === r.id).map((ra) => ra.addon_id);
     return {
@@ -338,7 +346,9 @@ const AdminReservations = () => {
             <p className="text-center py-8 text-muted-foreground">Chargement...</p>
           ) : reservations && reservations.length > 0 ? (
             <div className="space-y-3">
-              {reservations.map((r) => (
+              {reservations.map((r) => {
+                const addDriver = additionalDrivers.find((ad: any) => ad.reservation_id === r.id);
+                return (
                 <ReservationRow
                   key={r.id}
                   r={r}
@@ -350,6 +360,7 @@ const AdminReservations = () => {
                   pricingTiers={pricingTiers}
                   locations={locations}
                   allAddons={allAddons}
+                  additionalDriver={addDriver || null}
                   onUpdateStatus={(status) => updateStatus.mutate({ id: r.id, status })}
                   onUpdateDeposit={(deposit_status) => updateDeposit.mutate({ id: r.id, deposit_status })}
                   onSave={(calc) => saveReservation.mutate({ id: r.id, edit: getEdit(r.id, r), calc })}
@@ -363,6 +374,22 @@ const AdminReservations = () => {
                     if (field === "email") updateObj.customer_email = value;
                     if (field === "phone") updateObj.customer_phone = value;
                     if (field === "license") updateObj.customer_license = value;
+                    // Handle additional driver fields
+                    if (field.startsWith("add_")) {
+                      const addDriverRecord = additionalDrivers.find((ad: any) => ad.reservation_id === id);
+                      if (addDriverRecord) {
+                        const addUpdateObj: any = {};
+                        const addField = field.replace("add_", "");
+                        addUpdateObj[addField] = value;
+                        const { error } = await supabase.from("additional_drivers").update(addUpdateObj).eq("id", addDriverRecord.id);
+                        if (!error) {
+                          qc.invalidateQueries({ queryKey: ["additional-drivers-all"] });
+                          toast({ title: "Conducteur supplémentaire mis à jour" });
+                        }
+                      }
+                      setClientEdits((prev) => ({ ...prev, [id]: null }));
+                      return;
+                    }
                     const { error } = await supabase.from("reservations").update(updateObj).eq("id", id);
                     if (!error) {
                       qc.invalidateQueries({ queryKey: ["admin-reservations"] });
@@ -371,7 +398,8 @@ const AdminReservations = () => {
                     setClientEdits((prev) => ({ ...prev, [id]: null }));
                   }}
                 />
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="text-center py-8 text-muted-foreground">Aucune réservation.</p>
