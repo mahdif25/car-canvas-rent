@@ -35,6 +35,8 @@ function detectDevice(): { device_type: string; browser: string; os: string } {
 declare global {
   interface Window {
     fbq?: (...args: any[]) => void;
+    ttq?: { track: (event: string, params?: Record<string, any>) => void; page: () => void };
+    gtag?: (...args: any[]) => void;
   }
 }
 
@@ -216,6 +218,24 @@ export function useAnalytics() {
     []
   );
 
+  const trackTikTokEvent = useCallback(
+    (eventName: string, params: Record<string, any> = {}) => {
+      try {
+        if (window.ttq) window.ttq.track(eventName, params);
+      } catch { /* silent */ }
+    },
+    []
+  );
+
+  const trackGAEvent = useCallback(
+    (eventName: string, params: Record<string, any> = {}) => {
+      try {
+        if (window.gtag) window.gtag("event", eventName, params);
+      } catch { /* silent */ }
+    },
+    []
+  );
+
   return {
     visitorId: visitorId.current,
     sessionId: sessionId.current,
@@ -223,6 +243,8 @@ export function useAnalytics() {
     trackReservationStep,
     trackFieldCapture,
     trackFacebookEvent,
+    trackTikTokEvent,
+    trackGAEvent,
     captureLeadField,
     markLeadCompleted,
   };
