@@ -1,20 +1,49 @@
 
+## Mobile Hero Video Fix
 
-# Fix Hero Video Background for All Screen Sizes
+### What’s causing the issue
+The hero is currently sized by its content, but the YouTube/video background is sized with viewport-based cover math. On tall mobile screens, the content becomes taller than the visible video area, so you get a black strip at the bottom and weak video coverage.
 
-## Problem
-The YouTube iframe uses `scale(1.2)` which is insufficient on mobile (16:9 video in a tall/narrow viewport leaves black bars on sides). Direct MP4 videos use `object-cover` which works fine, but the iframe approach cannot use `object-cover` since iframes don't support it.
+## Implementation plan
 
-## Solution
-Replace the fixed `scale(1.2)` with a CSS technique that forces the iframe to always cover the container regardless of aspect ratio — the same approach used by professional video backgrounds.
+### 1. Refactor the hero background sizing
+Update `src/pages/Index.tsx` so the media sits inside a dedicated full-section background layer:
+- keep a separate absolute media wrapper with `inset-0 overflow-hidden`
+- for YouTube, use a true background-video cover pattern centered in the hero
+- for uploaded MP4s, keep `object-cover` but make sure it fills the full hero container consistently
 
-### `src/pages/Index.tsx`
-- Replace the YouTube iframe's inline `style={{ transform: "scale(1.2)" }}` with a responsive cover technique:
-  - Use `min-w-[100%] min-h-[100%]` with `w-[177.78vh] h-[56.25vw]` (16:9 ratio math) to ensure the video always exceeds the container in both dimensions
-  - Center it with `absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2`
-  - This mimics `object-cover` behavior for iframes — on tall screens (mobile) the video stretches wider and crops sides; on wide screens it stretches taller and crops top/bottom
-- Keep the direct `<video>` tag unchanged (it already uses `object-cover` correctly)
+### 2. Make the hero height work on mobile
+Still in `src/pages/Index.tsx`:
+- give the hero a controlled mobile height/min-height instead of letting it stretch too far past the media
+- tighten mobile spacing so the text + search card fit better inside the visible hero
+- ensure the hero section ends where the media coverage ends, removing the bottom black band
 
-### Single file change
-- `src/pages/Index.tsx` — update iframe className and remove the inline transform style
+### 3. Add mobile-specific video adjustment controls
+Because you asked to resize the video differently for screens, add admin settings for:
+- mobile video scale
+- desktop video scale
+- optional vertical position offset
 
+This gives automatic cover behavior by default, while still letting you fine-tune framing when the subject of the video is too low/high on mobile.
+
+### 4. Expose the controls in admin
+Update `src/pages/admin/AdminSettings.tsx` to add:
+- mobile zoom slider
+- desktop zoom slider
+- vertical offset slider
+- preview area for hero media positioning
+
+### 5. Store the new settings
+Add new fields to `site_settings` and read them through `src/hooks/useSiteSettings.ts`, then apply them in `src/pages/Index.tsx`.
+
+## Files to change
+- `supabase/migrations/...` — add hero video mobile/desktop sizing fields
+- `src/hooks/useSiteSettings.ts` — include the new settings
+- `src/pages/admin/AdminSettings.tsx` — add hero video sizing controls
+- `src/pages/Index.tsx` — fix hero media coverage and mobile section height
+
+## Expected result
+- no black edges on mobile
+- hero ends cleanly where the video coverage ends
+- uploaded videos auto-cover correctly
+- you can fine-tune zoom/position separately for mobile and desktop when needed
