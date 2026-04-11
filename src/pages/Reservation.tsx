@@ -68,6 +68,7 @@ function getInitialState(searchParams: URLSearchParams) {
   const urlPickup = searchParams.get("pickup") || "";
   const urlReturn = searchParams.get("return") || "";
   const urlVehicle = searchParams.get("vehicle") || "";
+  const urlColor = searchParams.get("color") || "";
   const hasUrlParams = urlLocation || urlPickup || urlReturn || urlVehicle;
 
   let formData = { ...defaultFormData };
@@ -86,6 +87,7 @@ function getInitialState(searchParams: URLSearchParams) {
     if (urlPickup) formData.pickup_date = urlPickup;
     if (urlReturn) formData.return_date = urlReturn;
     if (urlVehicle) formData.vehicle_id = urlVehicle;
+    if (urlColor) formData.selected_color_id = urlColor;
   }
 
   return { formData, step };

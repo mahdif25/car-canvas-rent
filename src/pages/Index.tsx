@@ -11,6 +11,8 @@ import { useReviews } from "@/hooks/useReviews";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DatePickerField } from "@/components/ui/date-picker-field";
+import { useAllVehicleColors, getDefaultColor, VehicleColor } from "@/hooks/useVehicleColors";
+import VehicleColorPicker from "@/components/VehicleColorPicker";
 
 const FONT_SIZE_MAP: Record<string, string> = {
   xl: "text-xl", "2xl": "text-2xl", "3xl": "text-3xl", "4xl": "text-4xl",
@@ -47,6 +49,7 @@ const Index = () => {
   const [pickupLocation, setPickupLocation] = useState("");
   const [pickupDate, setPickupDate] = useState("");
   const [returnDate, setReturnDate] = useState("");
+  const [selectedColors, setSelectedColors] = useState<Record<string, VehicleColor>>({});
   const deviceType = useDeviceType();
 
   const { data: vehicles = [], isLoading: loadingVehicles } = useVehicles();
@@ -54,6 +57,7 @@ const Index = () => {
   const { data: locations = [], isLoading: loadingLocations } = useLocations();
   const { data: siteSettings } = useSiteSettings();
   const { data: reviews = [] } = useReviews(true);
+  const { data: allColors = [] } = useAllVehicleColors();
 
   const heroType = siteSettings?.hero_bg_type || "color";
   const heroValue = siteSettings?.hero_bg_value || "";
