@@ -143,7 +143,6 @@ export function renderCouponPreviewHtml(opts: {
 
   return html;
 }
-}
 
 function escapeHtml(str: string): string {
   return str
