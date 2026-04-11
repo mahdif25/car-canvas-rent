@@ -7,13 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, X, Upload, Image, Loader2, FlipHorizontal, Monitor, Tablet, Smartphone } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Upload, Image, Loader2, FlipHorizontal, Monitor, Tablet, Smartphone, Palette } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { STRUCTURED_FEATURES } from "@/lib/vehicle-features";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import type { Database } from "@/integrations/supabase/types";
+import type { VehicleColor } from "@/hooks/useVehicleColors";
 
 type Vehicle = Database["public"]["Tables"]["vehicles"]["Row"];
 type VehicleInsert = Database["public"]["Tables"]["vehicles"]["Insert"];
