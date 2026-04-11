@@ -582,11 +582,11 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
           </div>
 
           {/* Status + deposit + actions */}
-          <div className="flex flex-wrap gap-4 items-end">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-3 lg:gap-4 items-end">
             <div className="space-y-1">
               <label className="text-sm font-medium">Statut réservation</label>
               <Select value={r.status} onValueChange={(v) => onUpdateStatus(v as ReservationStatus)}>
-                <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-full lg:w-40"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {(Object.keys(statusLabels) as ReservationStatus[]).map((s) => (
                     <SelectItem key={s} value={s}>{statusLabels[s]}</SelectItem>
@@ -597,7 +597,7 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
             <div className="space-y-1">
               <label className="text-sm font-medium">Caution ({calc.depositAmount.toLocaleString()} MAD)</label>
               <Select value={r.deposit_status} onValueChange={(v) => onUpdateDeposit(v as DepositStatus)}>
-                <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-full lg:w-40"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {(Object.keys(depositLabels) as DepositStatus[]).map((s) => (
                     <SelectItem key={s} value={s}>{depositLabels[s]}</SelectItem>
@@ -606,17 +606,19 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
               </Select>
             </div>
 
-            <Button
-              size="sm"
-              onClick={() => onSave(calc)}
-              disabled={isSaving}
-              className="gap-1"
-            >
-              <Save size={14} /> Sauvegarder
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => onPrint(calc)} className="gap-1">
-              <Printer size={14} /> Imprimer
-            </Button>
+            <div className="flex gap-2 sm:col-span-2 lg:col-span-1">
+              <Button
+                size="sm"
+                onClick={() => onSave(calc)}
+                disabled={isSaving}
+                className="gap-1 flex-1 sm:flex-none"
+              >
+                <Save size={14} /> Sauvegarder
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => onPrint(calc)} className="gap-1 flex-1 sm:flex-none">
+                <Printer size={14} /> Imprimer
+              </Button>
+            </div>
           </div>
         </div>
       )}
