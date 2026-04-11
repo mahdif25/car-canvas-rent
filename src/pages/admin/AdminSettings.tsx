@@ -207,7 +207,8 @@ const AdminSettings = () => {
                       const maxWidth = 500;
                       const scaleFactor = Math.min(1, maxWidth / device.width);
                       const previewW = device.width * scaleFactor;
-                      const previewH = (device.height * 0.55) * scaleFactor;
+                     const heroRatio = previewDevice === "mobile" ? 0.85 : 0.70;
+                     const previewH = (device.height * heroRatio) * scaleFactor;
                       const currentScale =
                         previewDevice === "mobile" ? (form.hero_video_mobile_scale ?? 1.5) :
                         previewDevice === "tablet" ? (form.hero_video_tablet_scale ?? 1.3) :
