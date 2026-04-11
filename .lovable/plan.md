@@ -1,40 +1,50 @@
 
 
-# Make Hero Section More Compact
+# Per-Device Image Scaling for Vehicle Placements
 
 ## Current state
-- Hero section: `min-h-[85vh]` on mobile, `min-h-[70vh]` on tablet/desktop
-- Inner content padding: `py-12` on mobile, `py-32` on tablet/desktop
-- Search bar margin: `mt-6` mobile, `mt-10` desktop
-- Search bar padding: `p-4` mobile, `p-8` desktop
-- Text spacing: `space-y-4` mobile, `space-y-6` desktop
+Each vehicle has 5 single scale values: `image_scale_home`, `image_scale_fleet`, `image_scale_detail`, `image_scale_reservation`, `image_scale_sidebar`. These apply uniformly regardless of screen size.
 
-## Changes — `src/pages/Index.tsx`
+## What changes
 
-### 1. Reduce min-height per breakpoint
-```
-Before: min-h-[85vh] md:min-h-[70vh]
-After:  min-h-[60vh] md:min-h-[50vh] lg:min-h-[55vh]
-```
+### 1. Database migration — add 10 new columns
+For each of the 5 placements, add `_mobile` and `_tablet` suffixes (desktop keeps the existing column):
 
-### 2. Reduce container padding
-```
-Before: py-12 md:py-32
-After:  py-8 md:py-16 lg:py-20
-```
-
-### 3. Tighten text + search bar spacing
-- Text block: `space-y-3 md:space-y-4` (from `space-y-4 md:space-y-6`)
-- Search bar margin: `mt-4 md:mt-6` (from `mt-6 md:mt-10`)
-- Search bar padding: `p-3 md:p-6` (from `p-4 md:p-8`)
-
-### 4. Update admin preview ratio to match
-In `src/pages/admin/AdminSettings.tsx`, update the `heroRatio` to reflect the new min-heights:
-```
-Before: mobile 0.85, others 0.70
-After:  mobile 0.60, tablet 0.50, desktop 0.55
+```sql
+ALTER TABLE vehicles
+  ADD COLUMN image_scale_home_mobile numeric DEFAULT 1.0 NOT NULL,
+  ADD COLUMN image_scale_home_tablet numeric DEFAULT 1.0 NOT NULL,
+  ADD COLUMN image_scale_fleet_mobile numeric DEFAULT 1.0 NOT NULL,
+  ADD COLUMN image_scale_fleet_tablet numeric DEFAULT 1.0 NOT NULL,
+  ADD COLUMN image_scale_detail_mobile numeric DEFAULT 1.0 NOT NULL,
+  ADD COLUMN image_scale_detail_tablet numeric DEFAULT 1.0 NOT NULL,
+  ADD COLUMN image_scale_reservation_mobile numeric DEFAULT 1.0 NOT NULL,
+  ADD COLUMN image_scale_reservation_tablet numeric DEFAULT 1.0 NOT NULL,
+  ADD COLUMN image_scale_sidebar_mobile numeric DEFAULT 1.0 NOT NULL,
+  ADD COLUMN image_scale_sidebar_tablet numeric DEFAULT 1.0 NOT NULL;
 ```
 
-## Result
-The hero section becomes noticeably shorter on all devices, bringing the search bar and content below the fold into view sooner, while keeping the same layout structure and background media.
+The existing columns (`image_scale_home`, etc.) become the **desktop** values.
+
+### 2. Admin UI — `src/pages/admin/AdminFleet.tsx`
+For each placement in the "Zoom par emplacement" section, add a **device tab selector** (Mobile / Tablet / Desktop) with an independent slider and preview for each device. The preview container dimensions will match the device context.
+
+### 3. Frontend rendering — apply responsive scales
+In each file that renders vehicle images, replace the single `scale(v.image_scale_X)` with a CSS approach using media-query-driven CSS custom properties or a hook:
+
+- Create a small utility hook `useDeviceScale(vehicle, placement)` that returns the correct scale based on current viewport width (using the existing `useIsMobile` pattern plus a tablet check).
+- Apply in: `Index.tsx` (home), `Fleet.tsx`, `VehicleDetail.tsx`, `StepVehicle.tsx` (reservation), `ReservationSidebar.tsx`.
+
+### 4. Form state updates
+Update form initialization, reset, and edit in `AdminFleet.tsx` to include all 10 new fields.
+
+## Files to change
+- **Migration**: new SQL migration (10 columns)
+- **`src/hooks/useDeviceScale.ts`** (new) — returns correct scale for placement + device
+- **`src/pages/admin/AdminFleet.tsx`** — add per-device tabs in the zoom section
+- **`src/pages/Index.tsx`** — use `useDeviceScale`
+- **`src/pages/Fleet.tsx`** — use `useDeviceScale`
+- **`src/pages/VehicleDetail.tsx`** — use `useDeviceScale`
+- **`src/components/reservation/StepVehicle.tsx`** — use `useDeviceScale`
+- **`src/components/reservation/ReservationSidebar.tsx`** — use `useDeviceScale`
 
