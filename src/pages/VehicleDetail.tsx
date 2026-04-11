@@ -6,6 +6,7 @@ import Layout from "@/components/layout/Layout";
 import { useVehicleBySlug, usePricingTiers, useVehicleImages } from "@/hooks/useVehicles";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDeviceScale } from "@/hooks/useDeviceScale";
 
 const VehicleDetail = () => {
   const { slug } = useParams();

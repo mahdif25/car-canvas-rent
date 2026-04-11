@@ -5,6 +5,7 @@ import { getActiveFeatures } from "@/lib/vehicle-features";
 import Layout from "@/components/layout/Layout";
 import { useVehicles, usePricingTiers, getStartingPriceFromTiers } from "@/hooks/useVehicles";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDeviceScale } from "@/hooks/useDeviceScale";
 
 const Fleet = () => {
   const [category, setCategory] = useState<string>("all");
