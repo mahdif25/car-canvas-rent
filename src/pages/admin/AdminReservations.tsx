@@ -443,6 +443,7 @@ interface RowProps {
   pricingTiers: any[];
   locations: any[];
   allAddons: any[];
+  additionalDriver: any | null;
   onUpdateStatus: (s: ReservationStatus) => void;
   onUpdateDeposit: (s: DepositStatus) => void;
   onSave: (calc: { totalPrice: number; deliveryFee: number; depositAmount: number }) => void;
@@ -454,7 +455,7 @@ interface RowProps {
   onSaveClientEdit: (id: string, field: string, value: string) => void;
 }
 
-const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, pricingTiers, locations, allAddons, onUpdateStatus, onUpdateDeposit, onSave, onPrint, isSaving, clientEdit, onStartClientEdit, onCancelClientEdit, onSaveClientEdit }: RowProps) => {
+const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, pricingTiers, locations, allAddons, additionalDriver, onUpdateStatus, onUpdateDeposit, onSave, onPrint, isSaving, clientEdit, onStartClientEdit, onCancelClientEdit, onSaveClientEdit }: RowProps) => {
   const calc = useCalc(edit, vehicles, pricingTiers, locations, allAddons);
 
   const toggleAddon = (addonId: string) => {
