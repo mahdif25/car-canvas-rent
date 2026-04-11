@@ -42,6 +42,9 @@ export interface SiteSettings {
   conditions_generales_html: string;
   privacy_policy_html: string;
   caution_policy_html: string;
+  hero_video_mobile_scale: number;
+  hero_video_desktop_scale: number;
+  hero_video_offset_y: number;
   updated_at: string;
 }
 
