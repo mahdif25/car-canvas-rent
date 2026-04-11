@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { ReservationFormData, AdditionalDriver } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,15 +18,46 @@ interface Props {
   analytics?: {
     captureLeadField: (fields: Record<string, string>, step: number, capi_allowed?: boolean) => void;
     trackFieldCapture: (fields: Record<string, string>) => void;
+    trackFacebookEvent: (eventName: string, customData?: Record<string, any>) => void;
+    trackTikTokEvent: (eventName: string, params?: Record<string, any>) => void;
+    trackGAEvent: (eventName: string, params?: Record<string, any>) => void;
   };
 }
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_REGEX = /^(?:(?:\+|00)212|0)[5-7]\d{8}$/;
 
+const AUTOFILL_FIELDS = [
+  { name: "fname", key: "first_name" },
+  { name: "lname", key: "last_name" },
+  { name: "email", key: "email" },
+  { name: "phone", key: "phone" },
+] as const;
+
 const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadCaptureMode = "blur" }: Props) => {
   const prevFieldsRef = useRef<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const formRef = useRef<HTMLFormElement>(null);
+
+  // Autofill detection: poll DOM values after mount
+  useEffect(() => {
+    let attempts = 0;
+    const interval = setInterval(() => {
+      attempts++;
+      if (!formRef.current || attempts > 6) { clearInterval(interval); return; }
+      const updates: Partial<ReservationFormData> = {};
+      let found = false;
+      for (const { name, key } of AUTOFILL_FIELDS) {
+        const input = formRef.current.querySelector<HTMLInputElement>(`[name="${name}"]`);
+        if (input && input.value && input.value !== (formData as any)[key]) {
+          (updates as any)[key] = input.value;
+          found = true;
+        }
+      }
+      if (found) { updateForm(updates); clearInterval(interval); }
+    }, 400);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const watched = ["first_name", "last_name", "email", "phone"] as const;
