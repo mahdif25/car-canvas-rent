@@ -49,6 +49,16 @@ const Reservation = () => {
     promo_code: "",
     discount_amount: 0,
     coupon_id: "",
+    has_additional_driver: false,
+    additional_driver: {
+      first_name: "",
+      last_name: "",
+      email: "",
+      phone: "",
+      license_number: "",
+      nationality: "",
+      dob: "",
+    },
   });
 
   const [confirmationId, setConfirmationId] = useState("");
