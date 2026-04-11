@@ -48,6 +48,7 @@ const defaultFormData: ReservationFormData = {
   discount_amount: 0,
   coupon_id: "",
   has_additional_driver: false,
+  selected_color_id: "",
   additional_driver: {
     first_name: "",
     last_name: "",
@@ -203,6 +204,7 @@ const Reservation = () => {
           coupon_id: formData.coupon_id || null,
           discount_amount: formData.discount_amount,
           marketing_consent: true,
+          selected_color_id: formData.selected_color_id || null,
         })
         .select()
         .single();
