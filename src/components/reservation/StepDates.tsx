@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ReservationFormData } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,16 @@ const StepDates = ({ formData, updateForm, onNext, locations }: Props) => {
   const [differentDropoff, setDifferentDropoff] = useState(
     !!(formData.return_location && formData.return_location !== formData.pickup_location)
   );
+  const pickupTriggerRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!formData.pickup_location) {
+      const timer = setTimeout(() => {
+        pickupTriggerRef.current?.click();
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   const isValid = formData.pickup_location && formData.pickup_date && formData.return_date && formData.pickup_date < formData.return_date;
 
@@ -42,7 +52,7 @@ const StepDates = ({ formData, updateForm, onNext, locations }: Props) => {
         <div className="space-y-2">
           <label className="text-sm font-medium">Lieu de prise en charge</label>
           <Select value={formData.pickup_location} onValueChange={(v) => updateForm({ pickup_location: v })}>
-            <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+            <SelectTrigger ref={pickupTriggerRef}><SelectValue placeholder="Sélectionner" /></SelectTrigger>
             <SelectContent>
               {locations.map((l) => (
                 <SelectItem key={l.id} value={l.name}>{l.name}</SelectItem>

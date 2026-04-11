@@ -26,6 +26,7 @@ import CautionPolicy from "./pages/CautionPolicy";
 import TrackReservation from "./pages/TrackReservation";
 import Unsubscribe from "./pages/Unsubscribe";
 import TrackingScripts from "./components/TrackingScripts";
+import ScrollToTop from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <ScrollToTop />
         <AuthProvider>
           <TrackingScripts />
           <Routes>
