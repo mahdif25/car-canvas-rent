@@ -55,6 +55,13 @@ const StepVehicle = ({ formData, updateForm, rentalDays, onNext, onBack, vehicle
     return defaultImage || "/placeholder.svg";
   };
 
+  const getImageTransform = (vehicleId: string, vehicle: any) => {
+    const activeColor = localColors[vehicleId] || getDefaultColor(allColors, vehicleId);
+    const flipped = activeColor ? activeColor.image_flipped : vehicle.image_flipped;
+    const scale = activeColor ? getScaleForColorOnDevice(activeColor, 'reservation', deviceType) : getScaleForDevice(vehicle, 'reservation', deviceType);
+    return { flipped, scale };
+  };
+
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold">Choisissez votre véhicule</h2>
@@ -69,6 +76,10 @@ const StepVehicle = ({ formData, updateForm, rentalDays, onNext, onBack, vehicle
           const isSelected = formData.vehicle_id === v.id;
           const vehicleColors = allColors.filter((c) => c.vehicle_id === v.id);
           const displayImage = getDisplayImage(v.id, v.image_url);
+          const selectedColorId = localColors[v.id]?.id || getDefaultColor(allColors, v.id)?.id;
+
+          const displayImage = getDisplayImage(v.id, v.image_url);
+          const { flipped: imgFlipped, scale: imgScale } = getImageTransform(v.id, v);
           const selectedColorId = localColors[v.id]?.id || getDefaultColor(allColors, v.id)?.id;
 
           return (
