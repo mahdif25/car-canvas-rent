@@ -157,6 +157,7 @@ const AdminFleet = () => {
     mutationFn: async () => {
       const { slug, ...vehicleData } = form;
       const saveData = { ...vehicleData, slug: slug || null };
+      let vehicleId = editingId;
       if (editingId) {
         const { error } = await supabase.from("vehicles").update(saveData).eq("id", editingId);
         if (error) throw error;
@@ -173,6 +174,7 @@ const AdminFleet = () => {
       } else {
         const { data, error } = await supabase.from("vehicles").insert(saveData as VehicleInsert).select().single();
         if (error) throw error;
+        vehicleId = data.id;
         const tierInserts = tiers.map((t) => ({ vehicle_id: data.id, ...t }));
         const { error: tierErr } = await supabase.from("vehicle_pricing_tiers").insert(tierInserts);
         if (tierErr) throw tierErr;
@@ -182,10 +184,29 @@ const AdminFleet = () => {
           if (imgErr) throw imgErr;
         }
       }
+
+      // Save color variants
+      if (vehicleId) {
+        await supabase.from("vehicle_colors").delete().eq("vehicle_id", vehicleId);
+        const validColors = colorVariants.filter((c) => c.color_name && c.image_url);
+        if (validColors.length > 0) {
+          const colorInserts = validColors.map((c, i) => ({
+            vehicle_id: vehicleId!,
+            color_name: c.color_name!,
+            color_hex: c.color_hex || "#000000",
+            image_url: c.image_url!,
+            is_default: c.is_default ?? i === 0,
+            sort_order: i,
+          }));
+          const { error: colorErr } = await supabase.from("vehicle_colors").insert(colorInserts);
+          if (colorErr) throw colorErr;
+        }
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-vehicles"] });
       qc.invalidateQueries({ queryKey: ["admin-pricing-tiers"] });
+      qc.invalidateQueries({ queryKey: ["vehicle_colors"] });
       toast({ title: editingId ? "Véhicule modifié" : "Véhicule ajouté" });
       resetForm();
     },
@@ -218,7 +239,7 @@ const AdminFleet = () => {
     setTiers(defaultTiers);
     setFeatureInput("");
     setGalleryUrls([]);
-  };
+    setColorVariants([]);
 
   const editVehicle = async (v: Vehicle) => {
     setEditingId(v.id);
