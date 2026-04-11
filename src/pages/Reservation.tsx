@@ -17,6 +17,9 @@ import { useAnalytics } from "@/hooks/useAnalytics";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { Check } from "lucide-react";
 
+const STORAGE_KEY = "reservation_form";
+const STEP_KEY = "reservation_step";
+
 const steps = [
   { label: "Dates", number: 1 },
   { label: "Véhicule", number: 2 },
@@ -24,20 +27,28 @@ const steps = [
   { label: "Résumé", number: 4 },
 ];
 
-const Reservation = () => {
-  const [searchParams] = useSearchParams();
-  const preselectedVehicle = searchParams.get("vehicle") || "";
-
-  const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState<ReservationFormData>({
-    pickup_location: searchParams.get("location") || "",
-    pickup_date: searchParams.get("pickup") || "",
-    pickup_time: "09:00",
-    return_location: "",
-    return_date: searchParams.get("return") || "",
-    return_time: "09:00",
-    vehicle_id: preselectedVehicle,
-    selected_addons: [],
+const defaultFormData: ReservationFormData = {
+  pickup_location: "",
+  pickup_date: "",
+  pickup_time: "09:00",
+  return_location: "",
+  return_date: "",
+  return_time: "09:00",
+  vehicle_id: "",
+  selected_addons: [],
+  first_name: "",
+  last_name: "",
+  email: "",
+  phone: "",
+  license_number: "",
+  nationality: "",
+  dob: "",
+  terms_accepted: false,
+  promo_code: "",
+  discount_amount: 0,
+  coupon_id: "",
+  has_additional_driver: false,
+  additional_driver: {
     first_name: "",
     last_name: "",
     email: "",
@@ -45,33 +56,65 @@ const Reservation = () => {
     license_number: "",
     nationality: "",
     dob: "",
-    terms_accepted: false,
-    promo_code: "",
-    discount_amount: 0,
-    coupon_id: "",
-    has_additional_driver: false,
-    additional_driver: {
-      first_name: "",
-      last_name: "",
-      email: "",
-      phone: "",
-      license_number: "",
-      nationality: "",
-      dob: "",
-    },
-  });
+  },
+};
+
+function getInitialState(searchParams: URLSearchParams) {
+  const savedForm = sessionStorage.getItem(STORAGE_KEY);
+  const savedStep = sessionStorage.getItem(STEP_KEY);
+
+  const urlLocation = searchParams.get("location") || "";
+  const urlPickup = searchParams.get("pickup") || "";
+  const urlReturn = searchParams.get("return") || "";
+  const urlVehicle = searchParams.get("vehicle") || "";
+  const hasUrlParams = urlLocation || urlPickup || urlReturn || urlVehicle;
+
+  let formData = { ...defaultFormData };
+  let step = 1;
+
+  if (savedForm) {
+    try {
+      formData = { ...defaultFormData, ...JSON.parse(savedForm) };
+      step = savedStep ? parseInt(savedStep, 10) || 1 : 1;
+    } catch { /* ignore */ }
+  }
+
+  // URL params override stored values when present
+  if (hasUrlParams) {
+    if (urlLocation) formData.pickup_location = urlLocation;
+    if (urlPickup) formData.pickup_date = urlPickup;
+    if (urlReturn) formData.return_date = urlReturn;
+    if (urlVehicle) formData.vehicle_id = urlVehicle;
+  }
+
+  return { formData, step };
+}
+
+const Reservation = () => {
+  const [searchParams] = useSearchParams();
+
+  const [initialized] = useState(() => getInitialState(searchParams));
+  const [currentStep, setCurrentStep] = useState(initialized.step);
+  const [formData, setFormData] = useState<ReservationFormData>(initialized.formData);
 
   const [confirmationId, setConfirmationId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const analytics = useAnalytics();
   const { data: siteSettings } = useSiteSettings();
 
+  // Persist form data and step to sessionStorage
+  useEffect(() => {
+    if (currentStep < 5) {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
+      sessionStorage.setItem(STEP_KEY, String(currentStep));
+    }
+  }, [formData, currentStep]);
+
   useEffect(() => {
     analytics.trackReservationStep(currentStep, {
       vehicle_id: formData.vehicle_id || undefined,
       pickup_location: formData.pickup_location || undefined,
     });
-    // Fire CAPI events on specific steps
     if (currentStep === 4) {
       analytics.trackFacebookEvent("InitiateCheckout", {
         currency: "MAD",
@@ -95,16 +138,10 @@ const Reservation = () => {
     return Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)));
   }, [formData.pickup_date, formData.return_date]);
 
-  const nextStep = () => setCurrentStep((s) => {
-    // Skip vehicle selection (step 2) if a vehicle is already pre-selected
-    if (s === 1 && preselectedVehicle) return 3;
-    return Math.min(s + 1, 5);
-  });
-  const prevStep = () => setCurrentStep((s) => {
-    // Skip vehicle selection (step 2) going back if pre-selected
-    if (s === 3 && preselectedVehicle) return 1;
-    return Math.max(s - 1, 1);
-  });
+  const nextStep = () => setCurrentStep((s) => Math.min(s + 1, 5));
+  const prevStep = () => setCurrentStep((s) => Math.max(s - 1, 1));
+
+  const handleChangeVehicle = () => setCurrentStep(2);
 
   const selectedVehicle = vehicles.find((v) => v.id === formData.vehicle_id);
 
@@ -176,7 +213,6 @@ const Reservation = () => {
         });
       }
 
-      // Insert additional driver if present
       if (formData.has_additional_driver && formData.additional_driver.first_name) {
         const { error: addDriverErr } = await supabase.from("additional_drivers").insert({
           reservation_id: reservation.id,
@@ -200,7 +236,10 @@ const Reservation = () => {
         content_ids: [formData.vehicle_id],
       });
 
-      // Send confirmation + welcome emails
+      // Clear session storage on success
+      sessionStorage.removeItem(STORAGE_KEY);
+      sessionStorage.removeItem(STEP_KEY);
+
       const fmtDate = (d: string) => new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
       const addonDetails = formData.selected_addons.map((id) => {
         const addon = addons.find((a) => a.id === id);
@@ -283,7 +322,6 @@ const Reservation = () => {
             <span className="text-primary">Réservation</span>
           </h1>
 
-          {/* Stepper: connected dots */}
           {currentStep <= 4 && (
             <div className="flex items-center justify-center mb-10 px-4">
               {steps.map((step, idx) => (
@@ -344,7 +382,7 @@ const Reservation = () => {
 
             {currentStep <= 4 && (
               <div className="lg:col-span-1">
-                <ReservationSidebar formData={formData} rentalDays={rentalDays} vehicles={vehicles} pricingTiers={pricingTiers} addons={addons} locations={locations} currentStep={currentStep} />
+                <ReservationSidebar formData={formData} rentalDays={rentalDays} vehicles={vehicles} pricingTiers={pricingTiers} addons={addons} locations={locations} currentStep={currentStep} onChangeVehicle={handleChangeVehicle} />
               </div>
             )}
           </div>

@@ -13,6 +13,7 @@ interface Props {
   addons: AddonOption[];
   locations: Location[];
   currentStep: number;
+  onChangeVehicle?: () => void;
 }
 
 const ReservationSidebar = ({ formData, rentalDays, vehicles, pricingTiers, currentStep }: Props) => {
