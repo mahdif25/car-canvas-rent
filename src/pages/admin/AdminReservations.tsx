@@ -486,6 +486,25 @@ interface RowProps {
 
 const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, pricingTiers, locations, allAddons, additionalDriver, onUpdateStatus, onUpdateDeposit, onSave, onPrint, isSaving, clientEdit, onStartClientEdit, onCancelClientEdit, onSaveClientEdit }: RowProps) => {
   const calc = useCalc(edit, vehicles, pricingTiers, locations, allAddons);
+  const { data: availablePlates = [] } = useAvailablePlates(edit.vehicle_id, edit.pickup_date, edit.return_date, r.id);
+  const qc = useQueryClient();
+
+  const assignPlate = async (plateId: string | null) => {
+    const { error } = await supabase.from("reservations").update({ assigned_plate_id: plateId }).eq("id", r.id);
+    if (error) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    } else {
+      qc.invalidateQueries({ queryKey: ["admin-reservations"] });
+      qc.invalidateQueries({ queryKey: ["available-plates"] });
+      toast({ title: plateId ? "Véhicule assigné" : "Véhicule désassigné" });
+    }
+  };
+
+  const assignedPlate = availablePlates.find((p) => p.id === r.assigned_plate_id);
+  // Also check if the current plate is not in available list (already assigned to this res)
+  const allPlatesForDropdown = r.assigned_plate_id && !availablePlates.find((p) => p.id === r.assigned_plate_id)
+    ? availablePlates
+    : availablePlates;
 
   const toggleAddon = (addonId: string) => {
     const current = edit.addons;
