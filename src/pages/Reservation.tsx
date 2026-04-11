@@ -48,6 +48,7 @@ const defaultFormData: ReservationFormData = {
   discount_amount: 0,
   coupon_id: "",
   has_additional_driver: false,
+  selected_color_id: "",
   additional_driver: {
     first_name: "",
     last_name: "",
@@ -67,6 +68,7 @@ function getInitialState(searchParams: URLSearchParams) {
   const urlPickup = searchParams.get("pickup") || "";
   const urlReturn = searchParams.get("return") || "";
   const urlVehicle = searchParams.get("vehicle") || "";
+  const urlColor = searchParams.get("color") || "";
   const hasUrlParams = urlLocation || urlPickup || urlReturn || urlVehicle;
 
   let formData = { ...defaultFormData };
@@ -85,6 +87,7 @@ function getInitialState(searchParams: URLSearchParams) {
     if (urlPickup) formData.pickup_date = urlPickup;
     if (urlReturn) formData.return_date = urlReturn;
     if (urlVehicle) formData.vehicle_id = urlVehicle;
+    if (urlColor) formData.selected_color_id = urlColor;
   }
 
   return { formData, step };
@@ -203,6 +206,7 @@ const Reservation = () => {
           coupon_id: formData.coupon_id || null,
           discount_amount: formData.discount_amount,
           marketing_consent: true,
+          selected_color_id: formData.selected_color_id || null,
         })
         .select()
         .single();

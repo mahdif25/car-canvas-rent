@@ -4,6 +4,9 @@ import { Users, Fuel, Settings2, Shield } from "lucide-react";
 import { getActiveFeatures } from "@/lib/vehicle-features";
 import { Vehicle, PricingTier, getDailyRateFromTiers } from "@/hooks/useVehicles";
 import { useDeviceType, getScaleForDevice } from "@/hooks/useDeviceScale";
+import { useAllVehicleColors, getDefaultColor, VehicleColor } from "@/hooks/useVehicleColors";
+import VehicleColorPicker from "@/components/VehicleColorPicker";
+import { useState, useEffect } from "react";
 
 interface Props {
   formData: ReservationFormData;
@@ -18,9 +21,38 @@ interface Props {
 const StepVehicle = ({ formData, updateForm, rentalDays, onNext, onBack, vehicles, pricingTiers }: Props) => {
   const available = vehicles.filter((v) => v.is_available);
   const deviceType = useDeviceType();
+  const { data: allColors = [] } = useAllVehicleColors();
+  const [localColors, setLocalColors] = useState<Record<string, VehicleColor>>({});
+
+  // Initialize selected color from formData if present
+  useEffect(() => {
+    if (formData.selected_color_id && allColors.length > 0) {
+      const color = allColors.find((c) => c.id === formData.selected_color_id);
+      if (color && !localColors[color.vehicle_id]) {
+        setLocalColors((prev) => ({ ...prev, [color.vehicle_id]: color }));
+      }
+    }
+  }, [formData.selected_color_id, allColors]);
 
   const selectVehicle = (id: string) => {
-    updateForm({ vehicle_id: id });
+    const vehicleColors = allColors.filter((c) => c.vehicle_id === id);
+    const currentColor = localColors[id] || getDefaultColor(allColors, id);
+    updateForm({ vehicle_id: id, selected_color_id: currentColor?.id || "" });
+  };
+
+  const handleColorSelect = (vehicleId: string, color: VehicleColor) => {
+    setLocalColors((prev) => ({ ...prev, [vehicleId]: color }));
+    if (formData.vehicle_id === vehicleId) {
+      updateForm({ selected_color_id: color.id });
+    }
+  };
+
+  const getDisplayImage = (vehicleId: string, defaultImage: string | null) => {
+    const selected = localColors[vehicleId];
+    if (selected) return selected.image_url;
+    const def = getDefaultColor(allColors, vehicleId);
+    if (def) return def.image_url;
+    return defaultImage || "/placeholder.svg";
   };
 
   return (
@@ -35,6 +67,9 @@ const StepVehicle = ({ formData, updateForm, rentalDays, onNext, onBack, vehicle
           const tiers = pricingTiers.filter((t) => t.vehicle_id === v.id);
           const rate = getDailyRateFromTiers(tiers, rentalDays);
           const isSelected = formData.vehicle_id === v.id;
+          const vehicleColors = allColors.filter((c) => c.vehicle_id === v.id);
+          const displayImage = getDisplayImage(v.id, v.image_url);
+          const selectedColorId = localColors[v.id]?.id || getDefaultColor(allColors, v.id)?.id;
 
           return (
             <div
@@ -45,7 +80,7 @@ const StepVehicle = ({ formData, updateForm, rentalDays, onNext, onBack, vehicle
               }`}
             >
               <div className="w-full md:w-48 h-32 rounded-md overflow-hidden bg-secondary shrink-0">
-                <img src={v.image_url || "/placeholder.svg"} alt={v.name} className="w-full h-full object-contain" style={{ transform: `${v.image_flipped ? 'scaleX(-1)' : ''} scale(${getScaleForDevice(v, 'reservation', deviceType)})`.trim() || 'none' }} />
+                <img src={displayImage} alt={v.name} className="w-full h-full object-contain" style={{ transform: `${v.image_flipped ? 'scaleX(-1)' : ''} scale(${getScaleForDevice(v, 'reservation', deviceType)})`.trim() || 'none' }} />
               </div>
               <div className="flex-1 flex flex-col justify-between">
                 <div>
@@ -53,6 +88,17 @@ const StepVehicle = ({ formData, updateForm, rentalDays, onNext, onBack, vehicle
                     <h3 className="font-semibold text-lg">{v.name}</h3>
                     <span className="bg-primary/10 text-primary text-xs font-medium px-2 py-1 rounded-full">{v.category}</span>
                   </div>
+
+                  {vehicleColors.length > 0 && (
+                    <div className="mt-2">
+                      <VehicleColorPicker
+                        colors={vehicleColors}
+                        selectedColorId={selectedColorId}
+                        onSelect={(color) => handleColorSelect(v.id, color)}
+                      />
+                    </div>
+                  )}
+
                   <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1"><Settings2 size={14} />{v.transmission}</span>
                     <span className="flex items-center gap-1"><Fuel size={14} />{v.fuel}</span>

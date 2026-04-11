@@ -11,6 +11,8 @@ import { useReviews } from "@/hooks/useReviews";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DatePickerField } from "@/components/ui/date-picker-field";
+import { useAllVehicleColors, getDefaultColor, VehicleColor } from "@/hooks/useVehicleColors";
+import VehicleColorPicker from "@/components/VehicleColorPicker";
 
 const FONT_SIZE_MAP: Record<string, string> = {
   xl: "text-xl", "2xl": "text-2xl", "3xl": "text-3xl", "4xl": "text-4xl",
@@ -47,6 +49,7 @@ const Index = () => {
   const [pickupLocation, setPickupLocation] = useState("");
   const [pickupDate, setPickupDate] = useState("");
   const [returnDate, setReturnDate] = useState("");
+  const [selectedColors, setSelectedColors] = useState<Record<string, VehicleColor>>({});
   const deviceType = useDeviceType();
 
   const { data: vehicles = [], isLoading: loadingVehicles } = useVehicles();
@@ -54,6 +57,7 @@ const Index = () => {
   const { data: locations = [], isLoading: loadingLocations } = useLocations();
   const { data: siteSettings } = useSiteSettings();
   const { data: reviews = [] } = useReviews(true);
+  const { data: allColors = [] } = useAllVehicleColors();
 
   const heroType = siteSettings?.hero_bg_type || "color";
   const heroValue = siteSettings?.hero_bg_value || "";
@@ -278,10 +282,15 @@ const Index = () => {
               {featured.map((v) => {
                 const vehicleTiers = allTiers.filter((t) => t.vehicle_id === v.id);
                 const startingPrice = getStartingPriceFromTiers(vehicleTiers);
+                const vehicleColors = allColors.filter((c) => c.vehicle_id === v.id);
+                const selected = selectedColors[v.id];
+                const defaultCol = getDefaultColor(allColors, v.id);
+                const displayImage = selected?.image_url || defaultCol?.image_url || v.image_url || "/placeholder.svg";
+                const selectedColorId = selected?.id || defaultCol?.id;
                 return (
                   <Link
                     key={v.id}
-                    to={`/reservation?vehicle=${v.id}`}
+                    to={`/reservation?vehicle=${v.id}${selectedColorId ? `&color=${selectedColorId}` : ''}`}
                     className="group bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
                   >
                     <div className="p-4 pb-0 space-y-1">
@@ -293,7 +302,7 @@ const Index = () => {
                     <div className="relative mx-4 mt-3 rounded-xl overflow-hidden h-36 bg-secondary">
                       <div className="absolute inset-0 bg-primary translate-x-full group-hover:translate-x-0 transition-transform duration-500 ease-out" />
                       <img
-                        src={v.image_url || "/placeholder.svg"}
+                        src={displayImage}
                         alt={v.name}
                         className="relative z-10 w-full h-full object-contain transition-transform duration-300"
                         style={{
@@ -303,6 +312,14 @@ const Index = () => {
                     </div>
 
                     <div className="p-4 space-y-3">
+                      {vehicleColors.length > 0 && (
+                        <VehicleColorPicker
+                          colors={vehicleColors}
+                          selectedColorId={selectedColorId}
+                          onSelect={(color) => setSelectedColors((prev) => ({ ...prev, [v.id]: color }))}
+                        />
+                      )}
+
                       <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1.5"><Settings2 size={12} className="text-primary" />{v.transmission}</span>
                         <span className="flex items-center gap-1.5"><Fuel size={12} className="text-primary" />{v.fuel}</span>

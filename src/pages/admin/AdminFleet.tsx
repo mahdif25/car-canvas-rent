@@ -7,13 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, X, Upload, Image, Loader2, FlipHorizontal, Monitor, Tablet, Smartphone } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Upload, Image, Loader2, FlipHorizontal, Monitor, Tablet, Smartphone, Palette } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { STRUCTURED_FEATURES } from "@/lib/vehicle-features";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import type { Database } from "@/integrations/supabase/types";
+import type { VehicleColor } from "@/hooks/useVehicleColors";
 
 type Vehicle = Database["public"]["Tables"]["vehicles"]["Row"];
 type VehicleInsert = Database["public"]["Tables"]["vehicles"]["Insert"];
@@ -134,6 +135,7 @@ const AdminFleet = () => {
   const [tiers, setTiers] = useState(defaultTiers);
   const [featureInput, setFeatureInput] = useState("");
   const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
+  const [colorVariants, setColorVariants] = useState<Array<Partial<VehicleColor> & { _new?: boolean }>>([]);
 
   const { data: vehicles, isLoading } = useQuery({
     queryKey: ["admin-vehicles"],
@@ -155,6 +157,7 @@ const AdminFleet = () => {
     mutationFn: async () => {
       const { slug, ...vehicleData } = form;
       const saveData = { ...vehicleData, slug: slug || null };
+      let vehicleId = editingId;
       if (editingId) {
         const { error } = await supabase.from("vehicles").update(saveData).eq("id", editingId);
         if (error) throw error;
@@ -171,6 +174,7 @@ const AdminFleet = () => {
       } else {
         const { data, error } = await supabase.from("vehicles").insert(saveData as VehicleInsert).select().single();
         if (error) throw error;
+        vehicleId = data.id;
         const tierInserts = tiers.map((t) => ({ vehicle_id: data.id, ...t }));
         const { error: tierErr } = await supabase.from("vehicle_pricing_tiers").insert(tierInserts);
         if (tierErr) throw tierErr;
@@ -180,10 +184,29 @@ const AdminFleet = () => {
           if (imgErr) throw imgErr;
         }
       }
+
+      // Save color variants
+      if (vehicleId) {
+        await supabase.from("vehicle_colors").delete().eq("vehicle_id", vehicleId);
+        const validColors = colorVariants.filter((c) => c.color_name && c.image_url);
+        if (validColors.length > 0) {
+          const colorInserts = validColors.map((c, i) => ({
+            vehicle_id: vehicleId!,
+            color_name: c.color_name!,
+            color_hex: c.color_hex || "#000000",
+            image_url: c.image_url!,
+            is_default: c.is_default ?? i === 0,
+            sort_order: i,
+          }));
+          const { error: colorErr } = await supabase.from("vehicle_colors").insert(colorInserts);
+          if (colorErr) throw colorErr;
+        }
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-vehicles"] });
       qc.invalidateQueries({ queryKey: ["admin-pricing-tiers"] });
+      qc.invalidateQueries({ queryKey: ["vehicle_colors"] });
       toast({ title: editingId ? "Véhicule modifié" : "Véhicule ajouté" });
       resetForm();
     },
@@ -216,6 +239,7 @@ const AdminFleet = () => {
     setTiers(defaultTiers);
     setFeatureInput("");
     setGalleryUrls([]);
+    setColorVariants([]);
   };
 
   const editVehicle = async (v: Vehicle) => {
@@ -225,6 +249,8 @@ const AdminFleet = () => {
     setTiers(vehicleTiers.length > 0 ? vehicleTiers.map((t) => ({ min_days: t.min_days, max_days: t.max_days, daily_rate: Number(t.daily_rate) })) : defaultTiers);
     const { data: imgs } = await supabase.from("vehicle_images").select("*").eq("vehicle_id", v.id).order("sort_order");
     setGalleryUrls((imgs ?? []).map((img: any) => img.image_url));
+    const { data: colors } = await supabase.from("vehicle_colors").select("*").eq("vehicle_id", v.id).order("sort_order");
+    setColorVariants((colors ?? []) as VehicleColor[]);
     setShowForm(true);
   };
 
@@ -446,6 +472,89 @@ const AdminFleet = () => {
                   <Plus size={24} />
                   <span className="text-xs">Ajouter une image</span>
                 </button>
+              </div>
+            </div>
+
+            {/* Color Variants */}
+            <div className="space-y-3 p-4 border rounded-xl bg-muted/30">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-medium flex items-center gap-2"><Palette size={16} className="text-primary" /> Couleurs disponibles</h4>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setColorVariants([...colorVariants, { color_name: "", color_hex: "#000000", image_url: "", is_default: colorVariants.length === 0, _new: true }])}
+                  className="gap-1"
+                >
+                  <Plus size={14} /> Ajouter une couleur
+                </Button>
+              </div>
+              {colorVariants.length === 0 && (
+                <p className="text-xs text-muted-foreground">Aucune couleur ajoutée. L'image principale sera utilisée.</p>
+              )}
+              <div className="space-y-4">
+                {colorVariants.map((color, idx) => (
+                  <div key={idx} className="flex flex-col sm:flex-row gap-3 p-3 border rounded-lg bg-background">
+                    <div className="flex-1 space-y-2">
+                      <div className="flex gap-2">
+                        <Input
+                          value={color.color_name || ""}
+                          onChange={(e) => {
+                            const updated = [...colorVariants];
+                            updated[idx] = { ...updated[idx], color_name: e.target.value };
+                            setColorVariants(updated);
+                          }}
+                          placeholder="Nom (ex: Rouge)"
+                          className="flex-1"
+                        />
+                        <input
+                          type="color"
+                          value={color.color_hex || "#000000"}
+                          onChange={(e) => {
+                            const updated = [...colorVariants];
+                            updated[idx] = { ...updated[idx], color_hex: e.target.value };
+                            setColorVariants(updated);
+                          }}
+                          className="w-10 h-10 rounded cursor-pointer border border-border"
+                        />
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <label className="flex items-center gap-2 text-xs">
+                          <Switch
+                            checked={color.is_default ?? false}
+                            onCheckedChange={(checked) => {
+                              const updated = colorVariants.map((c, i) => ({
+                                ...c,
+                                is_default: i === idx ? checked : checked ? false : c.is_default,
+                              }));
+                              setColorVariants(updated);
+                            }}
+                          />
+                          Par défaut
+                        </label>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="text-destructive h-7"
+                          onClick={() => setColorVariants(colorVariants.filter((_, i) => i !== idx))}
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="w-full sm:w-40 shrink-0">
+                      <ImageUploadField
+                        value={color.image_url || ""}
+                        onChange={(url) => {
+                          const updated = [...colorVariants];
+                          updated[idx] = { ...updated[idx], image_url: url };
+                          setColorVariants(updated);
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 

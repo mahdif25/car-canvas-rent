@@ -2,12 +2,13 @@ import { useState, useEffect, useRef } from "react";
 import { ReservationFormData } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Check, X, Tag, Truck, Shield, Car, Package } from "lucide-react";
+import { Check, X, Tag, Truck, Shield, Car, Package, Palette } from "lucide-react";
 import { getActiveFeatures } from "@/lib/vehicle-features";
 import { Vehicle, PricingTier, AddonOption, getDailyRateFromTiers } from "@/hooks/useVehicles";
 import { Location, getDeliveryFee } from "@/hooks/useLocations";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAllVehicleColors, getColorById } from "@/hooks/useVehicleColors";
 
 interface Props {
   formData: ReservationFormData;
@@ -29,6 +30,8 @@ const StepSummary = ({ formData, updateForm, onConfirm, onBack, rentalDays, vehi
   const [couponConditions, setCouponConditions] = useState<{ min_total_price: number | null; min_rental_days: number | null } | null>(null);
 
   const vehicle = vehicles.find((v) => v.id === formData.vehicle_id);
+  const { data: allColors = [] } = useAllVehicleColors();
+  const selectedColor = formData.selected_color_id ? getColorById(allColors, formData.selected_color_id) : undefined;
   const tiers = pricingTiers.filter((t) => t.vehicle_id === formData.vehicle_id);
   const dailyRate = vehicle ? getDailyRateFromTiers(tiers, rentalDays) : 0;
   const vehicleTotal = dailyRate * rentalDays;
@@ -136,10 +139,17 @@ const StepSummary = ({ formData, updateForm, onConfirm, onBack, rentalDays, vehi
           <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <Car size={16} className="text-primary" /> Véhicule
           </div>
-          <div className="flex justify-between items-center">
+           <div className="flex justify-between items-center">
             <div>
               <p className="font-semibold">{vehicle.name}</p>
               <p className="text-sm text-muted-foreground">{dailyRate} MAD/jour × {rentalDays} jour{rentalDays > 1 ? "s" : ""}</p>
+              {selectedColor && (
+                <div className="flex items-center gap-1.5 mt-1">
+                  <Palette size={12} className="text-primary" />
+                  <span className="w-3 h-3 rounded-full border border-border" style={{ backgroundColor: selectedColor.color_hex }} />
+                  <span className="text-xs text-muted-foreground">{selectedColor.color_name}</span>
+                </div>
+              )}
             </div>
             <span className="font-semibold">{vehicleTotal.toLocaleString()} MAD</span>
           </div>

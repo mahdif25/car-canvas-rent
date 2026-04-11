@@ -2,8 +2,9 @@ import { useState } from "react";
 import { ReservationFormData } from "@/lib/types";
 import { Vehicle, PricingTier, AddonOption, getDailyRateFromTiers } from "@/hooks/useVehicles";
 import { Location } from "@/hooks/useLocations";
-import { CalendarDays, MapPin, Car, ChevronUp, ChevronDown } from "lucide-react";
+import { CalendarDays, MapPin, Car, ChevronUp, ChevronDown, Palette } from "lucide-react";
 import { useDeviceScale } from "@/hooks/useDeviceScale";
+import { useAllVehicleColors, getColorById, getDefaultColor } from "@/hooks/useVehicleColors";
 
 interface Props {
   formData: ReservationFormData;
@@ -23,15 +24,21 @@ const ReservationSidebar = ({ formData, rentalDays, vehicles, pricingTiers, curr
   const tiers = pricingTiers.filter((t) => t.vehicle_id === formData.vehicle_id);
   const dailyRate = vehicle ? getDailyRateFromTiers(tiers, rentalDays) : 0;
   const vehicleTotal = dailyRate * rentalDays;
+  const { data: allColors = [] } = useAllVehicleColors();
+
+  const selectedColor = formData.selected_color_id
+    ? getColorById(allColors, formData.selected_color_id)
+    : vehicle ? getDefaultColor(allColors, vehicle.id) : undefined;
+  const sidebarImage = selectedColor?.image_url || vehicle?.image_url;
 
   // Only show vehicle price in sidebar (no delivery fees, no addons — those appear in step 4)
   const total = vehicleTotal;
 
   const content = (
     <div className="space-y-4">
-      {vehicle?.image_url && (
+      {sidebarImage && (
         <div className="w-full h-28 bg-secondary rounded-lg overflow-hidden">
-          <img src={vehicle.image_url} alt={vehicle.name} className="w-full h-full object-contain" style={{ transform: `${vehicle.image_flipped ? 'scaleX(-1)' : ''} scale(${sidebarScale})`.trim() || 'none' }} />
+          <img src={sidebarImage} alt={vehicle?.name} className="w-full h-full object-contain" style={{ transform: `${vehicle?.image_flipped ? 'scaleX(-1)' : ''} scale(${sidebarScale})`.trim() || 'none' }} />
         </div>
       )}
       {formData.pickup_location && (
@@ -69,6 +76,13 @@ const ReservationSidebar = ({ formData, rentalDays, vehicles, pricingTiers, curr
               )}
             </div>
             <p className="text-muted-foreground">{dailyRate} MAD/jour</p>
+            {selectedColor && (
+              <div className="flex items-center gap-1.5 mt-1">
+                <Palette size={12} className="text-primary" />
+                <span className="w-3 h-3 rounded-full border border-border" style={{ backgroundColor: selectedColor.color_hex }} />
+                <span className="text-xs text-muted-foreground">{selectedColor.color_name}</span>
+              </div>
+            )}
           </div>
         </div>
       )}
