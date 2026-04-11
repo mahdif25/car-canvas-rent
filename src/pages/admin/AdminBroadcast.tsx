@@ -369,7 +369,7 @@ const AdminBroadcast = () => {
                 <EmailBuilder value={emailBuilderData} onChange={setEmailBuilderData} />
               </div>
 
-              <div className="space-y-3 border rounded-lg p-4 bg-card">
+              <div className="space-y-3 border rounded-lg p-4 bg-card max-w-2xl">
                 <label className="text-sm font-semibold flex items-center gap-2"><Gift size={16} /> Mode coupon</label>
                 <Select value={couponMode} onValueChange={(v) => setCouponMode(v as CouponMode)}>
                   <SelectTrigger>
@@ -440,10 +440,8 @@ const AdminBroadcast = () => {
                     </p>
                   </>
                 )}
+              </div>
             </div>
-            </div>
-
-            <div className="max-w-2xl">
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <Button variant="outline" onClick={() => setStep(1)} className="gap-2 w-full sm:w-auto">
