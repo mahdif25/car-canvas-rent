@@ -708,6 +708,46 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
             <div className="flex justify-between font-bold text-base pt-2 border-t"><span>Total</span><span className="text-primary">{calc.totalPrice.toLocaleString()} MAD</span></div>
           </div>
 
+          {/* Plate assignment */}
+          <div className="bg-accent/30 border border-border rounded-lg p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="space-y-1 flex-1">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  Véhicule assigné (immatriculation)
+                  {r.status !== "active" && !r.assigned_plate_id && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <AlertTriangle size={14} className="text-yellow-500" />
+                      </TooltipTrigger>
+                      <TooltipContent>Assignez un véhicule avant de passer en "Active"</TooltipContent>
+                    </Tooltip>
+                  )}
+                </label>
+                <Select
+                  value={r.assigned_plate_id || "none"}
+                  onValueChange={(v) => assignPlate(v === "none" ? null : v)}
+                >
+                  <SelectTrigger className="w-full sm:w-60">
+                    <SelectValue placeholder="Aucun véhicule assigné" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Aucun</SelectItem>
+                    {allPlatesForDropdown.map((plate) => (
+                      <SelectItem key={plate.id} value={plate.id}>
+                        {plate.plate_number} — {plate.brand} {plate.model}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {r.assigned_plate_id && (
+                <Badge variant="outline" className="font-mono text-sm self-end">
+                  {availablePlates.find((p) => p.id === r.assigned_plate_id)?.plate_number || "Assigné"}
+                </Badge>
+              )}
+            </div>
+          </div>
+
           {/* Status + deposit + actions */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-3 lg:gap-4 items-end">
             <div className="space-y-1">
@@ -716,7 +756,9 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
                 <SelectTrigger className="w-full lg:w-40"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {(Object.keys(statusLabels) as ReservationStatus[]).map((s) => (
-                    <SelectItem key={s} value={s}>{statusLabels[s]}</SelectItem>
+                    <SelectItem key={s} value={s} disabled={s === "active" && !r.assigned_plate_id}>
+                      {statusLabels[s]}{s === "active" && !r.assigned_plate_id ? " ⚠️" : ""}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
