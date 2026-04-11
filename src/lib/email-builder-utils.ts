@@ -1,6 +1,6 @@
 export interface EmailBlock {
   id: string;
-  type: 'heading' | 'text' | 'image' | 'button' | 'divider' | 'spacer' | 'html';
+  type: 'heading' | 'text' | 'image' | 'button' | 'divider' | 'spacer' | 'html' | 'coupon';
   content?: string;
   settings: BlockSettings;
 }
@@ -66,6 +66,8 @@ export function createBlock(type: EmailBlock['type']): EmailBlock {
       return { ...base, settings: { spacerHeight: '24' } };
     case 'html':
       return { ...base, content: '', settings: { paddingTop: '0', paddingBottom: '0' } };
+    case 'coupon':
+      return { ...base, content: 'coupon', settings: { paddingTop: '10', paddingBottom: '10' } };
   }
 }
 
@@ -91,6 +93,8 @@ export function renderBlocksToHtml(blocks: EmailBlock[], globals: GlobalStyles):
         return `<div style="height:${block.settings.spacerHeight || '24'}px;"></div>`;
       case 'html':
         return `<div style="${wrapStyle}">${block.content || ''}</div>`;
+      case 'coupon':
+        return `<!--COUPON_BLOCK-->`;
       default:
         return '';
     }
