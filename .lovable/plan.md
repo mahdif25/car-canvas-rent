@@ -1,81 +1,41 @@
 
 
-# Vehicle Color Variants — Color Picker & Admin Management
+# Per-Color Image Adjustments
 
-## Overview
-Add a color variant system where each vehicle type can have multiple color options, each with its own image. Users see color swatches on the homepage, fleet page, and reservation flow, and can pick a color. The selected color persists through the reservation and is saved with the booking.
+## Problem
+Currently, color variant images have no individual flip/zoom controls. The primary image has flip + 15 scale sliders (5 placements x 3 devices), but color images are displayed raw.
 
 ## Database Changes
 
-**New table: `vehicle_colors`**
-- `id` uuid PK
-- `vehicle_id` uuid FK → vehicles(id) ON DELETE CASCADE
-- `color_name` text (e.g. "Rouge", "Noir")
-- `color_hex` text (e.g. "#FF0000")
-- `image_url` text (the vehicle image for this color)
-- `is_default` boolean DEFAULT false
-- `sort_order` integer DEFAULT 0
-- `created_at` timestamptz DEFAULT now()
+**Migration**: Add 16 columns to `vehicle_colors`:
+- `image_flipped` (boolean, default false)
+- 15 scale columns matching the vehicle pattern: `image_scale_home`, `image_scale_home_mobile`, `image_scale_home_tablet`, `image_scale_fleet`, `image_scale_fleet_mobile`, `image_scale_fleet_tablet`, `image_scale_detail`, `image_scale_detail_mobile`, `image_scale_detail_tablet`, `image_scale_reservation`, `image_scale_reservation_mobile`, `image_scale_reservation_tablet`, `image_scale_sidebar`, `image_scale_sidebar_mobile`, `image_scale_sidebar_tablet` — all `numeric NOT NULL DEFAULT 1.0`
 
-RLS: public SELECT, admin ALL.
+## Admin UI (`AdminFleet.tsx`)
 
-**New column on `reservations`:**
-- `selected_color_id` uuid REFERENCES vehicle_colors(id) — nullable
+- Under each color variant row, add a collapsible "Ajustements image" section (same pattern as the primary image controls)
+- Contains: flip toggle + 5 placement panels with 3 device sliders each + live preview per placement
+- Each color stores its own scale/flip values in `colorVariants` state
+- On save, these values are persisted to `vehicle_colors`
 
-## Admin: Color Management (inside AdminFleet.tsx)
-- In the vehicle edit form, add a "Couleurs" section below the main image
-- Each color entry: color name input, hex color picker (native `<input type="color">`), image upload, "default" toggle
-- Add/remove color rows dynamically
-- On save, upsert `vehicle_colors` for that vehicle_id
-- Delete removed colors
+## Public Display Updates
 
-## Public-Facing Color Picker Component
-Create a reusable `VehicleColorPicker` component:
-- Row of circular color swatches (filled with hex color, ring on selected)
-- Clicking a swatch updates the displayed vehicle image to that color's image_url
-- Compact, fits under the vehicle image
+Update all places that render color-specific images to use the color's own scale/flip values instead of the vehicle's:
 
-## Integration Points
+- **`src/pages/Index.tsx`** — homepage cards: use color's scale values when a color is active
+- **`src/pages/Fleet.tsx`** — fleet cards: same
+- **`src/components/reservation/StepVehicle.tsx`** — reservation vehicle list
+- **`src/components/reservation/ReservationSidebar.tsx`** — sidebar thumbnail
+- **`src/hooks/useVehicleColors.ts`** — extend the `VehicleColor` interface with the 16 new fields
+- **`src/hooks/useDeviceScale.ts`** — add a helper `getScaleForColorOnDevice(color, placement, deviceType)` that reads from the color object, falling back to 1.0
 
-### Homepage (`Index.tsx`)
-- Fetch `vehicle_colors` alongside vehicles
-- Show color swatches under each featured vehicle card
-- Default to `is_default` color; swap image on swatch click
-- Selected color passed as URL param when clicking "Réserver"
-
-### Fleet Page (`Fleet.tsx`)
-- Same color swatches on each vehicle card
-- Image swaps on hover/click
-
-### Reservation — StepVehicle
-- Show color swatches on each vehicle card
-- Store selected color in `formData.selected_color_id`
-- Image updates based on selected color
-
-### Reservation — Sidebar & Summary
-- Show selected color name/swatch alongside vehicle info
-
-### Reservation Submission (`Reservation.tsx`)
-- Save `selected_color_id` in the reservation insert
-
-## Data Flow
-- New hook `useVehicleColors(vehicleId?)` fetches from `vehicle_colors`
-- `ReservationFormData` gets new field `selected_color_id: string`
-
-## Files to Create/Modify
-- **Migration**: create `vehicle_colors` table, add `selected_color_id` to reservations
-- **`src/hooks/useVehicleColors.ts`** (new): fetch colors per vehicle or all
-- **`src/components/VehicleColorPicker.tsx`** (new): reusable swatch component
-- **`src/pages/admin/AdminFleet.tsx`**: color management section in vehicle form
-- **`src/pages/Index.tsx`**: integrate color picker on featured cards
-- **`src/pages/Fleet.tsx`**: integrate color picker on fleet cards
-- **`src/components/reservation/StepVehicle.tsx`**: color picker + formData update
-- **`src/components/reservation/ReservationSidebar.tsx`**: show selected color
-- **`src/components/reservation/StepSummary.tsx`**: show selected color
-- **`src/pages/Reservation.tsx`**: add `selected_color_id` to submission
-- **`src/lib/types.ts`**: add `selected_color_id` to `ReservationFormData`
-
-## Responsive
-- Swatches: small circles (w-6 h-6 on mobile, w-7 h-7 on desktop)
-- Wraps naturally on narrow screens
+## Files to Modify
+- **Migration**: add 16 columns to `vehicle_colors`
+- **`src/hooks/useVehicleColors.ts`**: extend interface
+- **`src/hooks/useDeviceScale.ts`**: add color-aware scale helper
+- **`src/pages/admin/AdminFleet.tsx`**: add per-color adjustment UI (collapsible)
+- **`src/pages/Index.tsx`**: use color scale/flip
+- **`src/pages/Fleet.tsx`**: use color scale/flip
+- **`src/components/reservation/StepVehicle.tsx`**: use color scale/flip
+- **`src/components/reservation/ReservationSidebar.tsx`**: use color scale/flip
 
