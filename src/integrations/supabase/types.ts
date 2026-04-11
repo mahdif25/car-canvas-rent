@@ -621,6 +621,7 @@ export type Database = {
           return_date: string
           return_location: string | null
           return_time: string | null
+          selected_color_id: string | null
           status: Database["public"]["Enums"]["reservation_status"]
           total_price: number
           updated_at: string
@@ -651,6 +652,7 @@ export type Database = {
           return_date: string
           return_location?: string | null
           return_time?: string | null
+          selected_color_id?: string | null
           status?: Database["public"]["Enums"]["reservation_status"]
           total_price?: number
           updated_at?: string
@@ -681,6 +683,7 @@ export type Database = {
           return_date?: string
           return_location?: string | null
           return_time?: string | null
+          selected_color_id?: string | null
           status?: Database["public"]["Enums"]["reservation_status"]
           total_price?: number
           updated_at?: string
@@ -699,6 +702,13 @@ export type Database = {
             columns: ["coupon_id"]
             isOneToOne: false
             referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_selected_color_id_fkey"
+            columns: ["selected_color_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_colors"
             referencedColumns: ["id"]
           },
           {
@@ -931,6 +941,47 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      vehicle_colors: {
+        Row: {
+          color_hex: string
+          color_name: string
+          created_at: string
+          id: string
+          image_url: string
+          is_default: boolean
+          sort_order: number
+          vehicle_id: string
+        }
+        Insert: {
+          color_hex?: string
+          color_name: string
+          created_at?: string
+          id?: string
+          image_url: string
+          is_default?: boolean
+          sort_order?: number
+          vehicle_id: string
+        }
+        Update: {
+          color_hex?: string
+          color_name?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          is_default?: boolean
+          sort_order?: number
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_colors_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vehicle_images: {
         Row: {
