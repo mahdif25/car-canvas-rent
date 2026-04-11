@@ -27,8 +27,8 @@ const navItems = [
 const bottomNavItems = [
   navItems[0], // Dashboard
   navItems[1], // Flotte
-  navItems[3], // Réservations
-  navItems[8], // Leads
+  navItems[4], // Réservations
+  navItems[9], // Leads
 ];
 
 const AdminLayout = ({ children }: Props) => {
