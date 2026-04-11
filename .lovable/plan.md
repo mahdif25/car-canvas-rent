@@ -1,49 +1,35 @@
 
-## Mobile Hero Video Fix
 
-### What’s causing the issue
-The hero is currently sized by its content, but the YouTube/video background is sized with viewport-based cover math. On tall mobile screens, the content becomes taller than the visible video area, so you get a black strip at the bottom and weak video coverage.
+# Mobile-Friendly Admin Settings Page
 
-## Implementation plan
+## Problem
+The settings page uses a 6-column tab grid (`grid-cols-6`) that crams all tab labels into a tiny row on mobile — text gets truncated and is hard to tap. Inside tabs, multi-column grids (e.g. `grid-cols-2`, `grid-cols-3` for text formatting) also squeeze on small screens.
 
-### 1. Refactor the hero background sizing
-Update `src/pages/Index.tsx` so the media sits inside a dedicated full-section background layer:
-- keep a separate absolute media wrapper with `inset-0 overflow-hidden`
-- for YouTube, use a true background-video cover pattern centered in the hero
-- for uploaded MP4s, keep `object-cover` but make sure it fills the full hero container consistently
+## Plan
 
-### 2. Make the hero height work on mobile
-Still in `src/pages/Index.tsx`:
-- give the hero a controlled mobile height/min-height instead of letting it stretch too far past the media
-- tighten mobile spacing so the text + search card fit better inside the visible hero
-- ensure the hero section ends where the media coverage ends, removing the bottom black band
+### 1. Replace the tab bar with a scrollable horizontal strip on mobile
+In `src/pages/admin/AdminSettings.tsx`:
+- Change `TabsList` from `grid grid-cols-6` to a horizontally scrollable row on mobile: `flex overflow-x-auto` with `whitespace-nowrap` on each trigger
+- On desktop (md+), keep the current grid layout: `md:grid md:grid-cols-6`
+- Show only the icon on mobile triggers (hide label text below `md`), show icon + label on desktop
+- This makes tabs easy to tap and scroll on small screens
 
-### 3. Add mobile-specific video adjustment controls
-Because you asked to resize the video differently for screens, add admin settings for:
-- mobile video scale
-- desktop video scale
-- optional vertical position offset
+### 2. Make inner form grids responsive
+Throughout the file:
+- Change `grid-cols-2` → `grid-cols-1 md:grid-cols-2` for hero text fields, footer fields, etc.
+- Change `grid-cols-3` → `grid-cols-1 sm:grid-cols-3` for text formatting controls (size/weight/alignment)
+- Reduce card padding on mobile: `p-4 md:p-6`
 
-This gives automatic cover behavior by default, while still letting you fine-tune framing when the subject of the video is too low/high on mobile.
+### 3. Improve card section spacing on mobile
+- Tighten `space-y-6` to `space-y-4` on mobile for denser layout
+- Make save buttons full-width on mobile: `w-full md:w-auto`
 
-### 4. Expose the controls in admin
-Update `src/pages/admin/AdminSettings.tsx` to add:
-- mobile zoom slider
-- desktop zoom slider
-- vertical offset slider
-- preview area for hero media positioning
+## File to change
+- `src/pages/admin/AdminSettings.tsx`
 
-### 5. Store the new settings
-Add new fields to `site_settings` and read them through `src/hooks/useSiteSettings.ts`, then apply them in `src/pages/Index.tsx`.
+## Result
+- Tabs are scrollable and tappable on mobile with icon-only display
+- Form fields stack vertically instead of cramming side-by-side
+- Save buttons are easy to reach on mobile
+- Desktop layout remains unchanged
 
-## Files to change
-- `supabase/migrations/...` — add hero video mobile/desktop sizing fields
-- `src/hooks/useSiteSettings.ts` — include the new settings
-- `src/pages/admin/AdminSettings.tsx` — add hero video sizing controls
-- `src/pages/Index.tsx` — fix hero media coverage and mobile section height
-
-## Expected result
-- no black edges on mobile
-- hero ends cleanly where the video coverage ends
-- uploaded videos auto-cover correctly
-- you can fine-tune zoom/position separately for mobile and desktop when needed
