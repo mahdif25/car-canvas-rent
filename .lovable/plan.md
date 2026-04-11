@@ -1,96 +1,38 @@
 
 
-# Advanced Broadcast Email Builder
+# Fix Scroll & Auto-Insert Coupon Block
 
-## Overview
-Replace the basic textarea-based email content editor (Step 2) with a rich, block-based email builder that lets the admin compose professional promotional emails with customizable sections, colors, fonts, spacing, and the ability to load from existing email templates.
+## Problems
+1. **Scroll**: `ScrollArea` has `max-h-[50vh]` but `addBlock` never scrolls to the new block — it's added off-screen.
+2. **Coupon placement**: Coupon section is appended at the bottom by the email template, outside the builder's control. User wants to position it within the email and see it in the preview.
 
-## Current State
-- Step 2 has a plain `<Input>` for subject and a `<Textarea>` for body content
-- The `bodyHtml` is sent as plain text to the `promotional-email.tsx` template which renders it inside a fixed layout
-- No way to customize colors, fonts, spacing, or structure
+## Changes
 
-## What Changes
+### 1. `src/lib/email-builder-utils.ts`
+- Add a new block type `'coupon'` to `EmailBlock['type']`
+- Add coupon-related fields to `BlockSettings`: `couponMode`, `discountAmount`, `couponPrefix`, `friendDiscountAmount`, `expiresAt`, `minTotalPrice`, `minRentalDays`
+- Update `createBlock('coupon')` to return a placeholder coupon block
+- Update `renderBlocksToHtml` to render the coupon block as a styled coupon card (matching the promotional-email.tsx styles: grey background, code placeholder, discount text)
 
-### 1. New Component: `src/components/admin/EmailBuilder.tsx`
-A block-based email editor component with:
+### 2. `src/components/admin/EmailBuilder.tsx`
+- **Scroll fix**: After `addBlock`, use a `useEffect` + ref to scroll the ScrollArea viewport to the bottom when blocks length increases
+- **Coupon block**: Add `'coupon'` to `BLOCK_TYPE_OPTIONS` but do NOT show it in the "add block" menu — it's only added/removed programmatically
+- Accept new props: `couponMode`, `discountAmount`, `couponPrefix`, `friendDiscountAmount`, `couponExpiresAt`, `minTotalPrice`, `minRentalDays`
+- When `couponMode` changes from `'none'` to something else: auto-insert a coupon block (if not already present)
+- When `couponMode` changes to `'none'`: auto-remove any coupon block
+- Coupon block editor: read-only label saying "Bloc coupon — configuré depuis le mode coupon ci-dessous", with move up/down buttons to reposition it but no delete/edit
+- Render coupon block in preview with placeholder values (e.g. `{PREFIX}-{NOM}`, discount amount)
 
-**Template Loader**
-- Dropdown to select a starter template (e.g., "Offre spéciale", "Bienvenue", "Parrainage", "Personnalisé")
-- Each template pre-fills the blocks with different layouts and content
-- "Personnalisé" starts with empty blocks
+### 3. `src/pages/admin/AdminBroadcast.tsx`
+- Pass coupon-related state as props to `<EmailBuilder>`: `couponMode`, `discountAmount`, `couponPrefix`, `friendDiscountAmount`, `couponExpiresAt`, `minTotalPrice`, `minRentalDays`
+- Update `handleSend`: when rendering HTML, strip the coupon block from builder output (server handles actual coupon rendering with real codes), OR pass coupon block position info so the server inserts it at the right place
 
-**Block System**
-- Email is composed of ordered blocks, each with a type:
-  - `heading` — editable heading text with font size, color, alignment controls
-  - `text` — rich paragraph with font size, color, line height, alignment
-  - `image` — image URL + alt text + width control
-  - `button` — CTA button with label, URL, background color, text color, border radius
-  - `divider` — horizontal rule with color and thickness
-  - `spacer` — adjustable vertical spacing (8px–64px)
-  - `html` — raw HTML textarea for advanced users
-- Each block can be reordered (move up/down), duplicated, or deleted
-- "Add block" button with block type selector
+### 4. `supabase/functions/send-broadcast/index.ts`
+- When `body_html` contains a coupon placeholder marker (e.g. `<!--COUPON_BLOCK-->`), split the HTML and insert the real coupon section at that position instead of appending at the end
 
-**Per-Block Style Controls**
-- Inline toolbar when a block is selected:
-  - Text color picker
-  - Background color picker  
-  - Font size selector (12–32px)
-  - Font weight (normal/bold)
-  - Text alignment (left/center/right)
-  - Padding controls (top/bottom)
+### 5. `supabase/functions/_shared/transactional-email-templates/promotional-email.tsx`
+- Update builder-generated path: instead of always appending coupon after `renderedBodyHtml`, look for `<!--COUPON_BLOCK-->` marker and place coupon there. If no marker, fall back to appending at end.
 
-**Global Email Style Controls**
-- Collapsible "Style global" panel at the top:
-  - Email background color (default: #ffffff)
-  - Content area background color
-  - Default font family (Poppins, Arial, Georgia, monospace)
-  - Default text color
-  - Accent color (used for buttons, dividers)
-
-**Live Preview**
-- Side-by-side on desktop: editor left, preview right
-- Stacked on mobile: editor on top, toggle to preview below
-- Preview renders the blocks as styled HTML in an iframe
-
-### 2. Update `src/pages/admin/AdminBroadcast.tsx`
-- Replace the `<Textarea>` in Step 2 with the `<EmailBuilder>` component
-- The builder outputs structured JSON (blocks array + global styles) stored in `bodyHtml` as a JSON string
-- Step 3 (Review) renders the preview using the same rendering logic
-- The `handleSend` function passes the rendered HTML to `body_html`
-
-### 3. Update `supabase/functions/send-broadcast/index.ts`
-- Detect if `body_html` is JSON (blocks format) vs plain text (legacy)
-- If JSON, render the blocks into inline-styled HTML server-side before passing to the email template
-- If plain text, pass as-is (backward compatible)
-
-### 4. Update `supabase/functions/_shared/transactional-email-templates/promotional-email.tsx`
-- When `bodyHtml` contains rendered HTML from the builder, use `dangerouslySetInnerHTML` is NOT allowed — instead, receive pre-rendered HTML sections and wrap them in React Email components
-- Add a new prop `bodyBlocks` (array of rendered HTML strings) as an alternative to `bodyHtml`
-- The edge function renders blocks to HTML before passing to the template
-
-### 5. Helper: `src/lib/email-builder-utils.ts`
-- `renderBlocksToHtml(blocks, globalStyles)` — converts the block JSON into inline-styled HTML string
-- `getStarterTemplates()` — returns predefined template configurations
-- Block type definitions and interfaces
-
-## Starter Templates
-1. **Offre spéciale** — Header + accent divider + greeting text + promo paragraph + CTA button
-2. **Bienvenue** — Header + welcome text + feature list + CTA
-3. **Parrainage** — Header + explanation text + two-column coupon display + CTA
-4. **Annonce** — Large image header + text + button
-5. **Vide** — Empty canvas, just a heading block
-
-## Files to Create/Modify
-- **Create**: `src/components/admin/EmailBuilder.tsx` — the main builder component
-- **Create**: `src/lib/email-builder-utils.ts` — block rendering + template definitions
-- **Modify**: `src/pages/admin/AdminBroadcast.tsx` — integrate the builder in Step 2
-- **Modify**: `supabase/functions/send-broadcast/index.ts` — handle blocks JSON rendering
-- **Modify**: `supabase/functions/_shared/transactional-email-templates/promotional-email.tsx` — accept pre-rendered HTML sections
-
-## Mobile/Tablet/Desktop
-- Desktop: side-by-side editor + preview layout
-- Tablet: side-by-side with narrower preview
-- Mobile: stacked with a "Modifier / Aperçu" toggle button, full-width block controls with touch-friendly sizing
+## Summary
+5 files modified. Scroll fix is a simple auto-scroll on block add. Coupon block is a special non-editable, repositionable placeholder that syncs with the coupon mode selector and renders in preview with sample data.
 
