@@ -61,18 +61,18 @@ const AdminSettings = () => {
       <div className="space-y-6">
         <h1 className="text-2xl font-bold">Paramètres</h1>
         <Tabs defaultValue="appearance" className="space-y-6">
-          <TabsList className="w-full grid grid-cols-6 h-auto bg-card border border-border">
-            <TabsTrigger value="appearance" className="gap-2 text-foreground"><Palette size={16} />Apparence</TabsTrigger>
-            <TabsTrigger value="tracking" className="gap-2 text-foreground"><BarChart3 size={16} />Tracking</TabsTrigger>
-            <TabsTrigger value="emails" className="gap-2 text-foreground"><Mail size={16} />Emails</TabsTrigger>
-            <TabsTrigger value="whatsapp" className="gap-2 text-foreground"><MessageCircle size={16} />WhatsApp</TabsTrigger>
-            <TabsTrigger value="reviews" className="gap-2 text-foreground"><Star size={16} />Avis</TabsTrigger>
-            <TabsTrigger value="content" className="gap-2 text-foreground"><FileText size={16} />Contenu</TabsTrigger>
+          <TabsList className="w-full flex overflow-x-auto md:grid md:grid-cols-6 h-auto bg-card border border-border gap-1 p-1">
+            <TabsTrigger value="appearance" className="gap-2 text-foreground flex-shrink-0 py-3 px-3"><Palette size={16} /><span className="hidden md:inline">Apparence</span></TabsTrigger>
+            <TabsTrigger value="tracking" className="gap-2 text-foreground flex-shrink-0 py-3 px-3"><BarChart3 size={16} /><span className="hidden md:inline">Tracking</span></TabsTrigger>
+            <TabsTrigger value="emails" className="gap-2 text-foreground flex-shrink-0 py-3 px-3"><Mail size={16} /><span className="hidden md:inline">Emails</span></TabsTrigger>
+            <TabsTrigger value="whatsapp" className="gap-2 text-foreground flex-shrink-0 py-3 px-3"><MessageCircle size={16} /><span className="hidden md:inline">WhatsApp</span></TabsTrigger>
+            <TabsTrigger value="reviews" className="gap-2 text-foreground flex-shrink-0 py-3 px-3"><Star size={16} /><span className="hidden md:inline">Avis</span></TabsTrigger>
+            <TabsTrigger value="content" className="gap-2 text-foreground flex-shrink-0 py-3 px-3"><FileText size={16} /><span className="hidden md:inline">Contenu</span></TabsTrigger>
           </TabsList>
 
           {/* Appearance */}
           <TabsContent value="appearance" className="space-y-6">
-            <div className="bg-card rounded-xl p-6 space-y-5 border border-border">
+            <div className="bg-card rounded-xl p-4 md:p-6 space-y-5 border border-border">
               <h2 className="font-semibold text-lg">Arrière-plan Hero</h2>
               <div className="space-y-2">
                 <Label>Type d'arrière-plan</Label>
@@ -157,15 +157,15 @@ const AdminSettings = () => {
                   </div>
                 </>
               )}
-              <Button onClick={() => save(["hero_bg_type", "hero_bg_value", "hero_overlay_opacity", "hero_video_start_time", "hero_video_mobile_scale" as any, "hero_video_desktop_scale" as any, "hero_video_offset_y" as any])} disabled={updateMutation.isPending}>
+              <Button className="w-full md:w-auto" onClick={() => save(["hero_bg_type", "hero_bg_value", "hero_overlay_opacity", "hero_video_start_time", "hero_video_mobile_scale" as any, "hero_video_desktop_scale" as any, "hero_video_offset_y" as any])} disabled={updateMutation.isPending}>
                 Sauvegarder
               </Button>
             </div>
 
             {/* Hero Texts */}
-            <div className="bg-card rounded-xl p-6 space-y-5 border border-border">
+            <div className="bg-card rounded-xl p-4 md:p-6 space-y-5 border border-border">
               <h2 className="font-semibold text-lg">Textes du Hero</h2>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Titre principal</Label>
                   <Input
@@ -195,7 +195,7 @@ const AdminSettings = () => {
               {/* Title formatting */}
               <div className="space-y-3 pt-3 border-t border-border">
                 <Label className="font-semibold">Formatage du titre</Label>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="space-y-1">
                     <Label className="text-xs">Taille</Label>
                     <Select value={(form.hero_title_style as any)?.fontSize || "5xl"} onValueChange={(v) => setForm({ ...form, hero_title_style: { ...(form.hero_title_style as any || {}), fontSize: v } })}>
@@ -246,7 +246,7 @@ const AdminSettings = () => {
               {/* Subtitle formatting */}
               <div className="space-y-3 pt-3 border-t border-border">
                 <Label className="font-semibold">Formatage du sous-titre</Label>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="space-y-1">
                     <Label className="text-xs">Taille</Label>
                     <Select value={(form.hero_subtitle_style as any)?.fontSize || "lg"} onValueChange={(v) => setForm({ ...form, hero_subtitle_style: { ...(form.hero_subtitle_style as any || {}), fontSize: v } })}>
@@ -294,13 +294,13 @@ const AdminSettings = () => {
                 </div>
               </div>
 
-              <Button onClick={() => save(["hero_title_text", "hero_title_highlight", "hero_subtitle_text", "hero_title_animation", "hero_subtitle_animation", "hero_title_style", "hero_subtitle_style"])} disabled={updateMutation.isPending}>
+              <Button className="w-full md:w-auto" onClick={() => save(["hero_title_text", "hero_title_highlight", "hero_subtitle_text", "hero_title_animation", "hero_subtitle_animation", "hero_title_style", "hero_subtitle_style"])} disabled={updateMutation.isPending}>
                 Sauvegarder
               </Button>
             </div>
 
             {/* Logo Size */}
-            <div className="bg-card rounded-xl p-6 space-y-5 border border-border">
+            <div className="bg-card rounded-xl p-4 md:p-6 space-y-5 border border-border">
               <h2 className="font-semibold text-lg">Taille du logo</h2>
               <div className="space-y-2">
                 <Label>Hauteur du logo ({form.logo_height ?? 48}px)</Label>
@@ -314,7 +314,7 @@ const AdminSettings = () => {
                 <img src={logo} alt="Aperçu logo" style={{ height: form.logo_height ?? 48 }} className="w-auto" />
                 <span className="text-sm text-muted-foreground">Aperçu</span>
               </div>
-              <Button onClick={() => save(["logo_height"])} disabled={updateMutation.isPending}>
+              <Button className="w-full md:w-auto" onClick={() => save(["logo_height"])} disabled={updateMutation.isPending}>
                 Sauvegarder
               </Button>
             </div>
@@ -322,7 +322,7 @@ const AdminSettings = () => {
 
           {/* Tracking */}
           <TabsContent value="tracking" className="space-y-6">
-            <div className="bg-card rounded-xl p-6 space-y-5 border border-border">
+            <div className="bg-card rounded-xl p-4 md:p-6 space-y-5 border border-border">
               <h2 className="font-semibold text-lg">Pixels & Analytics</h2>
               {[
                 { key: "facebook_pixel_id" as const, label: "Facebook Pixel ID", placeholder: "123456789" },
@@ -356,7 +356,7 @@ const AdminSettings = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <Button onClick={() => save(["facebook_pixel_id", "facebook_capi_token", "tiktok_pixel_id", "google_analytics_id", "google_tag_manager_id", "lead_capture_mode"])} disabled={updateMutation.isPending}>
+              <Button className="w-full md:w-auto" onClick={() => save(["facebook_pixel_id", "facebook_capi_token", "tiktok_pixel_id", "google_analytics_id", "google_tag_manager_id", "lead_capture_mode"])} disabled={updateMutation.isPending}>
                 Sauvegarder
               </Button>
             </div>
@@ -364,7 +364,7 @@ const AdminSettings = () => {
 
           {/* Emails */}
           <TabsContent value="emails" className="space-y-6">
-            <div className="bg-card rounded-xl p-6 space-y-5 border border-border">
+            <div className="bg-card rounded-xl p-4 md:p-6 space-y-5 border border-border">
               <h2 className="font-semibold text-lg">Configuration emails</h2>
               <div className="space-y-2">
                 <Label>Email de notification</Label>
@@ -382,7 +382,7 @@ const AdminSettings = () => {
                   onCheckedChange={(v) => setForm({ ...form, send_reservation_emails: v })}
                 />
               </div>
-              <Button onClick={() => save(["notification_email", "send_reservation_emails"])} disabled={updateMutation.isPending}>
+              <Button className="w-full md:w-auto" onClick={() => save(["notification_email", "send_reservation_emails"])} disabled={updateMutation.isPending}>
                 Sauvegarder
               </Button>
             </div>
@@ -390,7 +390,7 @@ const AdminSettings = () => {
 
           {/* WhatsApp */}
           <TabsContent value="whatsapp" className="space-y-6">
-            <div className="bg-card rounded-xl p-6 space-y-5 border border-border">
+            <div className="bg-card rounded-xl p-4 md:p-6 space-y-5 border border-border">
               <h2 className="font-semibold text-lg">Popup WhatsApp</h2>
               <div className="flex items-center justify-between">
                 <Label>Activer le popup WhatsApp</Label>
@@ -415,7 +415,7 @@ const AdminSettings = () => {
                   placeholder="Bonjour, je souhaite réserver un véhicule..."
                 />
               </div>
-              <Button onClick={() => save(["whatsapp_enabled", "whatsapp_number", "whatsapp_message"])} disabled={updateMutation.isPending}>
+              <Button className="w-full md:w-auto" onClick={() => save(["whatsapp_enabled", "whatsapp_number", "whatsapp_message"])} disabled={updateMutation.isPending}>
                 Sauvegarder
               </Button>
             </div>
@@ -424,7 +424,7 @@ const AdminSettings = () => {
           {/* Reviews */}
           <TabsContent value="reviews" className="space-y-6">
             {/* Global settings */}
-            <div className="bg-card rounded-xl p-6 space-y-5 border border-border">
+            <div className="bg-card rounded-xl p-4 md:p-6 space-y-5 border border-border">
               <h2 className="font-semibold text-lg">Avis Google</h2>
               <div className="flex items-center justify-between">
                 <Label>Afficher la section avis sur la page d'accueil</Label>
@@ -441,13 +441,13 @@ const AdminSettings = () => {
                   placeholder="https://g.page/r/..."
                 />
               </div>
-              <Button onClick={() => save(["show_reviews_section", "google_reviews_url"])} disabled={updateMutation.isPending}>
+              <Button className="w-full md:w-auto" onClick={() => save(["show_reviews_section", "google_reviews_url"])} disabled={updateMutation.isPending}>
                 Sauvegarder
               </Button>
             </div>
 
             {/* Reviews list */}
-            <div className="bg-card rounded-xl p-6 space-y-5 border border-border">
+            <div className="bg-card rounded-xl p-4 md:p-6 space-y-5 border border-border">
               <div className="flex items-center justify-between">
                 <h2 className="font-semibold text-lg">Gérer les avis ({reviews.length})</h2>
                 <Button size="sm" onClick={() => { setAddingReview(true); setNewReview({ name: "", text: "", rating: 5, time_label: "il y a 1 mois", is_enabled: true, sort_order: reviews.length + 1 }); }}>
@@ -458,7 +458,7 @@ const AdminSettings = () => {
               {/* Add form */}
               {addingReview && (
                 <div className="border border-primary/30 rounded-lg p-4 space-y-3 bg-primary/5">
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <Label className="text-xs">Nom</Label>
                       <Input value={newReview.name} onChange={(e) => setNewReview({ ...newReview, name: e.target.value })} placeholder="Nom du client" />
@@ -501,7 +501,7 @@ const AdminSettings = () => {
                     <div key={r.id} className="border border-border rounded-lg p-4 space-y-2">
                       {editingReview === r.id ? (
                         <>
-                          <div className="grid grid-cols-2 gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div className="space-y-1">
                               <Label className="text-xs">Nom</Label>
                               <Input value={reviewForm.name ?? r.name} onChange={(e) => setReviewForm({ ...reviewForm, name: e.target.value })} />
@@ -582,7 +582,7 @@ const AdminSettings = () => {
           {/* Content */}
           <TabsContent value="content" className="space-y-6">
             {/* Footer */}
-            <div className="bg-card rounded-xl p-6 space-y-5 border border-border">
+            <div className="bg-card rounded-xl p-4 md:p-6 space-y-5 border border-border">
               <h2 className="font-semibold text-lg">Pied de page (Footer)</h2>
               <div className="space-y-2">
                 <Label>Description</Label>
@@ -592,7 +592,7 @@ const AdminSettings = () => {
                   rows={2}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Téléphone</Label>
                   <Input value={form.footer_phone || ""} onChange={(e) => setForm({ ...form, footer_phone: e.target.value })} />
@@ -602,7 +602,7 @@ const AdminSettings = () => {
                   <Input value={form.footer_email || ""} onChange={(e) => setForm({ ...form, footer_email: e.target.value })} />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Adresse</Label>
                   <Input value={form.footer_address || ""} onChange={(e) => setForm({ ...form, footer_address: e.target.value })} />
@@ -612,13 +612,13 @@ const AdminSettings = () => {
                   <Input value={form.footer_copyright || ""} onChange={(e) => setForm({ ...form, footer_copyright: e.target.value })} />
                 </div>
               </div>
-              <Button onClick={() => save(["footer_description", "footer_phone", "footer_email", "footer_address", "footer_copyright"])} disabled={updateMutation.isPending}>
+              <Button className="w-full md:w-auto" onClick={() => save(["footer_description", "footer_phone", "footer_email", "footer_address", "footer_copyright"])} disabled={updateMutation.isPending}>
                 Sauvegarder
               </Button>
             </div>
 
             {/* Conditions Générales */}
-            <div className="bg-card rounded-xl p-6 space-y-5 border border-border">
+            <div className="bg-card rounded-xl p-4 md:p-6 space-y-5 border border-border">
               <h2 className="font-semibold text-lg">Conditions Générales</h2>
               <p className="text-xs text-muted-foreground">Contenu HTML affiché sur la page /conditions-generales. Laissez vide pour le contenu par défaut.</p>
               <Textarea
@@ -627,13 +627,13 @@ const AdminSettings = () => {
                 rows={10}
                 placeholder="<h2>1. Objet</h2><p>...</p>"
               />
-              <Button onClick={() => save(["conditions_generales_html"])} disabled={updateMutation.isPending}>
+              <Button className="w-full md:w-auto" onClick={() => save(["conditions_generales_html"])} disabled={updateMutation.isPending}>
                 Sauvegarder
               </Button>
             </div>
 
             {/* Politique de Confidentialité */}
-            <div className="bg-card rounded-xl p-6 space-y-5 border border-border">
+            <div className="bg-card rounded-xl p-4 md:p-6 space-y-5 border border-border">
               <h2 className="font-semibold text-lg">Politique de Confidentialité</h2>
               <p className="text-xs text-muted-foreground">Contenu HTML affiché sur la page /politique-confidentialite.</p>
               <Textarea
@@ -642,13 +642,13 @@ const AdminSettings = () => {
                 rows={10}
                 placeholder="<h2>Protection des données</h2><p>...</p>"
               />
-              <Button onClick={() => save(["privacy_policy_html"])} disabled={updateMutation.isPending}>
+              <Button className="w-full md:w-auto" onClick={() => save(["privacy_policy_html"])} disabled={updateMutation.isPending}>
                 Sauvegarder
               </Button>
             </div>
 
             {/* Politique de Caution */}
-            <div className="bg-card rounded-xl p-6 space-y-5 border border-border">
+            <div className="bg-card rounded-xl p-4 md:p-6 space-y-5 border border-border">
               <h2 className="font-semibold text-lg">Politique de Caution</h2>
               <p className="text-xs text-muted-foreground">Contenu HTML affiché sur la page /politique-caution.</p>
               <Textarea
@@ -657,7 +657,7 @@ const AdminSettings = () => {
                 rows={10}
                 placeholder="<h2>Dépôt de garantie</h2><p>...</p>"
               />
-              <Button onClick={() => save(["caution_policy_html"])} disabled={updateMutation.isPending}>
+              <Button className="w-full md:w-auto" onClick={() => save(["caution_policy_html"])} disabled={updateMutation.isPending}>
                 Sauvegarder
               </Button>
             </div>
