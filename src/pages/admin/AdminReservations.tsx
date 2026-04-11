@@ -56,7 +56,7 @@ const AdminReservations = () => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editState, setEditState] = useState<Record<string, EditState>>({});
   const [clientEdits, setClientEdits] = useState<Record<string, { field: string; value: string } | null>>({});
-
+  const [manualOpen, setManualOpen] = useState(false);
   const { data: reservations, isLoading } = useQuery({
     queryKey: ["admin-reservations", statusFilter],
     queryFn: async () => {
