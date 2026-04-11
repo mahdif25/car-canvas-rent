@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, ArrowRight, Send, Users, Mail, Gift } from "lucide-react";
+import { ArrowLeft, ArrowRight, Send, Users, Mail, Gift, Check } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -31,6 +31,29 @@ interface Coupon {
 }
 
 type CouponMode = "none" | "shared" | "unique" | "referral";
+
+const StepIndicator = ({ current }: { current: number }) => {
+  const steps = [
+    { num: 1, label: "Audience" },
+    { num: 2, label: "Contenu" },
+    { num: 3, label: "Envoi" },
+  ];
+  return (
+    <div className="flex items-center gap-1 sm:gap-2">
+      {steps.map((s, i) => (
+        <div key={s.num} className="flex items-center gap-1 sm:gap-2">
+          <div className={`flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full text-xs sm:text-sm font-semibold ${
+            current === s.num ? "bg-primary text-primary-foreground" : current > s.num ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
+          }`}>
+            {current > s.num ? <Check size={14} /> : s.num}
+          </div>
+          <span className={`text-xs sm:text-sm hidden sm:inline ${current === s.num ? "text-primary font-semibold" : "text-muted-foreground"}`}>{s.label}</span>
+          {i < steps.length - 1 && <div className={`w-6 sm:w-10 h-0.5 ${current > s.num ? "bg-primary" : "bg-muted"}`} />}
+        </div>
+      ))}
+    </div>
+  );
+};
 
 const AdminBroadcast = () => {
   const queryClient = useQueryClient();
@@ -87,26 +110,17 @@ const AdminBroadcast = () => {
   const filteredLeads = useMemo(() => {
     return leads.filter((lead) => {
       if (!lead.email) return false;
-
-      // Status filter
       if (statusFilter === "client" && !lead.reservation_completed) return false;
       if (statusFilter === "abandoned" && (lead.reservation_completed || (lead.last_reservation_step || 0) < 1)) return false;
       if (statusFilter === "lead" && (lead.reservation_completed || (lead.last_reservation_step || 0) >= 1)) return false;
-
-      // Step filter
       if (stepFilter !== "all" && (lead.last_reservation_step || 0) < Number(stepFilter)) return false;
-
-      // Date filter
       if (dateFrom && lead.created_at && lead.created_at < dateFrom) return false;
       if (dateTo && lead.created_at && lead.created_at > dateTo + "T23:59:59") return false;
-
-      // Search
       if (search) {
         const s = search.toLowerCase();
         const name = `${lead.first_name || ""} ${lead.last_name || ""}`.toLowerCase();
         if (!name.includes(s) && !lead.email.toLowerCase().includes(s)) return false;
       }
-
       return true;
     });
   }, [leads, statusFilter, stepFilter, dateFrom, dateTo, search]);
@@ -151,7 +165,6 @@ const AdminBroadcast = () => {
     if (!canSend) return;
     setSending(true);
     try {
-      // 1. Create broadcast record
       const broadcastData: Record<string, any> = {
         subject,
         body_html: bodyHtml,
@@ -174,7 +187,6 @@ const AdminBroadcast = () => {
 
       if (bErr || !broadcast) throw new Error(bErr?.message || "Failed to create broadcast");
 
-      // 2. Create recipients
       const recipientRows = selectedLeads.map((lead) => ({
         broadcast_id: broadcast.id,
         email: lead.email!,
@@ -185,7 +197,6 @@ const AdminBroadcast = () => {
       const { error: rErr } = await supabase.from("broadcast_recipients" as any).insert(recipientRows) as { error: any };
       if (rErr) throw new Error(rErr.message);
 
-      // 3. Invoke send-broadcast edge function
       const { error: sendErr } = await supabase.functions.invoke("send-broadcast", {
         body: { broadcast_id: broadcast.id },
       });
@@ -213,23 +224,17 @@ const AdminBroadcast = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <h1 className="text-2xl font-bold">Broadcast Email</h1>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span className={step === 1 ? "text-primary font-semibold" : ""}>1. Audience</span>
-            <span>→</span>
-            <span className={step === 2 ? "text-primary font-semibold" : ""}>2. Contenu</span>
-            <span>→</span>
-            <span className={step === 3 ? "text-primary font-semibold" : ""}>3. Envoi</span>
-          </div>
+          <StepIndicator current={step} />
         </div>
 
         {/* Step 1: Audience */}
         {step === 1 && (
           <div className="space-y-4">
-            <div className="flex flex-wrap gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:flex md:flex-wrap gap-3">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[160px]">
+                <SelectTrigger className="w-full sm:w-[160px]">
                   <SelectValue placeholder="Statut" />
                 </SelectTrigger>
                 <SelectContent>
@@ -240,7 +245,7 @@ const AdminBroadcast = () => {
                 </SelectContent>
               </Select>
               <Select value={stepFilter} onValueChange={setStepFilter}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="Étape min." />
                 </SelectTrigger>
                 <SelectContent>
@@ -251,9 +256,9 @@ const AdminBroadcast = () => {
                   <SelectItem value="4">Étape 4+</SelectItem>
                 </SelectContent>
               </Select>
-              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-[160px]" placeholder="Du" />
-              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-[160px]" placeholder="Au" />
-              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher nom ou email..." className="w-[220px]" />
+              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-full sm:w-[160px]" placeholder="Du" />
+              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-full sm:w-[160px]" placeholder="Au" />
+              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher..." className="w-full sm:w-[220px]" />
             </div>
 
             <div className="flex items-center justify-between">
@@ -271,7 +276,8 @@ const AdminBroadcast = () => {
               </Button>
             </div>
 
-            <div className="bg-background rounded-lg border max-h-[500px] overflow-auto">
+            {/* Desktop table */}
+            <div className="hidden md:block bg-background rounded-lg border max-h-[500px] overflow-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -306,6 +312,34 @@ const AdminBroadcast = () => {
                   )}
                 </TableBody>
               </Table>
+            </div>
+
+            {/* Mobile card list */}
+            <div className="md:hidden space-y-2 max-h-[60vh] overflow-auto">
+              {leadsLoading ? (
+                <p className="text-center py-8 text-muted-foreground">Chargement...</p>
+              ) : filteredLeads.length === 0 ? (
+                <p className="text-center py-8 text-muted-foreground">Aucun lead trouvé</p>
+              ) : (
+                filteredLeads.map((lead) => (
+                  <div
+                    key={lead.id}
+                    className={`border rounded-lg p-3 cursor-pointer transition-colors ${selectedIds.has(lead.id) ? "border-primary bg-primary/5" : ""}`}
+                    onClick={() => toggleOne(lead.id)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Checkbox checked={selectedIds.has(lead.id)} onCheckedChange={() => toggleOne(lead.id)} onClick={(e) => e.stopPropagation()} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-sm truncate">{[lead.first_name, lead.last_name].filter(Boolean).join(" ") || "—"}</span>
+                          <Badge variant={getStatusVariant(lead)} className="text-[10px] shrink-0">{getStatusLabel(lead)}</Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate">{lead.email}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         )}
@@ -357,7 +391,7 @@ const AdminBroadcast = () => {
 
                 {(couponMode === "unique" || couponMode === "referral") && (
                   <>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <label className="text-sm font-medium">Préfixe du code *</label>
                         <Input value={couponPrefix} onChange={(e) => setCouponPrefix(e.target.value.toUpperCase())} placeholder="Ex: PROMO" />
@@ -377,7 +411,7 @@ const AdminBroadcast = () => {
                       <label className="text-sm font-medium">Date d'expiration (optionnel)</label>
                       <Input type="datetime-local" value={couponExpiresAt} onChange={(e) => setCouponExpiresAt(e.target.value)} />
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <label className="text-sm font-medium">Montant min. réservation (MAD)</label>
                         <Input type="number" value={minTotalPrice} onChange={(e) => setMinTotalPrice(e.target.value)} placeholder="Aucun minimum" />
@@ -397,11 +431,11 @@ const AdminBroadcast = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <Button variant="outline" onClick={() => setStep(1)} className="gap-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <Button variant="outline" onClick={() => setStep(1)} className="gap-2 w-full sm:w-auto">
                 <ArrowLeft size={16} /> Retour
               </Button>
-              <Button onClick={() => setStep(3)} disabled={!subject.trim()} className="gap-2">
+              <Button onClick={() => setStep(3)} disabled={!subject.trim()} className="gap-2 w-full sm:w-auto">
                 Aperçu <ArrowRight size={16} />
               </Button>
             </div>
@@ -411,9 +445,9 @@ const AdminBroadcast = () => {
         {/* Step 3: Review & Send */}
         {step === 3 && (
           <div className="space-y-6 max-w-2xl">
-            <div className="border rounded-lg p-6 bg-card space-y-4">
+            <div className="border rounded-lg p-4 sm:p-6 bg-card space-y-4">
               <h2 className="text-lg font-semibold">Récapitulatif</h2>
-              <div className="grid grid-cols-2 gap-y-3 text-sm">
+              <div className="space-y-3 sm:grid sm:grid-cols-2 sm:gap-y-3 text-sm">
                 <span className="text-muted-foreground">Destinataires</span>
                 <span className="font-medium flex items-center gap-2"><Users size={14} /> {selectedLeads.length}</span>
                 <span className="text-muted-foreground">Objet</span>
@@ -456,14 +490,14 @@ const AdminBroadcast = () => {
               )}
             </div>
 
-            <div className="flex items-center gap-3">
-              <Button variant="outline" onClick={() => setStep(2)} className="gap-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <Button variant="outline" onClick={() => setStep(2)} className="gap-2 w-full sm:w-auto">
                 <ArrowLeft size={16} /> Retour
               </Button>
               <Button
                 onClick={handleSend}
                 disabled={!canSend || sending}
-                className="gap-2"
+                className="gap-2 w-full sm:w-auto"
               >
                 <Send size={16} /> {sending ? "Envoi en cours..." : `Envoyer à ${selectedLeads.length} destinataire${selectedLeads.length > 1 ? "s" : ""}`}
               </Button>

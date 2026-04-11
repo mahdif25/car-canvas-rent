@@ -438,8 +438,9 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
 
   return (
     <div className="border rounded-lg">
+      {/* Desktop row */}
       <div
-        className="flex flex-wrap items-center justify-between p-4 cursor-pointer hover:bg-secondary/50 gap-2"
+        className="hidden sm:flex flex-wrap items-center justify-between p-4 cursor-pointer hover:bg-secondary/50 gap-2"
         onClick={onToggle}
       >
         <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
@@ -452,6 +453,24 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
         <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
           <span className="text-xs sm:text-sm">{r.pickup_date} → {r.return_date}</span>
           <span className="font-semibold text-primary text-sm">{Number(r.total_price).toLocaleString()} MAD</span>
+        </div>
+      </div>
+
+      {/* Mobile row */}
+      <div
+        className="sm:hidden p-3 cursor-pointer hover:bg-secondary/50"
+        onClick={onToggle}
+      >
+        <div className="flex items-center justify-between mb-1">
+          <span className="font-medium text-sm">{r.customer_first_name} {r.customer_last_name}</span>
+          <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${statusColors[r.status as ReservationStatus]}`}>
+            {statusLabels[r.status as ReservationStatus]}
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground">{(r as any).vehicles?.name}</p>
+        <div className="flex items-center justify-between mt-1.5 text-xs">
+          <span className="text-muted-foreground">{r.pickup_date} → {r.return_date}</span>
+          <span className="font-semibold text-primary">{Number(r.total_price).toLocaleString()} MAD</span>
         </div>
       </div>
 
@@ -563,11 +582,11 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
           </div>
 
           {/* Status + deposit + actions */}
-          <div className="flex flex-wrap gap-4 items-end">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-3 lg:gap-4 items-end">
             <div className="space-y-1">
               <label className="text-sm font-medium">Statut réservation</label>
               <Select value={r.status} onValueChange={(v) => onUpdateStatus(v as ReservationStatus)}>
-                <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-full lg:w-40"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {(Object.keys(statusLabels) as ReservationStatus[]).map((s) => (
                     <SelectItem key={s} value={s}>{statusLabels[s]}</SelectItem>
@@ -578,7 +597,7 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
             <div className="space-y-1">
               <label className="text-sm font-medium">Caution ({calc.depositAmount.toLocaleString()} MAD)</label>
               <Select value={r.deposit_status} onValueChange={(v) => onUpdateDeposit(v as DepositStatus)}>
-                <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-full lg:w-40"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {(Object.keys(depositLabels) as DepositStatus[]).map((s) => (
                     <SelectItem key={s} value={s}>{depositLabels[s]}</SelectItem>
@@ -587,17 +606,19 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
               </Select>
             </div>
 
-            <Button
-              size="sm"
-              onClick={() => onSave(calc)}
-              disabled={isSaving}
-              className="gap-1"
-            >
-              <Save size={14} /> Sauvegarder
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => onPrint(calc)} className="gap-1">
-              <Printer size={14} /> Imprimer
-            </Button>
+            <div className="flex gap-2 sm:col-span-2 lg:col-span-1">
+              <Button
+                size="sm"
+                onClick={() => onSave(calc)}
+                disabled={isSaving}
+                className="gap-1 flex-1 sm:flex-none"
+              >
+                <Save size={14} /> Sauvegarder
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => onPrint(calc)} className="gap-1 flex-1 sm:flex-none">
+                <Printer size={14} /> Imprimer
+              </Button>
+            </div>
           </div>
         </div>
       )}

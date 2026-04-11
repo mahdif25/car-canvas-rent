@@ -98,9 +98,9 @@ const AdminMarketing = () => {
           <h1 className="text-2xl font-bold">Marketing — Coupons</h1>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2"><Plus size={16} /> Nouveau coupon</Button>
+              <Button className="gap-2"><Plus size={16} /> <span className="hidden sm:inline">Nouveau coupon</span><span className="sm:hidden">Nouveau</span></Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-[95vw] sm:max-w-lg">
               <DialogHeader>
                 <DialogTitle>Créer un coupon</DialogTitle>
               </DialogHeader>
@@ -142,87 +142,156 @@ const AdminMarketing = () => {
         ) : coupons.length === 0 ? (
           <p className="text-muted-foreground">Aucun coupon créé.</p>
         ) : (
-          <div className="bg-background rounded-lg border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead></TableHead>
-                  <TableHead>Code</TableHead>
-                  <TableHead>Réduction</TableHead>
-                  <TableHead>Utilisations</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead>Expiration</TableHead>
-                  <TableHead>Actif</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {coupons.map((coupon) => {
-                  const couponUsages = usages.filter((u) => u.coupon_id === coupon.id);
-                  const expanded = expandedCoupon === coupon.id;
-                  return (
-                    <Collapsible key={coupon.id} open={expanded} onOpenChange={() => setExpandedCoupon(expanded ? null : coupon.id)} asChild>
-                      <>
-                        <CollapsibleTrigger asChild>
-                          <TableRow className="cursor-pointer">
-                            <TableCell>{expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</TableCell>
-                            <TableCell className="font-mono font-bold">{coupon.code}</TableCell>
-                            <TableCell>{Number(coupon.discount_amount).toLocaleString()} MAD</TableCell>
-                            <TableCell>
-                              <div className="flex flex-wrap gap-1">
-                                <span>{coupon.current_uses} / {coupon.max_uses ?? "∞"}</span>
-                                {coupon.min_total_price && <Badge variant="outline" className="text-[10px] px-1.5">Min {Number(coupon.min_total_price).toLocaleString()} MAD</Badge>}
-                                {coupon.min_rental_days && <Badge variant="outline" className="text-[10px] px-1.5">Min {coupon.min_rental_days}j</Badge>}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              {isExpired(coupon) ? (
-                                <Badge variant="secondary">Expiré</Badge>
-                              ) : coupon.is_active ? (
-                                <Badge className="bg-primary/10 text-primary border-primary/20">Actif</Badge>
-                              ) : (
-                                <Badge variant="outline">Inactif</Badge>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-sm">{coupon.expires_at ? new Date(coupon.expires_at).toLocaleDateString("fr-FR") : "—"}</TableCell>
-                            <TableCell>
-                              <Switch
-                                checked={coupon.is_active}
-                                onCheckedChange={(checked) => toggleMutation.mutate({ id: coupon.id, is_active: checked })}
-                                onClick={(e) => e.stopPropagation()}
-                              />
-                            </TableCell>
-                          </TableRow>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent asChild>
-                          <TableRow>
-                            <TableCell colSpan={7} className="bg-muted/30 p-0">
-                              <div className="p-4">
-                                <h4 className="text-sm font-semibold mb-2">Historique d'utilisation ({couponUsages.length})</h4>
-                                {couponUsages.length === 0 ? (
-                                  <p className="text-sm text-muted-foreground">Aucune utilisation.</p>
+          <>
+            {/* Desktop table */}
+            <div className="hidden md:block bg-background rounded-lg border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead></TableHead>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Réduction</TableHead>
+                    <TableHead>Utilisations</TableHead>
+                    <TableHead>Statut</TableHead>
+                    <TableHead>Expiration</TableHead>
+                    <TableHead>Actif</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {coupons.map((coupon) => {
+                    const couponUsages = usages.filter((u) => u.coupon_id === coupon.id);
+                    const expanded = expandedCoupon === coupon.id;
+                    return (
+                      <Collapsible key={coupon.id} open={expanded} onOpenChange={() => setExpandedCoupon(expanded ? null : coupon.id)} asChild>
+                        <>
+                          <CollapsibleTrigger asChild>
+                            <TableRow className="cursor-pointer">
+                              <TableCell>{expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</TableCell>
+                              <TableCell className="font-mono font-bold">{coupon.code}</TableCell>
+                              <TableCell>{Number(coupon.discount_amount).toLocaleString()} MAD</TableCell>
+                              <TableCell>
+                                <div className="flex flex-wrap gap-1">
+                                  <span>{coupon.current_uses} / {coupon.max_uses ?? "∞"}</span>
+                                  {coupon.min_total_price && <Badge variant="outline" className="text-[10px] px-1.5">Min {Number(coupon.min_total_price).toLocaleString()} MAD</Badge>}
+                                  {coupon.min_rental_days && <Badge variant="outline" className="text-[10px] px-1.5">Min {coupon.min_rental_days}j</Badge>}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                {isExpired(coupon) ? (
+                                  <Badge variant="secondary">Expiré</Badge>
+                                ) : coupon.is_active ? (
+                                  <Badge className="bg-primary/10 text-primary border-primary/20">Actif</Badge>
                                 ) : (
-                                  <div className="space-y-1 text-sm">
-                                    {couponUsages.map((u) => (
-                                      <div key={u.id} className="flex items-center gap-4">
-                                        <span className="text-muted-foreground">{new Date(u.created_at).toLocaleDateString("fr-FR")}</span>
-                                        <span>{u.customer_email}</span>
-                                        <span className="font-mono text-xs text-muted-foreground">#{u.reservation_id.slice(0, 8)}</span>
-                                        <span className="text-primary font-medium">-{Number(u.discount_applied).toLocaleString()} MAD</span>
-                                      </div>
-                                    ))}
-                                  </div>
+                                  <Badge variant="outline">Inactif</Badge>
                                 )}
+                              </TableCell>
+                              <TableCell className="text-sm">{coupon.expires_at ? new Date(coupon.expires_at).toLocaleDateString("fr-FR") : "—"}</TableCell>
+                              <TableCell>
+                                <Switch
+                                  checked={coupon.is_active}
+                                  onCheckedChange={(checked) => toggleMutation.mutate({ id: coupon.id, is_active: checked })}
+                                  onClick={(e) => e.stopPropagation()}
+                                />
+                              </TableCell>
+                            </TableRow>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent asChild>
+                            <TableRow>
+                              <TableCell colSpan={7} className="bg-muted/30 p-0">
+                                <div className="p-4">
+                                  <h4 className="text-sm font-semibold mb-2">Historique d'utilisation ({couponUsages.length})</h4>
+                                  {couponUsages.length === 0 ? (
+                                    <p className="text-sm text-muted-foreground">Aucune utilisation.</p>
+                                  ) : (
+                                    <div className="space-y-1 text-sm">
+                                      {couponUsages.map((u) => (
+                                        <div key={u.id} className="flex items-center gap-4">
+                                          <span className="text-muted-foreground">{new Date(u.created_at).toLocaleDateString("fr-FR")}</span>
+                                          <span>{u.customer_email}</span>
+                                          <span className="font-mono text-xs text-muted-foreground">#{u.reservation_id.slice(0, 8)}</span>
+                                          <span className="text-primary font-medium">-{Number(u.discount_applied).toLocaleString()} MAD</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          </CollapsibleContent>
+                        </>
+                      </Collapsible>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Mobile card list */}
+            <div className="md:hidden space-y-3">
+              {coupons.map((coupon) => {
+                const couponUsages = usages.filter((u) => u.coupon_id === coupon.id);
+                const expanded = expandedCoupon === coupon.id;
+                return (
+                  <div key={coupon.id} className="border rounded-lg bg-background overflow-hidden">
+                    <div
+                      className="p-4 cursor-pointer"
+                      onClick={() => setExpandedCoupon(expanded ? null : coupon.id)}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-mono font-bold text-base">{coupon.code}</span>
+                        {isExpired(coupon) ? (
+                          <Badge variant="secondary">Expiré</Badge>
+                        ) : coupon.is_active ? (
+                          <Badge className="bg-primary/10 text-primary border-primary/20">Actif</Badge>
+                        ) : (
+                          <Badge variant="outline">Inactif</Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-primary font-semibold">{Number(coupon.discount_amount).toLocaleString()} MAD</span>
+                        <span className="text-muted-foreground">{coupon.current_uses} / {coupon.max_uses ?? "∞"} utilisations</span>
+                      </div>
+                      <div className="flex items-center justify-between mt-2">
+                        <div className="flex flex-wrap gap-1">
+                          {coupon.min_total_price && <Badge variant="outline" className="text-[10px] px-1.5">Min {Number(coupon.min_total_price).toLocaleString()} MAD</Badge>}
+                          {coupon.min_rental_days && <Badge variant="outline" className="text-[10px] px-1.5">Min {coupon.min_rental_days}j</Badge>}
+                        </div>
+                        <Switch
+                          checked={coupon.is_active}
+                          onCheckedChange={(checked) => toggleMutation.mutate({ id: coupon.id, is_active: checked })}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                      {coupon.expires_at && (
+                        <p className="text-xs text-muted-foreground mt-1">Expire: {new Date(coupon.expires_at).toLocaleDateString("fr-FR")}</p>
+                      )}
+                    </div>
+
+                    {expanded && (
+                      <div className="border-t p-4 bg-muted/30">
+                        <h4 className="text-sm font-semibold mb-2">Historique ({couponUsages.length})</h4>
+                        {couponUsages.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">Aucune utilisation.</p>
+                        ) : (
+                          <div className="space-y-2">
+                            {couponUsages.map((u) => (
+                              <div key={u.id} className="text-sm space-y-0.5">
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">{new Date(u.created_at).toLocaleDateString("fr-FR")}</span>
+                                  <span className="text-primary font-medium">-{Number(u.discount_applied).toLocaleString()} MAD</span>
+                                </div>
+                                <p className="text-xs text-muted-foreground break-all">{u.customer_email}</p>
                               </div>
-                            </TableCell>
-                          </TableRow>
-                        </CollapsibleContent>
-                      </>
-                    </Collapsible>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
     </AdminLayout>

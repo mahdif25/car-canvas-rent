@@ -81,7 +81,7 @@ const AdminLeads = () => {
     }
 
     return Array.from(map.entries()).map(([key, entries]) => {
-      const latest = entries[0]; // already sorted desc
+      const latest = entries[0];
       const maxStep = Math.max(...entries.map((e) => e.last_reservation_step ?? 0));
       const completed = entries.some((e) => e.reservation_completed);
       const email = latest.email?.toLowerCase() ?? null;
@@ -152,13 +152,13 @@ const AdminLeads = () => {
     <AdminLayout>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h1 className="text-2xl font-bold">Leads</h1>
-        <div className="flex gap-2 flex-wrap">
-          <div className="relative">
+        <div className="flex gap-2 flex-wrap w-full sm:w-auto">
+          <div className="relative flex-1 sm:flex-none">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-            <Input placeholder="Rechercher..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 w-52" />
+            <Input placeholder="Rechercher..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 w-full sm:w-52" />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-36"><SelectValue placeholder="Statut" /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-36"><SelectValue placeholder="Statut" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tous</SelectItem>
               <SelectItem value="lead">Lead</SelectItem>
@@ -175,6 +175,7 @@ const AdminLeads = () => {
             <p className="text-center py-8 text-muted-foreground">Chargement...</p>
           ) : filtered.length > 0 ? (
             <div className="space-y-2">
+              {/* Desktop header */}
               <div className="hidden md:grid grid-cols-7 gap-2 px-4 py-2 text-xs font-medium text-muted-foreground uppercase">
                 <span>Nom</span>
                 <span>Email</span>
@@ -186,8 +187,9 @@ const AdminLeads = () => {
               </div>
               {filtered.map((group) => (
                 <div key={group.key} className="border rounded-lg">
+                  {/* Desktop row */}
                   <div
-                    className="grid grid-cols-1 md:grid-cols-7 gap-2 px-4 py-3 cursor-pointer hover:bg-secondary/50 items-center text-sm"
+                    className="hidden md:grid grid-cols-7 gap-2 px-4 py-3 cursor-pointer hover:bg-secondary/50 items-center text-sm"
                     onClick={() => setExpandedKey(expandedKey === group.key ? null : group.key)}
                   >
                     <span className="font-medium">{[group.latestFirstName, group.latestLastName].filter(Boolean).join(" ") || "—"}</span>
@@ -199,6 +201,26 @@ const AdminLeads = () => {
                     <div className="flex items-center gap-2">
                       {statusBadge(group.status)}
                       {expandedKey === group.key ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                    </div>
+                  </div>
+
+                  {/* Mobile card row */}
+                  <div
+                    className="md:hidden p-3 cursor-pointer"
+                    onClick={() => setExpandedKey(expandedKey === group.key ? null : group.key)}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium text-sm">{[group.latestFirstName, group.latestLastName].filter(Boolean).join(" ") || "—"}</span>
+                      <div className="flex items-center gap-2">
+                        {statusBadge(group.status)}
+                        {expandedKey === group.key ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">{group.latestEmail || "—"}</p>
+                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                      <span>{stepLabels[group.maxStep] || `Étape ${group.maxStep}`}</span>
+                      <span>{group.entryCount} entrée{group.entryCount > 1 ? "s" : ""}</span>
+                      <span>{group.resCount} rés.</span>
                     </div>
                   </div>
 
@@ -216,10 +238,10 @@ const AdminLeads = () => {
                                 {stepLabels[entry.last_reservation_step ?? 0] || `Étape ${entry.last_reservation_step}`}
                               </span>
                             </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-xs">
                               {entry.first_name && <div><span className="text-muted-foreground">Prénom:</span> {entry.first_name}</div>}
                               {entry.last_name && <div><span className="text-muted-foreground">Nom:</span> {entry.last_name}</div>}
-                              {entry.email && <div><span className="text-muted-foreground">Email:</span> {entry.email}</div>}
+                              {entry.email && <div className="break-all"><span className="text-muted-foreground">Email:</span> {entry.email}</div>}
                               {entry.phone && <div><span className="text-muted-foreground">Tél:</span> {entry.phone}</div>}
                               {entry.license_number && <div><span className="text-muted-foreground">Permis:</span> {entry.license_number}</div>}
                             </div>

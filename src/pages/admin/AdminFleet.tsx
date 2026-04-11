@@ -272,7 +272,7 @@ const AdminFleet = () => {
             <CardTitle>{editingId ? "Modifier le véhicule" : "Nouveau véhicule"}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Nom *</label>
                 <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Dacia Logan" />
@@ -510,63 +510,94 @@ const AdminFleet = () => {
               </div>
             </div>
 
-            <div className="flex gap-3">
-              <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !form.name || !form.brand || !form.model} className="bg-primary text-primary-foreground hover:bg-accent rounded-pill">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !form.name || !form.brand || !form.model} className="bg-primary text-primary-foreground hover:bg-accent rounded-pill w-full sm:w-auto">
                 {saveMutation.isPending ? "Enregistrement..." : editingId ? "Modifier" : "Ajouter"}
               </Button>
-              <Button variant="outline" onClick={resetForm} className="rounded-pill">Annuler</Button>
+              <Button variant="outline" onClick={resetForm} className="rounded-pill w-full sm:w-auto">Annuler</Button>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Vehicles Table */}
+      {/* Vehicles List */}
       <Card>
         <CardContent className="pt-6">
           {isLoading ? (
             <p className="text-center py-8 text-muted-foreground">Chargement...</p>
           ) : vehicles && vehicles.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-2 px-3">Véhicule</th>
-                    <th className="text-left py-2 px-3">Catégorie</th>
-                    <th className="text-left py-2 px-3">Transmission</th>
-                    <th className="text-right py-2 px-3">Caution</th>
-                    <th className="text-center py-2 px-3">Disponible</th>
-                    <th className="text-right py-2 px-3">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {vehicles.map((v) => (
-                    <tr key={v.id} className="border-b last:border-0">
-                      <td className="py-2 px-3 font-medium">
-                        <div className="flex items-center gap-2">
-                          {v.image_url && <img src={v.image_url} alt="" className="w-10 h-8 object-contain rounded" />}
-                          {v.name}
-                        </div>
-                      </td>
-                      <td className="py-2 px-3">{v.category}</td>
-                      <td className="py-2 px-3">{v.transmission}</td>
-                      <td className="py-2 px-3 text-right">{Number(v.security_deposit).toLocaleString()} MAD</td>
-                      <td className="py-2 px-3 text-center">
+            <>
+              {/* Desktop table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-2 px-3">Véhicule</th>
+                      <th className="text-left py-2 px-3">Catégorie</th>
+                      <th className="text-left py-2 px-3">Transmission</th>
+                      <th className="text-right py-2 px-3">Caution</th>
+                      <th className="text-center py-2 px-3">Disponible</th>
+                      <th className="text-right py-2 px-3">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {vehicles.map((v) => (
+                      <tr key={v.id} className="border-b last:border-0">
+                        <td className="py-2 px-3 font-medium">
+                          <div className="flex items-center gap-2">
+                            {v.image_url && <img src={v.image_url} alt="" className="w-10 h-8 object-contain rounded" />}
+                            {v.name}
+                          </div>
+                        </td>
+                        <td className="py-2 px-3">{v.category}</td>
+                        <td className="py-2 px-3">{v.transmission}</td>
+                        <td className="py-2 px-3 text-right">{Number(v.security_deposit).toLocaleString()} MAD</td>
+                        <td className="py-2 px-3 text-center">
+                          <Switch
+                            checked={v.is_available}
+                            onCheckedChange={(checked) => toggleAvailability.mutate({ id: v.id, is_available: checked })}
+                          />
+                        </td>
+                        <td className="py-2 px-3 text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button size="icon" variant="ghost" onClick={() => editVehicle(v)}><Pencil size={16} /></Button>
+                            <Button size="icon" variant="ghost" className="text-destructive" onClick={() => deleteMutation.mutate(v.id)}><Trash2 size={16} /></Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile card list */}
+              <div className="md:hidden space-y-3">
+                {vehicles.map((v) => (
+                  <div key={v.id} className="border rounded-lg p-3 space-y-3">
+                    <div className="flex items-center gap-3">
+                      {v.image_url && <img src={v.image_url} alt="" className="w-14 h-10 object-contain rounded shrink-0" />}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{v.name}</p>
+                        <p className="text-xs text-muted-foreground">{v.category} • {v.transmission}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
                         <Switch
                           checked={v.is_available}
                           onCheckedChange={(checked) => toggleAvailability.mutate({ id: v.id, is_available: checked })}
                         />
-                      </td>
-                      <td className="py-2 px-3 text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button size="icon" variant="ghost" onClick={() => editVehicle(v)}><Pencil size={16} /></Button>
-                          <Button size="icon" variant="ghost" className="text-destructive" onClick={() => deleteMutation.mutate(v.id)}><Trash2 size={16} /></Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                        <span className="text-xs text-muted-foreground">{v.is_available ? "Disponible" : "Indisponible"}</span>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button size="icon" variant="ghost" className="h-9 w-9" onClick={() => editVehicle(v)}><Pencil size={16} /></Button>
+                        <Button size="icon" variant="ghost" className="h-9 w-9 text-destructive" onClick={() => deleteMutation.mutate(v.id)}><Trash2 size={16} /></Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           ) : (
             <p className="text-center py-8 text-muted-foreground">Aucun véhicule. Ajoutez votre premier véhicule.</p>
           )}
