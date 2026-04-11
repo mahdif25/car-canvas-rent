@@ -11,6 +11,7 @@ import Reservation from "./pages/Reservation";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminFleet from "./pages/admin/AdminFleet";
+import AdminFleetPlates from "./pages/admin/AdminFleetPlates";
 import AdminAddons from "./pages/admin/AdminAddons";
 import AdminReservations from "./pages/admin/AdminReservations";
 import AdminLocations from "./pages/admin/AdminLocations";
@@ -52,6 +53,7 @@ const App = () => (
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/fleet" element={<AdminFleet />} />
+            <Route path="/admin/fleet-plates" element={<AdminFleetPlates />} />
             <Route path="/admin/addons" element={<AdminAddons />} />
             <Route path="/admin/reservations" element={<AdminReservations />} />
             <Route path="/admin/locations" element={<AdminLocations />} />

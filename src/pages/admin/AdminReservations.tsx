@@ -11,7 +11,9 @@ import { toast } from "@/hooks/use-toast";
 import { useMemo, useState } from "react";
 import { useVehicles, usePricingTiers, getDailyRateFromTiers } from "@/hooks/useVehicles";
 import { useLocations, useAllLocations, getDeliveryFee } from "@/hooks/useLocations";
-import { Printer, Save, Pencil, Check, X, Plus } from "lucide-react";
+import { Printer, Save, Pencil, Check, X, Plus, AlertTriangle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useAvailablePlates } from "@/hooks/useFleetPlates";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import type { Database } from "@/integrations/supabase/types";
 import ManualReservationDialog from "@/components/admin/ManualReservationDialog";
@@ -135,12 +137,18 @@ const AdminReservations = () => {
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: ReservationStatus }) => {
       const { error } = await supabase.from("reservations").update({ status }).eq("id", id);
-      if (error) throw error;
+      if (error) {
+        if (error.message?.includes("assigned vehicle plate")) {
+          throw new Error("Impossible d'activer la réservation sans véhicule assigné. Veuillez d'abord assigner une immatriculation.");
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-reservations"] });
       toast({ title: "Statut mis à jour" });
     },
+    onError: (e: Error) => toast({ title: "Erreur", description: e.message, variant: "destructive" }),
   });
 
   const updateDeposit = useMutation({
@@ -289,6 +297,7 @@ const AdminReservations = () => {
       <div class="section">
         <div class="section-title">Détails de la Réservation</div>
         <div class="row"><span class="label">Véhicule</span><span class="value">${vehicle?.name || "—"}</span></div>
+        ${r.status === "active" && r.assigned_plate_id ? `<div class="row"><span class="label">Immatriculation</span><span class="value" style="font-family:monospace;font-weight:700">${r._assignedPlateNumber || "—"}</span></div>` : ""}
         <div class="row"><span class="label">Durée</span><span class="value">${calc.days} jour${calc.days > 1 ? "s" : ""}</span></div>
         <div class="row"><span class="label">Du</span><span class="value">${fmtDate(edit.pickup_date)}</span></div>
         <div class="row"><span class="label">Au</span><span class="value">${fmtDate(edit.return_date)}</span></div>
@@ -478,6 +487,25 @@ interface RowProps {
 
 const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, pricingTiers, locations, allAddons, additionalDriver, onUpdateStatus, onUpdateDeposit, onSave, onPrint, isSaving, clientEdit, onStartClientEdit, onCancelClientEdit, onSaveClientEdit }: RowProps) => {
   const calc = useCalc(edit, vehicles, pricingTiers, locations, allAddons);
+  const { data: availablePlates = [] } = useAvailablePlates(edit.vehicle_id, edit.pickup_date, edit.return_date, r.id);
+  const qc = useQueryClient();
+
+  const assignPlate = async (plateId: string | null) => {
+    const { error } = await supabase.from("reservations").update({ assigned_plate_id: plateId }).eq("id", r.id);
+    if (error) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    } else {
+      qc.invalidateQueries({ queryKey: ["admin-reservations"] });
+      qc.invalidateQueries({ queryKey: ["available-plates"] });
+      toast({ title: plateId ? "Véhicule assigné" : "Véhicule désassigné" });
+    }
+  };
+
+  const assignedPlate = availablePlates.find((p) => p.id === r.assigned_plate_id);
+  // Also check if the current plate is not in available list (already assigned to this res)
+  const allPlatesForDropdown = r.assigned_plate_id && !availablePlates.find((p) => p.id === r.assigned_plate_id)
+    ? availablePlates
+    : availablePlates;
 
   const toggleAddon = (addonId: string) => {
     const current = edit.addons;
@@ -501,6 +529,7 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
           {r.payment_method === "cash" && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Cash</Badge>}
           <span className="font-medium text-sm">{r.customer_first_name} {r.customer_last_name}</span>
           <span className="text-sm text-muted-foreground">{(r as any).vehicles?.name}</span>
+          {r.assigned_plate_id && assignedPlate && <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-mono">{assignedPlate.plate_number}</Badge>}
         </div>
         <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
           <span className="text-xs sm:text-sm">{r.pickup_date} → {r.return_date}</span>
@@ -680,6 +709,46 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
             <div className="flex justify-between font-bold text-base pt-2 border-t"><span>Total</span><span className="text-primary">{calc.totalPrice.toLocaleString()} MAD</span></div>
           </div>
 
+          {/* Plate assignment */}
+          <div className="bg-accent/30 border border-border rounded-lg p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="space-y-1 flex-1">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  Véhicule assigné (immatriculation)
+                  {r.status !== "active" && !r.assigned_plate_id && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <AlertTriangle size={14} className="text-yellow-500" />
+                      </TooltipTrigger>
+                      <TooltipContent>Assignez un véhicule avant de passer en "Active"</TooltipContent>
+                    </Tooltip>
+                  )}
+                </label>
+                <Select
+                  value={r.assigned_plate_id || "none"}
+                  onValueChange={(v) => assignPlate(v === "none" ? null : v)}
+                >
+                  <SelectTrigger className="w-full sm:w-60">
+                    <SelectValue placeholder="Aucun véhicule assigné" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Aucun</SelectItem>
+                    {allPlatesForDropdown.map((plate) => (
+                      <SelectItem key={plate.id} value={plate.id}>
+                        {plate.plate_number} — {plate.brand} {plate.model}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {r.assigned_plate_id && (
+                <Badge variant="outline" className="font-mono text-sm self-end">
+                  {availablePlates.find((p) => p.id === r.assigned_plate_id)?.plate_number || "Assigné"}
+                </Badge>
+              )}
+            </div>
+          </div>
+
           {/* Status + deposit + actions */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-3 lg:gap-4 items-end">
             <div className="space-y-1">
@@ -688,7 +757,9 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
                 <SelectTrigger className="w-full lg:w-40"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {(Object.keys(statusLabels) as ReservationStatus[]).map((s) => (
-                    <SelectItem key={s} value={s}>{statusLabels[s]}</SelectItem>
+                    <SelectItem key={s} value={s} disabled={s === "active" && !r.assigned_plate_id}>
+                      {statusLabels[s]}{s === "active" && !r.assigned_plate_id ? " ⚠️" : ""}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -714,7 +785,11 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
               >
                 <Save size={14} /> Sauvegarder
               </Button>
-              <Button size="sm" variant="outline" onClick={() => onPrint(calc)} className="gap-1 flex-1 sm:flex-none">
+              <Button size="sm" variant="outline" onClick={() => {
+                // Attach plate number to r for receipt printing
+                r._assignedPlateNumber = availablePlates.find((p: any) => p.id === r.assigned_plate_id)?.plate_number || "";
+                onPrint(calc);
+              }} className="gap-1 flex-1 sm:flex-none">
                 <Printer size={14} /> Imprimer
               </Button>
             </div>

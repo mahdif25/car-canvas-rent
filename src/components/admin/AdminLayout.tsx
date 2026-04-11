@@ -3,7 +3,7 @@ import { Link, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
-import { Car, Settings, CalendarDays, LayoutDashboard, LogOut, MapPin, Menu, MoreHorizontal, BarChart3, Users, Tag, Puzzle, Mail } from "lucide-react";
+import { Car, Settings, CalendarDays, LayoutDashboard, LogOut, MapPin, Menu, MoreHorizontal, BarChart3, Users, Tag, Puzzle, Mail, CarFront } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import logo from "@/assets/logo.png";
 
@@ -14,6 +14,7 @@ interface Props {
 const navItems = [
   { label: "Dashboard", path: "/admin", icon: LayoutDashboard },
   { label: "Flotte", path: "/admin/fleet", icon: Car },
+  { label: "Parc Auto", path: "/admin/fleet-plates", icon: CarFront },
   { label: "Add-ons", path: "/admin/addons", icon: Puzzle },
   { label: "Réservations", path: "/admin/reservations", icon: CalendarDays },
   { label: "Lieux", path: "/admin/locations", icon: MapPin },
@@ -26,8 +27,8 @@ const navItems = [
 const bottomNavItems = [
   navItems[0], // Dashboard
   navItems[1], // Flotte
-  navItems[3], // Réservations
-  navItems[8], // Leads
+  navItems[4], // Réservations
+  navItems[9], // Leads
 ];
 
 const AdminLayout = ({ children }: Props) => {
