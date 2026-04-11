@@ -1,35 +1,49 @@
 
 
-# Mobile-Friendly Admin Settings Page
+# Enhanced Hero Video Editing Controls
 
-## Problem
-The settings page uses a 6-column tab grid (`grid-cols-6`) that crams all tab labels into a tiny row on mobile — text gets truncated and is hard to tap. Inside tabs, multi-column grids (e.g. `grid-cols-2`, `grid-cols-3` for text formatting) also squeeze on small screens.
+## Current state
+You have three controls: mobile zoom, desktop zoom, and vertical position. These only allow scaling and vertical shifting — no horizontal positioning, no tablet-specific control, and no live preview.
 
-## Plan
+## What we'll add
 
-### 1. Replace the tab bar with a scrollable horizontal strip on mobile
-In `src/pages/admin/AdminSettings.tsx`:
-- Change `TabsList` from `grid grid-cols-6` to a horizontally scrollable row on mobile: `flex overflow-x-auto` with `whitespace-nowrap` on each trigger
-- On desktop (md+), keep the current grid layout: `md:grid md:grid-cols-6`
-- Show only the icon on mobile triggers (hide label text below `md`), show icon + label on desktop
-- This makes tabs easy to tap and scroll on small screens
+### New video controls (per device)
+- **Horizontal position** (`hero_video_offset_x`, default 50) — shift the video left/right within the frame, so you can center on the subject
+- **Tablet zoom** (`hero_video_tablet_scale`, default 1.3) — separate scale for tablet screens
+- **Aspect ratio crop mode** — option to choose between "cover" (fill and crop) vs "contain" (fit entire video, may show bars) for edge cases
 
-### 2. Make inner form grids responsive
-Throughout the file:
-- Change `grid-cols-2` → `grid-cols-1 md:grid-cols-2` for hero text fields, footer fields, etc.
-- Change `grid-cols-3` → `grid-cols-1 sm:grid-cols-3` for text formatting controls (size/weight/alignment)
-- Reduce card padding on mobile: `p-4 md:p-6`
+### Live preview panel
+- Device switcher (mobile 375px / tablet 768px / desktop 1200px) rendered as a scaled-down preview box
+- Shows the actual hero section (video + overlay + text) updating in real-time as you drag sliders
+- Lets you see exactly how the video frames on each device before saving
 
-### 3. Improve card section spacing on mobile
-- Tighten `space-y-6` to `space-y-4` on mobile for denser layout
-- Make save buttons full-width on mobile: `w-full md:w-auto`
+### Database migration
+Add columns to `site_settings`:
+- `hero_video_tablet_scale` (numeric, default 1.3)
+- `hero_video_offset_x` (integer, default 50)
 
-## File to change
-- `src/pages/admin/AdminSettings.tsx`
+### File changes
 
-## Result
-- Tabs are scrollable and tappable on mobile with icon-only display
-- Form fields stack vertically instead of cramming side-by-side
-- Save buttons are easy to reach on mobile
-- Desktop layout remains unchanged
+1. **`supabase/migrations/...`** — add the two new columns
+2. **`src/hooks/useSiteSettings.ts`** — add `hero_video_tablet_scale` and `hero_video_offset_x` to interface
+3. **`src/pages/Index.tsx`**:
+   - Add tablet iframe breakpoint (`hidden md:block lg:hidden`) with its own scale
+   - Apply horizontal offset via `translateX` for YouTube iframes and `objectPosition` x-axis for MP4
+   - Three iframes: mobile / tablet / desktop, each with own scale + shared offsets
+4. **`src/pages/admin/AdminSettings.tsx`**:
+   - Add device switcher buttons (Mobile / Tablet / Desktop) above a live preview container
+   - Preview container renders a miniature hero (video + overlay + sample text) at the selected device width, scaled down to fit the admin panel
+   - Group sliders per device: zoom for mobile, tablet, desktop
+   - Add horizontal position slider (shared across devices)
+   - All sliders update the preview in real-time
+
+### Controls summary
+| Control | Range | Default |
+|---|---|---|
+| Mobile zoom | 1.0–3.0x | 1.5 |
+| Tablet zoom | 1.0–3.0x | 1.3 |
+| Desktop zoom | 1.0–3.0x | 1.2 |
+| Vertical position | 0–100% | 50 (center) |
+| Horizontal position | 0–100% | 50 (center) |
+| Video start time | 0+ seconds | 0 |
 
