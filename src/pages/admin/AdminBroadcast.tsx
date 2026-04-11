@@ -365,21 +365,6 @@ const AdminBroadcast = () => {
                 <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Ex: Offre spéciale rentrée 🚗" />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-sm font-medium">Contenu de l'email</label>
-                <EmailBuilder
-                  value={emailBuilderData}
-                  onChange={setEmailBuilderData}
-                  couponMode={couponMode}
-                  discountAmount={discountAmount}
-                  couponPrefix={couponPrefix}
-                  friendDiscountAmount={friendDiscountAmount}
-                  couponExpiresAt={couponExpiresAt}
-                  minTotalPrice={minTotalPrice}
-                  minRentalDays={minRentalDays}
-                />
-              </div>
-
               <div className="space-y-3 border rounded-lg p-4 bg-card max-w-2xl">
                 <label className="text-sm font-semibold flex items-center gap-2"><Gift size={16} /> Mode coupon</label>
                 <Select value={couponMode} onValueChange={(v) => setCouponMode(v as CouponMode)}>

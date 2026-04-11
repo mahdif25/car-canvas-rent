@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import {
   Plus, Trash2, ChevronUp, ChevronDown, Copy, Type, AlignLeft, AlignCenter, AlignRight,
   Image, MousePointerClick, Minus, Space, Code, Palette, Eye, Pencil, Settings2, GripVertical, Ticket,
@@ -51,9 +51,6 @@ const EmailBuilder = ({ value, onChange, couponMode = 'none', discountAmount = '
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [globalOpen, setGlobalOpen] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const scrollViewportRef = useRef<HTMLDivElement>(null);
-  const prevBlockCount = useRef(value.blocks.length);
-
   const { blocks, globalStyles } = value;
 
   const updateBlocks = useCallback((newBlocks: EmailBlock[]) => {
@@ -64,15 +61,6 @@ const EmailBuilder = ({ value, onChange, couponMode = 'none', discountAmount = '
     onChange({ ...value, globalStyles: { ...value.globalStyles, ...partial } });
   }, [value, onChange]);
 
-  // Auto-scroll when blocks are added
-  useEffect(() => {
-    if (blocks.length > prevBlockCount.current) {
-      setTimeout(() => {
-        scrollViewportRef.current?.scrollTo({ top: scrollViewportRef.current.scrollHeight, behavior: 'smooth' });
-      }, 50);
-    }
-    prevBlockCount.current = blocks.length;
-  }, [blocks.length]);
 
   // Auto-insert/remove coupon block when couponMode changes
   useEffect(() => {
@@ -460,16 +448,9 @@ const EmailBuilder = ({ value, onChange, couponMode = 'none', discountAmount = '
       </Collapsible>
 
       {/* Blocks */}
-      <ScrollArea className="max-h-[50vh] md:max-h-[60vh]" ref={(node) => {
-        if (node) {
-          const viewport = node.querySelector('[data-radix-scroll-area-viewport]') as HTMLDivElement | null;
-          if (viewport) scrollViewportRef.current = viewport;
-        }
-      }}>
-        <div className="space-y-2 pr-2">
-          {blocks.map(block => renderBlockEditor(block))}
-        </div>
-      </ScrollArea>
+      <div className="space-y-2">
+        {blocks.map(block => renderBlockEditor(block))}
+      </div>
 
       {/* Add block */}
       <div className="relative">
