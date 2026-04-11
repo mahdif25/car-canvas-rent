@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      additional_drivers: {
+        Row: {
+          created_at: string
+          dob: string | null
+          email: string | null
+          first_name: string
+          id: string
+          last_name: string
+          license_number: string
+          nationality: string | null
+          phone: string | null
+          reservation_id: string
+        }
+        Insert: {
+          created_at?: string
+          dob?: string | null
+          email?: string | null
+          first_name: string
+          id?: string
+          last_name: string
+          license_number: string
+          nationality?: string | null
+          phone?: string | null
+          reservation_id: string
+        }
+        Update: {
+          created_at?: string
+          dob?: string | null
+          email?: string | null
+          first_name?: string
+          id?: string
+          last_name?: string
+          license_number?: string
+          nationality?: string | null
+          phone?: string | null
+          reservation_id?: string
+        }
+        Relationships: []
+      }
       addon_options: {
         Row: {
           created_at: string
