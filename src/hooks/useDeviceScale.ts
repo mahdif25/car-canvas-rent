@@ -1,40 +1,35 @@
-import { useIsMobile } from "@/hooks/use-mobile";
 import { useEffect, useState } from "react";
-
-const TABLET_MAX = 1024;
-
-function useIsTablet() {
-  const [isTablet, setIsTablet] = useState(false);
-  useEffect(() => {
-    const check = () => {
-      const w = window.innerWidth;
-      setIsTablet(w >= 768 && w < TABLET_MAX);
-    };
-    check();
-    const mql = window.matchMedia(`(max-width: ${TABLET_MAX - 1}px)`);
-    mql.addEventListener("change", check);
-    window.addEventListener("resize", check);
-    return () => {
-      mql.removeEventListener("change", check);
-      window.removeEventListener("resize", check);
-    };
-  }, []);
-  return isTablet;
-}
 
 type Placement = "home" | "fleet" | "detail" | "reservation" | "sidebar";
 
-export function useDeviceScale(vehicle: any, placement: Placement): number {
-  const isMobile = useIsMobile();
-  const isTablet = useIsTablet();
+function getDeviceType(width: number): "mobile" | "tablet" | "desktop" {
+  if (width < 768) return "mobile";
+  if (width < 1024) return "tablet";
+  return "desktop";
+}
 
+export function useDeviceType() {
+  const [device, setDevice] = useState<"mobile" | "tablet" | "desktop">(() =>
+    typeof window !== "undefined" ? getDeviceType(window.innerWidth) : "desktop"
+  );
+
+  useEffect(() => {
+    const handler = () => setDevice(getDeviceType(window.innerWidth));
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, []);
+
+  return device;
+}
+
+export function getScaleForDevice(vehicle: any, placement: Placement, device: "mobile" | "tablet" | "desktop"): number {
   if (!vehicle) return 1;
+  if (device === "mobile") return Number(vehicle[`image_scale_${placement}_mobile`] ?? 1);
+  if (device === "tablet") return Number(vehicle[`image_scale_${placement}_tablet`] ?? 1);
+  return Number(vehicle[`image_scale_${placement}`] ?? 1);
+}
 
-  const desktopKey = `image_scale_${placement}` as string;
-  const mobileKey = `image_scale_${placement}_mobile` as string;
-  const tabletKey = `image_scale_${placement}_tablet` as string;
-
-  if (isMobile) return Number(vehicle[mobileKey] ?? 1);
-  if (isTablet) return Number(vehicle[tabletKey] ?? 1);
-  return Number(vehicle[desktopKey] ?? 1);
+export function useDeviceScale(vehicle: any, placement: Placement): number {
+  const device = useDeviceType();
+  return getScaleForDevice(vehicle, placement, device);
 }
