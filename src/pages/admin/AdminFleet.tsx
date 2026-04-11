@@ -475,6 +475,89 @@ const AdminFleet = () => {
               </div>
             </div>
 
+            {/* Color Variants */}
+            <div className="space-y-3 p-4 border rounded-xl bg-muted/30">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-medium flex items-center gap-2"><Palette size={16} className="text-primary" /> Couleurs disponibles</h4>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setColorVariants([...colorVariants, { color_name: "", color_hex: "#000000", image_url: "", is_default: colorVariants.length === 0, _new: true }])}
+                  className="gap-1"
+                >
+                  <Plus size={14} /> Ajouter une couleur
+                </Button>
+              </div>
+              {colorVariants.length === 0 && (
+                <p className="text-xs text-muted-foreground">Aucune couleur ajoutée. L'image principale sera utilisée.</p>
+              )}
+              <div className="space-y-4">
+                {colorVariants.map((color, idx) => (
+                  <div key={idx} className="flex flex-col sm:flex-row gap-3 p-3 border rounded-lg bg-background">
+                    <div className="flex-1 space-y-2">
+                      <div className="flex gap-2">
+                        <Input
+                          value={color.color_name || ""}
+                          onChange={(e) => {
+                            const updated = [...colorVariants];
+                            updated[idx] = { ...updated[idx], color_name: e.target.value };
+                            setColorVariants(updated);
+                          }}
+                          placeholder="Nom (ex: Rouge)"
+                          className="flex-1"
+                        />
+                        <input
+                          type="color"
+                          value={color.color_hex || "#000000"}
+                          onChange={(e) => {
+                            const updated = [...colorVariants];
+                            updated[idx] = { ...updated[idx], color_hex: e.target.value };
+                            setColorVariants(updated);
+                          }}
+                          className="w-10 h-10 rounded cursor-pointer border border-border"
+                        />
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <label className="flex items-center gap-2 text-xs">
+                          <Switch
+                            checked={color.is_default ?? false}
+                            onCheckedChange={(checked) => {
+                              const updated = colorVariants.map((c, i) => ({
+                                ...c,
+                                is_default: i === idx ? checked : checked ? false : c.is_default,
+                              }));
+                              setColorVariants(updated);
+                            }}
+                          />
+                          Par défaut
+                        </label>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="text-destructive h-7"
+                          onClick={() => setColorVariants(colorVariants.filter((_, i) => i !== idx))}
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="w-full sm:w-40 shrink-0">
+                      <ImageUploadField
+                        value={color.image_url || ""}
+                        onChange={(url) => {
+                          const updated = [...colorVariants];
+                          updated[idx] = { ...updated[idx], image_url: url };
+                          setColorVariants(updated);
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* Structured Features */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Caractéristiques</label>
