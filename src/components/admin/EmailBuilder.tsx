@@ -139,14 +139,19 @@ const EmailBuilder = ({ value, onChange, couponMode = 'none', discountAmount = '
   // Update preview iframe
   useEffect(() => {
     if (!iframeRef.current) return;
-    const html = renderBlocksToHtml(blocks, globalStyles);
+    let html = renderBlocksToHtml(blocks, globalStyles);
+    // Replace coupon marker with preview
+    if (couponMode !== 'none') {
+      const couponHtml = renderCouponPreviewHtml({ couponMode, discountAmount, couponPrefix, friendDiscountAmount, couponExpiresAt, minTotalPrice, minRentalDays });
+      html = html.replace('<!--COUPON_BLOCK-->', couponHtml);
+    }
     const doc = iframeRef.current.contentDocument;
     if (doc) {
       doc.open();
       doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:0;}</style></head><body>${html}</body></html>`);
       doc.close();
     }
-  }, [blocks, globalStyles]);
+  }, [blocks, globalStyles, couponMode, discountAmount, couponPrefix, friendDiscountAmount, couponExpiresAt, minTotalPrice, minRentalDays]);
 
   const selectedBlock = blocks.find(b => b.id === selectedBlockId);
 
