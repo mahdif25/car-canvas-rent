@@ -372,24 +372,40 @@ const AdminFleet = () => {
                 <h4 className="text-sm font-medium">Zoom par emplacement</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                   {([
-                    { key: "image_scale_home", label: "Accueil", w: 320, h: 180, objFit: "object-contain", bg: "bg-secondary" },
-                    { key: "image_scale_fleet", label: "Flotte", w: 320, h: 180, objFit: "object-contain", bg: "bg-secondary" },
-                    { key: "image_scale_detail", label: "Détail véhicule", w: 400, h: 225, objFit: "object-cover", bg: "bg-background" },
-                    { key: "image_scale_reservation", label: "Réservation", w: 280, h: 160, objFit: "object-contain", bg: "bg-secondary" },
-                    { key: "image_scale_sidebar", label: "Barre latérale", w: 200, h: 130, objFit: "object-contain", bg: "bg-secondary" },
+                    { base: "image_scale_home", label: "Accueil", w: 320, h: 180, objFit: "object-contain", bg: "bg-secondary" },
+                    { base: "image_scale_fleet", label: "Flotte", w: 320, h: 180, objFit: "object-contain", bg: "bg-secondary" },
+                    { base: "image_scale_detail", label: "Détail véhicule", w: 400, h: 225, objFit: "object-cover", bg: "bg-background" },
+                    { base: "image_scale_reservation", label: "Réservation", w: 280, h: 160, objFit: "object-contain", bg: "bg-secondary" },
+                    { base: "image_scale_sidebar", label: "Barre latérale", w: 200, h: 130, objFit: "object-contain", bg: "bg-secondary" },
                   ] as const).map((placement) => {
-                    const scaleVal = Number((form as any)[placement.key] ?? 1);
+                    const devices = [
+                      { suffix: "", label: "Desktop", icon: Monitor },
+                      { suffix: "_tablet", label: "Tablet", icon: Tablet },
+                      { suffix: "_mobile", label: "Mobile", icon: Smartphone },
+                    ];
                     return (
-                      <div key={placement.key} className="space-y-2">
-                        <div className="flex justify-between">
-                          <label className="text-sm font-medium">{placement.label}</label>
-                          <span className="text-xs text-muted-foreground">{scaleVal.toFixed(2)}x</span>
-                        </div>
-                        <Slider
-                          min={0.5} max={2} step={0.05}
-                          value={[scaleVal]}
-                          onValueChange={([val]) => setForm((f) => ({ ...f, [placement.key]: val }))}
-                        />
+                      <div key={placement.base} className="space-y-2">
+                        <label className="text-sm font-medium">{placement.label}</label>
+                        {devices.map((device) => {
+                          const key = `${placement.base}${device.suffix}` as string;
+                          const scaleVal = Number((form as any)[key] ?? 1);
+                          const DeviceIcon = device.icon;
+                          return (
+                            <div key={key} className="space-y-1">
+                              <div className="flex items-center justify-between">
+                                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <DeviceIcon size={12} />{device.label}
+                                </span>
+                                <span className="text-xs text-muted-foreground">{scaleVal.toFixed(2)}x</span>
+                              </div>
+                              <Slider
+                                min={0.5} max={2} step={0.05}
+                                value={[scaleVal]}
+                                onValueChange={([val]) => setForm((f) => ({ ...f, [key]: val }))}
+                              />
+                            </div>
+                          );
+                        })}
                         <div
                           className={`rounded-lg overflow-hidden border ${placement.bg} flex items-center justify-center`}
                           style={{ width: placement.w, height: placement.h, maxWidth: "100%" }}
@@ -399,7 +415,7 @@ const AdminFleet = () => {
                             alt={placement.label}
                             className={`w-full h-full ${placement.objFit}`}
                             style={{
-                              transform: `${(form as any).image_flipped ? 'scaleX(-1)' : ''} scale(${scaleVal})`.trim() || 'none'
+                              transform: `${(form as any).image_flipped ? 'scaleX(-1)' : ''} scale(${Number((form as any)[placement.base] ?? 1)})`.trim() || 'none'
                             }}
                           />
                         </div>
