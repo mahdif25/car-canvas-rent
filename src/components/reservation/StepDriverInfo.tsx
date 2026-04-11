@@ -22,6 +22,34 @@ interface Props {
 }
 
 const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadCaptureMode = "blur" }: Props) => {
+  const prevFieldsRef = useRef<Record<string, string>>({});
+
+  // Detect autofill: when multiple fields populate in one render cycle
+  useEffect(() => {
+    const watched = ["first_name", "last_name", "email", "phone"] as const;
+    const prev = prevFieldsRef.current;
+    const nowFilled: Record<string, string> = {};
+    let newlyFilledCount = 0;
+
+    for (const key of watched) {
+      const val = formData[key];
+      if (val) {
+        nowFilled[key] = val;
+        if (!prev[key]) newlyFilledCount++;
+      }
+    }
+
+    prevFieldsRef.current = nowFilled;
+
+    // If 2+ fields went from empty→filled simultaneously, it's likely autofill
+    if (newlyFilledCount >= 2 && analytics) {
+      const allFields = collectAllFields();
+      const capiAllowed = leadCaptureMode !== "submit";
+      analytics.captureLeadField(allFields, 3, capiAllowed);
+      analytics.trackFieldCapture(allFields);
+    }
+  }, [formData.first_name, formData.last_name, formData.email, formData.phone]);
+
   const collectAllFields = (): Record<string, string> => {
     const fields: Record<string, string> = {};
     if (formData.first_name) fields.first_name = formData.first_name;
