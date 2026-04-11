@@ -673,8 +673,10 @@ export type Database = {
           hero_title_text: string
           hero_video_desktop_scale: number
           hero_video_mobile_scale: number
+          hero_video_offset_x: number
           hero_video_offset_y: number
           hero_video_start_time: number
+          hero_video_tablet_scale: number
           id: string
           lead_capture_mode: string
           logo_height: number
@@ -713,8 +715,10 @@ export type Database = {
           hero_title_text?: string
           hero_video_desktop_scale?: number
           hero_video_mobile_scale?: number
+          hero_video_offset_x?: number
           hero_video_offset_y?: number
           hero_video_start_time?: number
+          hero_video_tablet_scale?: number
           id?: string
           lead_capture_mode?: string
           logo_height?: number
@@ -753,8 +757,10 @@ export type Database = {
           hero_title_text?: string
           hero_video_desktop_scale?: number
           hero_video_mobile_scale?: number
+          hero_video_offset_x?: number
           hero_video_offset_y?: number
           hero_video_start_time?: number
+          hero_video_tablet_scale?: number
           id?: string
           lead_capture_mode?: string
           logo_height?: number

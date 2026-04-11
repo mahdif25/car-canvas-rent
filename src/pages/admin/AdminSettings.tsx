@@ -12,8 +12,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Palette, BarChart3, Mail, MessageCircle, Star, Plus, Pencil, Trash2, FileText } from "lucide-react";
+import { Palette, BarChart3, Mail, MessageCircle, Star, Plus, Pencil, Trash2, FileText, Smartphone, Tablet, Monitor } from "lucide-react";
 import logo from "@/assets/logo.png";
+
+function getYouTubeId(url: string): string | null {
+  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/))([a-zA-Z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
+const DEVICE_PRESETS = [
+  { key: "mobile" as const, label: "Mobile", icon: Smartphone, width: 375, height: 667 },
+  { key: "tablet" as const, label: "Tablet", icon: Tablet, width: 768, height: 1024 },
+  { key: "desktop" as const, label: "Desktop", icon: Monitor, width: 1200, height: 675 },
+] as const;
+
+type DeviceKey = typeof DEVICE_PRESETS[number]["key"];
 
 const AdminSettings = () => {
   const { data: settings, isLoading } = useSiteSettings();
@@ -29,6 +42,8 @@ const AdminSettings = () => {
   const [reviewForm, setReviewForm] = useState<Partial<Review>>({});
   const [addingReview, setAddingReview] = useState(false);
   const [newReview, setNewReview] = useState({ name: "", text: "", rating: 5, time_label: "il y a 1 mois", is_enabled: true, sort_order: 0 });
+
+  const [previewDevice, setPreviewDevice] = useState<DeviceKey>("mobile");
 
   useEffect(() => {
     if (settings) setForm(settings);
@@ -129,35 +144,123 @@ const AdminSettings = () => {
               )}
               {form.hero_bg_type === "video" && (
                 <>
-                  <div className="space-y-2">
-                    <Label>Zoom mobile ({((form as any).hero_video_mobile_scale ?? 1.5).toFixed(1)}x)</Label>
-                    <Slider
-                      value={[(form as any).hero_video_mobile_scale ?? 1.5]}
-                      onValueChange={([v]) => setForm({ ...form, hero_video_mobile_scale: v } as any)}
-                      min={1} max={3} step={0.1}
-                    />
-                    <p className="text-xs text-muted-foreground">Agrandir la vidéo sur les écrans mobiles pour éviter les bords noirs</p>
+                  {/* Device Switcher */}
+                  <div className="space-y-3 pt-3 border-t border-border">
+                    <Label className="font-semibold">Aperçu par appareil</Label>
+                    <div className="flex gap-2">
+                      {DEVICE_PRESETS.map((d) => (
+                        <button
+                          key={d.key}
+                          onClick={() => setPreviewDevice(d.key)}
+                          className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            previewDevice === d.key
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-secondary text-muted-foreground hover:bg-muted"
+                          }`}
+                        >
+                          <d.icon size={16} />
+                          <span className="hidden sm:inline">{d.label}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Live Preview */}
+                    {form.hero_bg_value && (() => {
+                      const device = DEVICE_PRESETS.find((d) => d.key === previewDevice)!;
+                      const maxWidth = 500;
+                      const scaleFactor = Math.min(1, maxWidth / device.width);
+                      const previewW = device.width * scaleFactor;
+                      const previewH = (device.height * 0.55) * scaleFactor;
+                      const currentScale =
+                        previewDevice === "mobile" ? (form.hero_video_mobile_scale ?? 1.5) :
+                        previewDevice === "tablet" ? (form.hero_video_tablet_scale ?? 1.3) :
+                        (form.hero_video_desktop_scale ?? 1.2);
+                      const offsetY = form.hero_video_offset_y ?? 50;
+                      const offsetX = form.hero_video_offset_x ?? 50;
+                      const ytId = getYouTubeId(form.hero_bg_value || "");
+                      return (
+                        <div
+                          className="relative rounded-lg overflow-hidden bg-black mx-auto"
+                          style={{ width: previewW, height: previewH }}
+                        >
+                          {ytId ? (
+                            <iframe
+                              src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&playlist=${ytId}${form.hero_video_start_time ? `&start=${form.hero_video_start_time}` : ''}`}
+                              className="absolute inset-0 w-full h-full pointer-events-none"
+                              style={{ transform: `scale(${currentScale}) translate(${offsetX - 50}%, ${offsetY - 50}%)` }}
+                              allow="autoplay; encrypted-media"
+                              frameBorder="0"
+                              title="Preview"
+                            />
+                          ) : (
+                            <video
+                              src={form.hero_bg_value}
+                              className="absolute inset-0 w-full h-full object-cover"
+                              style={{ objectPosition: `${offsetX}% ${offsetY}%` }}
+                              autoPlay muted loop playsInline
+                            />
+                          )}
+                          <div className="absolute inset-0 bg-dark" style={{ opacity: form.hero_overlay_opacity ?? 0.6 }} />
+                          <div className="absolute inset-0 flex items-end p-3">
+                            <span className="text-white text-xs font-medium opacity-70">{device.width} × {device.height} — {device.label}</span>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
-                  <div className="space-y-2">
-                    <Label>Zoom desktop ({((form as any).hero_video_desktop_scale ?? 1.2).toFixed(1)}x)</Label>
-                    <Slider
-                      value={[(form as any).hero_video_desktop_scale ?? 1.2]}
-                      onValueChange={([v]) => setForm({ ...form, hero_video_desktop_scale: v } as any)}
-                      min={1} max={3} step={0.1}
-                    />
+
+                  {/* Per-device zoom sliders */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-3 border-t border-border">
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-1.5"><Smartphone size={14} /> Mobile ({(form.hero_video_mobile_scale ?? 1.5).toFixed(1)}x)</Label>
+                      <Slider
+                        value={[form.hero_video_mobile_scale ?? 1.5]}
+                        onValueChange={([v]) => setForm({ ...form, hero_video_mobile_scale: v })}
+                        min={1} max={3} step={0.1}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-1.5"><Tablet size={14} /> Tablet ({(form.hero_video_tablet_scale ?? 1.3).toFixed(1)}x)</Label>
+                      <Slider
+                        value={[form.hero_video_tablet_scale ?? 1.3]}
+                        onValueChange={([v]) => setForm({ ...form, hero_video_tablet_scale: v })}
+                        min={1} max={3} step={0.1}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-1.5"><Monitor size={14} /> Desktop ({(form.hero_video_desktop_scale ?? 1.2).toFixed(1)}x)</Label>
+                      <Slider
+                        value={[form.hero_video_desktop_scale ?? 1.2]}
+                        onValueChange={([v]) => setForm({ ...form, hero_video_desktop_scale: v })}
+                        min={1} max={3} step={0.1}
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Position verticale ({(form as any).hero_video_offset_y ?? 50}%)</Label>
-                    <Slider
-                      value={[(form as any).hero_video_offset_y ?? 50]}
-                      onValueChange={([v]) => setForm({ ...form, hero_video_offset_y: v } as any)}
-                      min={0} max={100} step={1}
-                    />
-                    <p className="text-xs text-muted-foreground">0% = haut, 50% = centré, 100% = bas</p>
+
+                  {/* Position sliders */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Position verticale ({form.hero_video_offset_y ?? 50}%)</Label>
+                      <Slider
+                        value={[form.hero_video_offset_y ?? 50]}
+                        onValueChange={([v]) => setForm({ ...form, hero_video_offset_y: v })}
+                        min={0} max={100} step={1}
+                      />
+                      <p className="text-xs text-muted-foreground">0% = haut, 50% = centré, 100% = bas</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Position horizontale ({form.hero_video_offset_x ?? 50}%)</Label>
+                      <Slider
+                        value={[form.hero_video_offset_x ?? 50]}
+                        onValueChange={([v]) => setForm({ ...form, hero_video_offset_x: v })}
+                        min={0} max={100} step={1}
+                      />
+                      <p className="text-xs text-muted-foreground">0% = gauche, 50% = centré, 100% = droite</p>
+                    </div>
                   </div>
                 </>
               )}
-              <Button className="w-full md:w-auto" onClick={() => save(["hero_bg_type", "hero_bg_value", "hero_overlay_opacity", "hero_video_start_time", "hero_video_mobile_scale" as any, "hero_video_desktop_scale" as any, "hero_video_offset_y" as any])} disabled={updateMutation.isPending}>
+              <Button className="w-full md:w-auto" onClick={() => save(["hero_bg_type", "hero_bg_value", "hero_overlay_opacity", "hero_video_start_time", "hero_video_mobile_scale" as any, "hero_video_desktop_scale" as any, "hero_video_tablet_scale" as any, "hero_video_offset_y" as any, "hero_video_offset_x" as any])} disabled={updateMutation.isPending}>
                 Sauvegarder
               </Button>
             </div>

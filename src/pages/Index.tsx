@@ -96,24 +96,36 @@ const Index = () => {
           {heroType === "video" && heroValue && (() => {
             const ytId = getYouTubeId(heroValue);
             const mobileScale = siteSettings?.hero_video_mobile_scale ?? 1.5;
+            const tabletScale = siteSettings?.hero_video_tablet_scale ?? 1.3;
             const desktopScale = siteSettings?.hero_video_desktop_scale ?? 1.2;
             const offsetY = siteSettings?.hero_video_offset_y ?? 50;
+            const offsetX = siteSettings?.hero_video_offset_x ?? 50;
+            const ytSrc = `https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&playlist=${ytId}${videoStartTime ? `&start=${videoStartTime}` : ''}`;
             return ytId ? (
               <>
                 {/* Mobile YouTube */}
                 <iframe
-                  src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&playlist=${ytId}${videoStartTime ? `&start=${videoStartTime}` : ''}`}
+                  src={ytSrc}
                   className="absolute inset-0 w-full h-full pointer-events-none md:hidden"
-                  style={{ transform: `scale(${mobileScale}) translateY(${offsetY - 50}%)` }}
+                  style={{ transform: `scale(${mobileScale}) translate(${offsetX - 50}%, ${offsetY - 50}%)` }}
+                  allow="autoplay; encrypted-media"
+                  frameBorder="0"
+                  title="Hero video"
+                />
+                {/* Tablet YouTube */}
+                <iframe
+                  src={ytSrc}
+                  className="absolute inset-0 w-full h-full pointer-events-none hidden md:block lg:hidden"
+                  style={{ transform: `scale(${tabletScale}) translate(${offsetX - 50}%, ${offsetY - 50}%)` }}
                   allow="autoplay; encrypted-media"
                   frameBorder="0"
                   title="Hero video"
                 />
                 {/* Desktop YouTube */}
                 <iframe
-                  src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&playlist=${ytId}${videoStartTime ? `&start=${videoStartTime}` : ''}`}
-                  className="absolute inset-0 w-full h-full pointer-events-none hidden md:block"
-                  style={{ transform: `scale(${desktopScale}) translateY(${offsetY - 50}%)` }}
+                  src={ytSrc}
+                  className="absolute inset-0 w-full h-full pointer-events-none hidden lg:block"
+                  style={{ transform: `scale(${desktopScale}) translate(${offsetX - 50}%, ${offsetY - 50}%)` }}
                   allow="autoplay; encrypted-media"
                   frameBorder="0"
                   title="Hero video"
@@ -123,7 +135,7 @@ const Index = () => {
               <video
                 src={heroValue}
                 className="absolute inset-0 w-full h-full object-cover"
-                style={{ objectPosition: `center ${offsetY}%` }}
+                style={{ objectPosition: `${offsetX}% ${offsetY}%` }}
                 autoPlay muted loop playsInline
               />
             );
