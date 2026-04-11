@@ -528,6 +528,7 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
           {r.payment_method === "cash" && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Cash</Badge>}
           <span className="font-medium text-sm">{r.customer_first_name} {r.customer_last_name}</span>
           <span className="text-sm text-muted-foreground">{(r as any).vehicles?.name}</span>
+          {r.assigned_plate_id && assignedPlate && <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-mono">{assignedPlate.plate_number}</Badge>}
         </div>
         <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
           <span className="text-xs sm:text-sm">{r.pickup_date} → {r.return_date}</span>
