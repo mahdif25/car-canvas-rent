@@ -86,7 +86,7 @@ const Index = () => {
   return (
     <Layout>
       {/* Hero */}
-      <section className="relative text-white overflow-hidden min-h-[85vh] md:min-h-[70vh] flex flex-col justify-center" style={heroType === "color" && heroValue ? { backgroundColor: heroValue } : undefined}>
+      <section className="relative text-white overflow-hidden min-h-[60vh] md:min-h-[50vh] lg:min-h-[55vh] flex flex-col justify-center" style={heroType === "color" && heroValue ? { backgroundColor: heroValue } : undefined}>
         {/* Background media wrapper */}
         <div className="absolute inset-0 overflow-hidden">
           {heroType === "color" && !heroValue && <div className="absolute inset-0 bg-dark" />}
@@ -135,8 +135,8 @@ const Index = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-dark/95 to-dark/60" style={{ opacity: heroType === "color" ? 1 : 0 }} />
         </div>
 
-        <div className="container relative z-10 py-12 md:py-32">
-          <div className={`max-w-2xl space-y-4 md:space-y-6 ${titleStyle.textAlign === "center" ? "mx-auto" : ""}`}>
+        <div className="container relative z-10 py-8 md:py-16 lg:py-20">
+          <div className={`max-w-2xl space-y-3 md:space-y-4 ${titleStyle.textAlign === "center" ? "mx-auto" : ""}`}>
             <h1 className={`${getStyleClasses(titleStyle)} leading-tight ${getAnimationClass(titleAnim)}`}>
               {titleText} {titleHighlight && <span className="text-primary">{titleHighlight}</span>}
             </h1>
@@ -146,7 +146,7 @@ const Index = () => {
           </div>
 
           {/* Search Bar */}
-          <div className="mt-6 md:mt-10 bg-background text-foreground p-4 md:p-8 rounded-2xl shadow-xl max-w-4xl">
+          <div className="mt-4 md:mt-6 bg-background text-foreground p-3 md:p-6 rounded-2xl shadow-xl max-w-4xl">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
               <div className="space-y-2">
                 <label className="text-sm font-medium flex items-center gap-1.5">
