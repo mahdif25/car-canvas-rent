@@ -96,8 +96,7 @@ const Index = () => {
           return ytId ? (
             <iframe
               src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&playlist=${ytId}${videoStartTime ? `&start=${videoStartTime}` : ''}`}
-              className="absolute inset-0 w-full h-full pointer-events-none"
-              style={{ transform: "scale(1.2)", transformOrigin: "center" }}
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 min-w-full min-h-full w-[177.78vh] h-[56.25vw] pointer-events-none"
               allow="autoplay; encrypted-media"
               frameBorder="0"
               title="Hero video"
