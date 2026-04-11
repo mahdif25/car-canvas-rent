@@ -16,7 +16,7 @@ interface Props {
   onChangeVehicle?: () => void;
 }
 
-const ReservationSidebar = ({ formData, rentalDays, vehicles, pricingTiers, currentStep }: Props) => {
+const ReservationSidebar = ({ formData, rentalDays, vehicles, pricingTiers, currentStep, onChangeVehicle }: Props) => {
   const [mobileExpanded, setMobileExpanded] = useState(false);
   const vehicle = vehicles.find((v) => v.id === formData.vehicle_id);
   const sidebarScale = useDeviceScale(vehicle, "sidebar");
