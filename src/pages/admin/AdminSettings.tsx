@@ -12,8 +12,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Palette, BarChart3, Mail, MessageCircle, Star, Plus, Pencil, Trash2, FileText } from "lucide-react";
+import { Palette, BarChart3, Mail, MessageCircle, Star, Plus, Pencil, Trash2, FileText, Smartphone, Tablet, Monitor } from "lucide-react";
 import logo from "@/assets/logo.png";
+
+function getYouTubeId(url: string): string | null {
+  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/))([a-zA-Z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
+const DEVICE_PRESETS = [
+  { key: "mobile" as const, label: "Mobile", icon: Smartphone, width: 375, height: 667 },
+  { key: "tablet" as const, label: "Tablet", icon: Tablet, width: 768, height: 1024 },
+  { key: "desktop" as const, label: "Desktop", icon: Monitor, width: 1200, height: 675 },
+] as const;
+
+type DeviceKey = typeof DEVICE_PRESETS[number]["key"];
 
 const AdminSettings = () => {
   const { data: settings, isLoading } = useSiteSettings();
