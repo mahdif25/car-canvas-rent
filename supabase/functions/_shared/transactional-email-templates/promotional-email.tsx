@@ -127,10 +127,6 @@ const PromotionalEmail = (props: Props) => {
         </Container>
       </Body>
     </Html>
-  )
-      </Body>
-    </Html>
-  )
 }
 
 export const template = {
