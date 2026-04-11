@@ -132,6 +132,16 @@ const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadC
     if (formData.first_name) sessionStorage.setItem("fb_fn", formData.first_name);
     if (formData.last_name) sessionStorage.setItem("fb_ln", formData.last_name);
     if (formData.phone) sessionStorage.setItem("fb_ph", formData.phone);
+
+    // Fire Lead event on submit
+    if (analytics) {
+      analytics.trackFacebookEvent("Lead", {
+        content_name: "reservation_driver_info",
+      });
+      analytics.trackTikTokEvent("SubmitForm");
+      analytics.trackGAEvent("generate_lead", { event_category: "reservation" });
+    }
+
     onNext();
   };
 
