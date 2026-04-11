@@ -657,7 +657,7 @@ const AdminSettings = () => {
                 rows={10}
                 placeholder="<h2>Dépôt de garantie</h2><p>...</p>"
               />
-              <Button onClick={() => save(["caution_policy_html"])} disabled={updateMutation.isPending}>
+              <Button className="w-full md:w-auto" onClick={() => save(["caution_policy_html"])} disabled={updateMutation.isPending}>
                 Sauvegarder
               </Button>
             </div>
