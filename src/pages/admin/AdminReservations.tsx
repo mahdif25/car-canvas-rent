@@ -329,18 +329,37 @@ const AdminReservations = () => {
     <AdminLayout>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h1 className="text-2xl font-bold">Réservations</h1>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filtrer par statut" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tous les statuts</SelectItem>
-            {(Object.keys(statusLabels) as ReservationStatus[]).map((s) => (
-              <SelectItem key={s} value={s}>{statusLabels[s]}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button size="sm" onClick={() => setManualOpen(true)} className="gap-1">
+            <Plus size={14} /> Nouvelle réservation
+          </Button>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Filtrer par statut" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les statuts</SelectItem>
+              {(Object.keys(statusLabels) as ReservationStatus[]).map((s) => (
+                <SelectItem key={s} value={s}>{statusLabels[s]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
+
+      <ManualReservationDialog
+        open={manualOpen}
+        onOpenChange={setManualOpen}
+        vehicles={vehicles}
+        pricingTiers={pricingTiers}
+        locations={allLocations.length > 0 ? allLocations : locations}
+        allAddons={allAddons}
+        onSuccess={() => {
+          qc.invalidateQueries({ queryKey: ["admin-reservations"] });
+          qc.invalidateQueries({ queryKey: ["reservation-addons-all"] });
+          qc.invalidateQueries({ queryKey: ["additional-drivers-all"] });
+        }}
+      />
 
       <Card>
         <CardContent className="pt-6">
