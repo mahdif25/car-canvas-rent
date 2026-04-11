@@ -115,11 +115,25 @@ const Reservation = () => {
       vehicle_id: formData.vehicle_id || undefined,
       pickup_location: formData.pickup_location || undefined,
     });
-    if (currentStep === 4) {
+
+    // Multi-platform events per step
+    if (currentStep === 2) {
+      analytics.trackFacebookEvent("ViewContent", { content_ids: [formData.vehicle_id] });
+      analytics.trackTikTokEvent("ViewContent", { content_id: formData.vehicle_id });
+      analytics.trackGAEvent("view_item", { items: [{ item_id: formData.vehicle_id }] });
+    }
+    if (currentStep === 3) {
       analytics.trackFacebookEvent("InitiateCheckout", {
         currency: "MAD",
         content_ids: [formData.vehicle_id],
       });
+      analytics.trackTikTokEvent("InitiateCheckout", { content_id: formData.vehicle_id });
+      analytics.trackGAEvent("begin_checkout", { items: [{ item_id: formData.vehicle_id }] });
+    }
+    if (currentStep === 4) {
+      analytics.trackFacebookEvent("AddPaymentInfo", { currency: "MAD" });
+      analytics.trackTikTokEvent("AddPaymentInfo");
+      analytics.trackGAEvent("add_payment_info");
     }
   }, [currentStep]);
 
@@ -234,6 +248,16 @@ const Reservation = () => {
         currency: "MAD",
         value: finalTotal,
         content_ids: [formData.vehicle_id],
+      });
+      analytics.trackTikTokEvent("CompletePayment", {
+        content_id: formData.vehicle_id,
+        currency: "MAD",
+        value: finalTotal,
+      });
+      analytics.trackGAEvent("purchase", {
+        currency: "MAD",
+        value: finalTotal,
+        items: [{ item_id: formData.vehicle_id }],
       });
 
       // Clear session storage on success
