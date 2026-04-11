@@ -76,6 +76,13 @@ const ReservationSidebar = ({ formData, rentalDays, vehicles, pricingTiers, curr
               )}
             </div>
             <p className="text-muted-foreground">{dailyRate} MAD/jour</p>
+            {selectedColor && (
+              <div className="flex items-center gap-1.5 mt-1">
+                <Palette size={12} className="text-primary" />
+                <span className="w-3 h-3 rounded-full border border-border" style={{ backgroundColor: selectedColor.color_hex }} />
+                <span className="text-xs text-muted-foreground">{selectedColor.color_name}</span>
+              </div>
+            )}
           </div>
         </div>
       )}
