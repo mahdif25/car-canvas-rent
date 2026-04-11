@@ -21,6 +21,7 @@ const ReservationSidebar = ({ formData, rentalDays, vehicles, pricingTiers, curr
   const [mobileExpanded, setMobileExpanded] = useState(false);
   const vehicle = vehicles.find((v) => v.id === formData.vehicle_id);
   const sidebarScale = useDeviceScale(vehicle, "sidebar");
+  const deviceType = useDeviceType();
   const tiers = pricingTiers.filter((t) => t.vehicle_id === formData.vehicle_id);
   const dailyRate = vehicle ? getDailyRateFromTiers(tiers, rentalDays) : 0;
   const vehicleTotal = dailyRate * rentalDays;
@@ -30,6 +31,8 @@ const ReservationSidebar = ({ formData, rentalDays, vehicles, pricingTiers, curr
     ? getColorById(allColors, formData.selected_color_id)
     : vehicle ? getDefaultColor(allColors, vehicle.id) : undefined;
   const sidebarImage = selectedColor?.image_url || vehicle?.image_url;
+  const imageFlipped = selectedColor ? selectedColor.image_flipped : vehicle?.image_flipped;
+  const imageScale = selectedColor ? getScaleForColorOnDevice(selectedColor, 'sidebar', deviceType) : sidebarScale;
 
   // Only show vehicle price in sidebar (no delivery fees, no addons — those appear in step 4)
   const total = vehicleTotal;
