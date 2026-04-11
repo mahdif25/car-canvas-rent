@@ -249,6 +249,8 @@ const AdminFleet = () => {
     setTiers(vehicleTiers.length > 0 ? vehicleTiers.map((t) => ({ min_days: t.min_days, max_days: t.max_days, daily_rate: Number(t.daily_rate) })) : defaultTiers);
     const { data: imgs } = await supabase.from("vehicle_images").select("*").eq("vehicle_id", v.id).order("sort_order");
     setGalleryUrls((imgs ?? []).map((img: any) => img.image_url));
+    const { data: colors } = await supabase.from("vehicle_colors").select("*").eq("vehicle_id", v.id).order("sort_order");
+    setColorVariants((colors ?? []) as VehicleColor[]);
     setShowForm(true);
   };
 
