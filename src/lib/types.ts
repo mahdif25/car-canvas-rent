@@ -90,4 +90,5 @@ export interface ReservationFormData {
   coupon_id: string;
   has_additional_driver: boolean;
   additional_driver: AdditionalDriver;
+  selected_color_id: string;
 }
