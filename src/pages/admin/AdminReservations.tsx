@@ -515,9 +515,13 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
       >
         <div className="flex items-center justify-between mb-1">
           <span className="font-medium text-sm">{r.customer_first_name} {r.customer_last_name}</span>
-          <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${statusColors[r.status as ReservationStatus]}`}>
-            {statusLabels[r.status as ReservationStatus]}
-          </span>
+          <div className="flex items-center gap-1">
+            {r.is_manual && <Badge variant="outline" className="text-[10px] px-1.5 py-0">Manuel</Badge>}
+            {r.payment_method === "cash" && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Cash</Badge>}
+            <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${statusColors[r.status as ReservationStatus]}`}>
+              {statusLabels[r.status as ReservationStatus]}
+            </span>
+          </div>
         </div>
         <p className="text-xs text-muted-foreground">{(r as any).vehicles?.name}</p>
         <div className="flex items-center justify-between mt-1.5 text-xs">
