@@ -6,13 +6,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { useMemo, useState } from "react";
 import { useVehicles, usePricingTiers, getDailyRateFromTiers } from "@/hooks/useVehicles";
-import { useLocations, getDeliveryFee } from "@/hooks/useLocations";
-import { Printer, Save, Pencil, Check, X } from "lucide-react";
+import { useLocations, useAllLocations, getDeliveryFee } from "@/hooks/useLocations";
+import { Printer, Save, Pencil, Check, X, Plus } from "lucide-react";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import type { Database } from "@/integrations/supabase/types";
+import ManualReservationDialog from "@/components/admin/ManualReservationDialog";
 
 type ReservationStatus = Database["public"]["Enums"]["reservation_status"];
 type DepositStatus = Database["public"]["Enums"]["deposit_status"];
