@@ -11,7 +11,9 @@ import { toast } from "@/hooks/use-toast";
 import { useMemo, useState } from "react";
 import { useVehicles, usePricingTiers, getDailyRateFromTiers } from "@/hooks/useVehicles";
 import { useLocations, useAllLocations, getDeliveryFee } from "@/hooks/useLocations";
-import { Printer, Save, Pencil, Check, X, Plus } from "lucide-react";
+import { Printer, Save, Pencil, Check, X, Plus, AlertTriangle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useAvailablePlates } from "@/hooks/useFleetPlates";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import type { Database } from "@/integrations/supabase/types";
 import ManualReservationDialog from "@/components/admin/ManualReservationDialog";
@@ -135,12 +137,18 @@ const AdminReservations = () => {
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: ReservationStatus }) => {
       const { error } = await supabase.from("reservations").update({ status }).eq("id", id);
-      if (error) throw error;
+      if (error) {
+        if (error.message?.includes("assigned vehicle plate")) {
+          throw new Error("Impossible d'activer la réservation sans véhicule assigné. Veuillez d'abord assigner une immatriculation.");
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-reservations"] });
       toast({ title: "Statut mis à jour" });
     },
+    onError: (e: Error) => toast({ title: "Erreur", description: e.message, variant: "destructive" }),
   });
 
   const updateDeposit = useMutation({
