@@ -1,44 +1,37 @@
 
 
-# Browser Autofill Detection & Comprehensive Tracking Events
+# Add Manual Reservation from Admin Dashboard
 
-## Problems
-1. Browser autofill populates fields but React state doesn't update until user interacts — the form appears empty despite filled inputs
-2. `InitiateCheckout` fires on step 4 (Summary) instead of step 3 (Info) where the user actually enters checkout info
-3. No `Purchase` event for TikTok/Google; no `PageView` events per step for other platforms; missing `AddToCart` and `ViewContent` events
+## Overview
+Add a "Nouvelle réservation" button to the admin reservations page that opens a dialog/form where admins can manually create a reservation by selecting a vehicle, dates, locations, and entering customer details. The reservation will be marked as a manual entry and flagged as cash payment.
 
-## Changes
+## Database Changes
 
-### 1. `src/components/reservation/StepDriverInfo.tsx` — Autofill detection
+**Migration**: Add two columns to the `reservations` table:
+- `is_manual` (boolean, default false) — flags admin-created reservations
+- `payment_method` (text, default 'pickup') — stores payment type ('cash' for manual)
 
-- Add a polling mechanism using `requestAnimationFrame` or a short `setInterval` (500ms, 3 attempts) that reads the actual DOM input values via refs after mount
-- If DOM values differ from React state (autofill happened), call `updateForm()` with those values
-- Use `onAnimationStart` on inputs to detect Chrome's autofill CSS animation (`:-webkit-autofill`) as a trigger to read DOM values immediately
-- Add a shared `useAutofillDetect` effect that checks all main fields (fname, lname, email, phone) and syncs to state
+## UI Changes
 
-### 2. `src/pages/Reservation.tsx` — Fix event timing & add multi-platform events
+### `src/pages/admin/AdminReservations.tsx`
+- Add a "Nouvelle réservation" button at the top next to the status filter
+- Create a Dialog component (`ManualReservationDialog`) containing a form with:
+  - **Vehicle selector** (dropdown from existing vehicles list)
+  - **Dates**: pickup date, return date, pickup time, return time
+  - **Locations**: pickup location, return location (from locations list)
+  - **Customer info**: first name, last name, email, phone, license number, nationality, DOB
+  - **Optional additional driver** toggle + fields (same as public flow)
+  - **Add-ons** checkboxes
+  - Auto-calculated total price, delivery fee, deposit amount (reusing `getDailyRateFromTiers` and `getDeliveryFee`)
+- On submit: insert into `reservations` with `is_manual: true`, `payment_method: 'cash'`, `status: 'confirmed'`
+- Also insert `reservation_addons` and `additional_drivers` if applicable
+- Show a "Manuel" badge on manual reservations in the list
+- Responsive: dialog scrollable on mobile, form fields stack vertically
 
-Current tracking in the `useEffect` on `currentStep`:
-- **Step 1**: `PageView` (already via `useAnalytics`), add TikTok `ttq.page()`, GA `page_view`
-- **Step 2**: Track `ViewContent` (FB) / `ViewContent` (TikTok) when viewing vehicle selection  
-- **Step 3**: Fire `InitiateCheckout` (FB Pixel + CAPI), TikTok `InitiateCheckout`, GA `begin_checkout` — move from step 4 to step 3
-- **Step 4**: Fire `AddPaymentInfo` (FB) when reaching summary
-- On confirm (step 5): Keep `Purchase` (FB), add TikTok `CompletePayment`, GA `purchase`
-
-### 3. `src/components/reservation/StepDriverInfo.tsx` — Track on Continue click
-
-- In `handleNext`, after saving fb_* to sessionStorage:
-  - Fire `Lead` event via `trackFacebookEvent("Lead", ...)` when lead capture mode is "submit"
-  - This ensures CAPI sends the lead with user data populated in sessionStorage
-
-### 4. `src/hooks/useAnalytics.ts` — Add TikTok & GA event helpers
-
-- Add `trackTikTokEvent(eventName, params)` — calls `window.ttq.track(eventName, params)` if available
-- Add `trackGAEvent(eventName, params)` — calls `window.gtag('event', eventName, params)` if available
-- Export both alongside existing methods
+### Display in reservation list
+- Show a small "Manuel" / "Cash" badge next to manual reservations in both the desktop table and mobile card views
 
 ## Files to Modify
-- `src/components/reservation/StepDriverInfo.tsx` — autofill detection + Lead event on submit
-- `src/pages/Reservation.tsx` — fix InitiateCheckout timing, add multi-platform events per step
-- `src/hooks/useAnalytics.ts` — add TikTok and GA tracking helpers, declare window types
+- **Migration**: add `is_manual` and `payment_method` columns
+- **`src/pages/admin/AdminReservations.tsx`**: add button, dialog, form, insert logic, badge display
 
