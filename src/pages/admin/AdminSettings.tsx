@@ -43,6 +43,8 @@ const AdminSettings = () => {
   const [addingReview, setAddingReview] = useState(false);
   const [newReview, setNewReview] = useState({ name: "", text: "", rating: 5, time_label: "il y a 1 mois", is_enabled: true, sort_order: 0 });
 
+  const [previewDevice, setPreviewDevice] = useState<DeviceKey>("mobile");
+
   useEffect(() => {
     if (settings) setForm(settings);
   }, [settings]);
