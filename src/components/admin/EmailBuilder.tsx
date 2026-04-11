@@ -186,11 +186,18 @@ const EmailBuilder = ({ value, onChange, couponMode = 'none', discountAmount = '
                 </Button>
                 <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); removeBlock(block.id); }}>
                   <Trash2 size={12} />
-            </Button>
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
         {/* Block content editor */}
+        {isCoupon ? (
+          <div className="p-3">
+            <p className="text-xs text-muted-foreground italic">Bloc coupon — configuré depuis le mode coupon ci-dessous. Utilisez les flèches pour repositionner.</p>
+          </div>
+        ) : (
         <div className="p-3 space-y-2">
           {(block.type === 'heading' || block.type === 'text') && (
             <>
