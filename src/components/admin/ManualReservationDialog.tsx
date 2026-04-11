@@ -185,7 +185,7 @@ export default function ManualReservationDialog({ open, onOpenChange, vehicles, 
           {/* Vehicle */}
           <div className="space-y-1">
             <Label>Véhicule *</Label>
-            <Select value={vehicleId} onValueChange={setVehicleId}>
+            <Select value={vehicleId} onValueChange={(v) => { setVehicleId(v); setAssignedPlateId(""); }}>
               <SelectTrigger><SelectValue placeholder="Sélectionner un véhicule" /></SelectTrigger>
               <SelectContent>
                 {vehicles.filter((v) => v.is_available).map((v) => (
