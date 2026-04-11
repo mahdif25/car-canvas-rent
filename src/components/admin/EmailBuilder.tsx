@@ -388,7 +388,6 @@ const EmailBuilder = ({ value, onChange, couponMode = 'none', discountAmount = '
         )}
       </div>
     );
-    );
   };
 
   const editorContent = (
