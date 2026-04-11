@@ -73,7 +73,7 @@ const AdminReservations = () => {
   const { data: vehicles = [] } = useVehicles();
   const { data: pricingTiers = [] } = usePricingTiers();
   const { data: locations = [] } = useLocations();
-
+  const { data: allLocations = [] } = useAllLocations();
   const { data: allAddons = [] } = useQuery({
     queryKey: ["all-addons"],
     queryFn: async () => {
