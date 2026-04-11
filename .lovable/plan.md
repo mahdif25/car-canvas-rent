@@ -1,29 +1,40 @@
 
 
-# Move WhatsApp Icon Above Mobile Sidebar Bar
+# Make Hero Section More Compact
 
-## Problem
-On mobile/tablet, the WhatsApp floating button (`bottom-6 left-6`, ~z-50) overlaps the sticky bottom summary bar from `ReservationSidebar` (also `fixed bottom-0`, z-50). This hides the "Véhicule 0 MAD" text, and when the summary expands, the WhatsApp icon covers the content.
+## Current state
+- Hero section: `min-h-[85vh]` on mobile, `min-h-[70vh]` on tablet/desktop
+- Inner content padding: `py-12` on mobile, `py-32` on tablet/desktop
+- Search bar margin: `mt-6` mobile, `mt-10` desktop
+- Search bar padding: `p-4` mobile, `p-8` desktop
+- Text spacing: `space-y-4` mobile, `space-y-6` desktop
 
-## Fix
+## Changes — `src/pages/Index.tsx`
 
-### 1. `src/components/WhatsAppPopup.tsx`
-- Change the WhatsApp button's bottom position to be higher on mobile/tablet so it sits above the collapsed sidebar bar (~56px tall). Use `bottom-20 lg:bottom-6` instead of `bottom-6`.
-- Listen for the sidebar expanded state: since WhatsApp and Sidebar are sibling components, use a CSS-based approach — add a data attribute or CSS variable on the sidebar's expanded state, or simply increase the WhatsApp button bottom position enough to clear both collapsed and expanded states.
-- Simpler approach: use a higher default bottom on mobile (`bottom-20`) to clear the collapsed bar. When the sidebar expands (up to 60vh), the WhatsApp button should move further up. We can achieve this by having the ReservationSidebar communicate its height via a CSS custom property on `document.documentElement`, and the WhatsApp button reads it.
+### 1. Reduce min-height per breakpoint
+```
+Before: min-h-[85vh] md:min-h-[70vh]
+After:  min-h-[60vh] md:min-h-[50vh] lg:min-h-[55vh]
+```
 
-**Simplest approach**: The sidebar expanded content has `max-h-[60vh]`. We can:
-1. Set WhatsApp button to `bottom-[72px] lg:bottom-6` by default on mobile (clears the ~56px collapsed bar)
-2. Export the `mobileExpanded` state from ReservationSidebar or use a global CSS approach
+### 2. Reduce container padding
+```
+Before: py-12 md:py-32
+After:  py-8 md:py-16 lg:py-20
+```
 
-Since these are separate components, the cleanest solution is:
-- In `ReservationSidebar`: when `mobileExpanded` changes, set a CSS custom property `--sidebar-height` on `document.body`
-- In `WhatsAppPopup`: read that variable and adjust bottom position accordingly
+### 3. Tighten text + search bar spacing
+- Text block: `space-y-3 md:space-y-4` (from `space-y-4 md:space-y-6`)
+- Search bar margin: `mt-4 md:mt-6` (from `mt-6 md:mt-10`)
+- Search bar padding: `p-3 md:p-6` (from `p-4 md:p-8`)
 
-**Even simpler**: Just use a generous fixed bottom offset on mobile/tablet. The collapsed bar is ~56px. Set the WhatsApp button to `bottom-[72px] lg:bottom-6`. When expanded, the sidebar scrolls internally (`max-h-[60vh] overflow-y-auto`), so the bar itself doesn't grow beyond the viewport — the WhatsApp icon at `bottom-[72px]` will stay above it.
+### 4. Update admin preview ratio to match
+In `src/pages/admin/AdminSettings.tsx`, update the `heroRatio` to reflect the new min-heights:
+```
+Before: mobile 0.85, others 0.70
+After:  mobile 0.60, tablet 0.50, desktop 0.55
+```
 
-### Files to change
-- `src/components/WhatsAppPopup.tsx` — change button class from `bottom-6` to `bottom-[72px] lg:bottom-6`
-
-This is a one-line CSS class change.
+## Result
+The hero section becomes noticeably shorter on all devices, bringing the search bar and content below the fold into view sooner, while keeping the same layout structure and background media.
 
