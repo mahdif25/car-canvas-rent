@@ -197,6 +197,22 @@ const AdminFleet = () => {
             image_url: c.image_url!,
             is_default: c.is_default ?? i === 0,
             sort_order: i,
+            image_flipped: c.image_flipped ?? false,
+            image_scale_home: Number(c.image_scale_home ?? 1),
+            image_scale_home_mobile: Number(c.image_scale_home_mobile ?? 1),
+            image_scale_home_tablet: Number(c.image_scale_home_tablet ?? 1),
+            image_scale_fleet: Number(c.image_scale_fleet ?? 1),
+            image_scale_fleet_mobile: Number(c.image_scale_fleet_mobile ?? 1),
+            image_scale_fleet_tablet: Number(c.image_scale_fleet_tablet ?? 1),
+            image_scale_detail: Number(c.image_scale_detail ?? 1),
+            image_scale_detail_mobile: Number(c.image_scale_detail_mobile ?? 1),
+            image_scale_detail_tablet: Number(c.image_scale_detail_tablet ?? 1),
+            image_scale_reservation: Number(c.image_scale_reservation ?? 1),
+            image_scale_reservation_mobile: Number(c.image_scale_reservation_mobile ?? 1),
+            image_scale_reservation_tablet: Number(c.image_scale_reservation_tablet ?? 1),
+            image_scale_sidebar: Number(c.image_scale_sidebar ?? 1),
+            image_scale_sidebar_mobile: Number(c.image_scale_sidebar_mobile ?? 1),
+            image_scale_sidebar_tablet: Number(c.image_scale_sidebar_tablet ?? 1),
           }));
           const { error: colorErr } = await supabase.from("vehicle_colors").insert(colorInserts);
           if (colorErr) throw colorErr;
