@@ -41,7 +41,7 @@ const ReservationSidebar = ({ formData, rentalDays, vehicles, pricingTiers, curr
     <div className="space-y-4">
       {sidebarImage && (
         <div className="w-full h-28 bg-secondary rounded-lg overflow-hidden">
-          <img src={sidebarImage} alt={vehicle?.name} className="w-full h-full object-contain" style={{ transform: `${vehicle?.image_flipped ? 'scaleX(-1)' : ''} scale(${sidebarScale})`.trim() || 'none' }} />
+          <img src={sidebarImage} alt={vehicle?.name} className="w-full h-full object-contain" style={{ transform: `${imageFlipped ? 'scaleX(-1)' : ''} scale(${imageScale})`.trim() || 'none' }} />
         </div>
       )}
       {formData.pickup_location && (
