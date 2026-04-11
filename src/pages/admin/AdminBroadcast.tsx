@@ -494,10 +494,17 @@ const AdminBroadcast = () => {
                 )}
               </div>
 
-              {bodyHtml && (
+              {emailBuilderData.blocks.length > 0 && (
                 <div className="border-t pt-4">
-                  <p className="text-sm text-muted-foreground mb-1">Message</p>
-                  <p className="text-sm whitespace-pre-wrap">{bodyHtml}</p>
+                  <p className="text-sm text-muted-foreground mb-2">Aperçu de l'email</p>
+                  <div className="border rounded-lg overflow-hidden">
+                    <iframe
+                      title="Email preview"
+                      srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{margin:0;padding:0;}</style></head><body>${renderBlocksToHtml(emailBuilderData.blocks, emailBuilderData.globalStyles)}</body></html>`}
+                      className="w-full bg-background"
+                      style={{ height: '300px', border: 'none' }}
+                    />
+                  </div>
                 </div>
               )}
             </div>
