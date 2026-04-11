@@ -135,6 +135,7 @@ const AdminFleet = () => {
   const [tiers, setTiers] = useState(defaultTiers);
   const [featureInput, setFeatureInput] = useState("");
   const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
+  const [colorVariants, setColorVariants] = useState<Array<Partial<VehicleColor> & { _new?: boolean }>>([]);
 
   const { data: vehicles, isLoading } = useQuery({
     queryKey: ["admin-vehicles"],
