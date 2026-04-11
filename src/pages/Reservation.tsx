@@ -49,6 +49,16 @@ const Reservation = () => {
     promo_code: "",
     discount_amount: 0,
     coupon_id: "",
+    has_additional_driver: false,
+    additional_driver: {
+      first_name: "",
+      last_name: "",
+      email: "",
+      phone: "",
+      license_number: "",
+      nationality: "",
+      dob: "",
+    },
   });
 
   const [confirmationId, setConfirmationId] = useState("");
@@ -164,6 +174,21 @@ const Reservation = () => {
           customer_email: formData.email,
           discount_applied: formData.discount_amount,
         });
+      }
+
+      // Insert additional driver if present
+      if (formData.has_additional_driver && formData.additional_driver.first_name) {
+        const { error: addDriverErr } = await supabase.from("additional_drivers").insert({
+          reservation_id: reservation.id,
+          first_name: formData.additional_driver.first_name,
+          last_name: formData.additional_driver.last_name,
+          email: formData.additional_driver.email || null,
+          phone: formData.additional_driver.phone || null,
+          license_number: formData.additional_driver.license_number,
+          nationality: formData.additional_driver.nationality || null,
+          dob: formData.additional_driver.dob || null,
+        });
+        if (addDriverErr) console.error("Additional driver insert error:", addDriverErr);
       }
 
       const confId = reservation.id.slice(0, 8).toUpperCase();

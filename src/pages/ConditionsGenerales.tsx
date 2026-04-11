@@ -12,6 +12,14 @@ const defaultContent = `
   <p>Le locataire doit être âgé d'au moins 21 ans et être titulaire d'un permis de conduire valide depuis au moins 2 ans. Une pièce d'identité en cours de validité est obligatoire.</p>
 </div>
 <div>
+  <h2 class="text-xl font-semibold mb-3">2bis. Conducteur principal et responsabilité</h2>
+  <p>Le conducteur principal (signataire du contrat) est le seul responsable du véhicule pendant toute la durée de la location. En cas de dépassement de la date de restitution convenue, le conducteur principal reste entièrement responsable du véhicule, y compris de tous les frais, dommages et pénalités qui pourraient en découler, jusqu'à la restitution effective du véhicule.</p>
+</div>
+<div>
+  <h2 class="text-xl font-semibold mb-3">2ter. Conducteur supplémentaire</h2>
+  <p>Un conducteur supplémentaire peut être déclaré lors de la réservation. Le conducteur supplémentaire doit remplir les mêmes conditions que le conducteur principal (âge minimum, permis de conduire valide). Le conducteur principal reste toutefois le seul responsable du véhicule en toutes circonstances.</p>
+</div>
+<div>
   <h2 class="text-xl font-semibold mb-3">3. Réservation et paiement</h2>
   <p>La réservation est confirmée après validation en ligne. Le paiement du montant total de la location est dû au moment de la prise en charge du véhicule.</p>
 </div>

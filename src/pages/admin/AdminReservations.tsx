@@ -88,6 +88,14 @@ const AdminReservations = () => {
     },
   });
 
+  const { data: additionalDrivers = [] } = useQuery({
+    queryKey: ["additional-drivers-all"],
+    queryFn: async () => {
+      const { data } = await supabase.from("additional_drivers").select("*");
+      return data ?? [];
+    },
+  });
+
   const initEdit = (r: any): EditState => {
     const currentAddons = reservationAddons.filter((ra) => ra.reservation_id === r.id).map((ra) => ra.addon_id);
     return {
@@ -338,7 +346,9 @@ const AdminReservations = () => {
             <p className="text-center py-8 text-muted-foreground">Chargement...</p>
           ) : reservations && reservations.length > 0 ? (
             <div className="space-y-3">
-              {reservations.map((r) => (
+              {reservations.map((r) => {
+                const addDriver = additionalDrivers.find((ad: any) => ad.reservation_id === r.id);
+                return (
                 <ReservationRow
                   key={r.id}
                   r={r}
@@ -350,6 +360,7 @@ const AdminReservations = () => {
                   pricingTiers={pricingTiers}
                   locations={locations}
                   allAddons={allAddons}
+                  additionalDriver={addDriver || null}
                   onUpdateStatus={(status) => updateStatus.mutate({ id: r.id, status })}
                   onUpdateDeposit={(deposit_status) => updateDeposit.mutate({ id: r.id, deposit_status })}
                   onSave={(calc) => saveReservation.mutate({ id: r.id, edit: getEdit(r.id, r), calc })}
@@ -363,6 +374,22 @@ const AdminReservations = () => {
                     if (field === "email") updateObj.customer_email = value;
                     if (field === "phone") updateObj.customer_phone = value;
                     if (field === "license") updateObj.customer_license = value;
+                    // Handle additional driver fields
+                    if (field.startsWith("add_")) {
+                      const addDriverRecord = additionalDrivers.find((ad: any) => ad.reservation_id === id);
+                      if (addDriverRecord) {
+                        const addUpdateObj: any = {};
+                        const addField = field.replace("add_", "");
+                        addUpdateObj[addField] = value;
+                        const { error } = await supabase.from("additional_drivers").update(addUpdateObj).eq("id", addDriverRecord.id);
+                        if (!error) {
+                          qc.invalidateQueries({ queryKey: ["additional-drivers-all"] });
+                          toast({ title: "Conducteur supplémentaire mis à jour" });
+                        }
+                      }
+                      setClientEdits((prev) => ({ ...prev, [id]: null }));
+                      return;
+                    }
                     const { error } = await supabase.from("reservations").update(updateObj).eq("id", id);
                     if (!error) {
                       qc.invalidateQueries({ queryKey: ["admin-reservations"] });
@@ -371,7 +398,8 @@ const AdminReservations = () => {
                     setClientEdits((prev) => ({ ...prev, [id]: null }));
                   }}
                 />
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="text-center py-8 text-muted-foreground">Aucune réservation.</p>
@@ -415,6 +443,7 @@ interface RowProps {
   pricingTiers: any[];
   locations: any[];
   allAddons: any[];
+  additionalDriver: any | null;
   onUpdateStatus: (s: ReservationStatus) => void;
   onUpdateDeposit: (s: DepositStatus) => void;
   onSave: (calc: { totalPrice: number; deliveryFee: number; depositAmount: number }) => void;
@@ -426,7 +455,7 @@ interface RowProps {
   onSaveClientEdit: (id: string, field: string, value: string) => void;
 }
 
-const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, pricingTiers, locations, allAddons, onUpdateStatus, onUpdateDeposit, onSave, onPrint, isSaving, clientEdit, onStartClientEdit, onCancelClientEdit, onSaveClientEdit }: RowProps) => {
+const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, pricingTiers, locations, allAddons, additionalDriver, onUpdateStatus, onUpdateDeposit, onSave, onPrint, isSaving, clientEdit, onStartClientEdit, onCancelClientEdit, onSaveClientEdit }: RowProps) => {
   const calc = useCalc(edit, vehicles, pricingTiers, locations, allAddons);
 
   const toggleAddon = (addonId: string) => {
@@ -506,6 +535,49 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
             ))}
             <div><p className="text-muted-foreground">Créée le</p><p>{new Date(r.created_at).toLocaleDateString("fr-FR")}</p></div>
           </div>
+
+          {/* Additional driver info */}
+          {additionalDriver && (
+            <div className="bg-accent/30 border border-border rounded-lg p-4">
+              <p className="text-sm font-medium mb-3 flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-100 text-blue-700">Conducteur supplémentaire</span>
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                {[
+                  { label: "Prénom", field: "add_first_name", value: additionalDriver.first_name },
+                  { label: "Nom", field: "add_last_name", value: additionalDriver.last_name },
+                  { label: "Email", field: "add_email", value: additionalDriver.email || "—" },
+                  { label: "Téléphone", field: "add_phone", value: additionalDriver.phone || "—" },
+                  { label: "Permis", field: "add_license_number", value: additionalDriver.license_number },
+                  { label: "Nationalité", field: "add_nationality", value: additionalDriver.nationality || "—" },
+                  { label: "Date de naissance", field: "add_dob", value: additionalDriver.dob ? new Date(additionalDriver.dob).toLocaleDateString("fr-FR") : "—" },
+                ].map(({ label, field, value }) => (
+                  <div key={field}>
+                    <p className="text-muted-foreground">{label}</p>
+                    {clientEdit?.field === field ? (
+                      <div className="flex items-center gap-1 mt-1">
+                        <Input
+                          className="h-7 text-sm"
+                          value={clientEdit.value}
+                          onChange={(e) => onStartClientEdit(field, e.target.value)}
+                          autoFocus
+                        />
+                        <button onClick={() => onSaveClientEdit(r.id, field, clientEdit.value)} className="text-primary hover:text-primary/80"><Check size={16} /></button>
+                        <button onClick={onCancelClientEdit} className="text-muted-foreground hover:text-foreground"><X size={16} /></button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1">
+                        <p className={field === "add_email" ? "break-all" : ""}>{value}</p>
+                        {value !== "—" || field === "add_email" || field === "add_phone" || field === "add_nationality" ? (
+                          <button onClick={() => onStartClientEdit(field, field === "add_dob" ? (additionalDriver.dob || "") : (value === "—" ? "" : value))} className="text-muted-foreground hover:text-primary"><Pencil size={13} /></button>
+                        ) : null}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Editable fields */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

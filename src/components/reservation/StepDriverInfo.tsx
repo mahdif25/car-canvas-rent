@@ -1,9 +1,9 @@
-import { useEffect, useRef } from "react";
-import { ReservationFormData } from "@/lib/types";
+import { useEffect, useRef, useState } from "react";
+import { ReservationFormData, AdditionalDriver } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { User, Mail, Phone, CreditCard, Globe, CalendarDays } from "lucide-react";
+import { User, Mail, Phone, CreditCard, Globe, CalendarDays, UserPlus } from "lucide-react";
 import { Vehicle } from "@/hooks/useVehicles";
 import { Link } from "react-router-dom";
 
@@ -21,27 +21,23 @@ interface Props {
   };
 }
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_REGEX = /^(?:(?:\+|00)212|0)[5-7]\d{8}$/;
+
 const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadCaptureMode = "blur" }: Props) => {
   const prevFieldsRef = useRef<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Detect autofill: when multiple fields populate in one render cycle
   useEffect(() => {
     const watched = ["first_name", "last_name", "email", "phone"] as const;
     const prev = prevFieldsRef.current;
     const nowFilled: Record<string, string> = {};
     let newlyFilledCount = 0;
-
     for (const key of watched) {
       const val = formData[key];
-      if (val) {
-        nowFilled[key] = val;
-        if (!prev[key]) newlyFilledCount++;
-      }
+      if (val) { nowFilled[key] = val; if (!prev[key]) newlyFilledCount++; }
     }
-
     prevFieldsRef.current = nowFilled;
-
-    // If 2+ fields went from empty→filled simultaneously, it's likely autofill
     if (newlyFilledCount >= 2 && analytics) {
       const allFields = collectAllFields();
       const capiAllowed = leadCaptureMode !== "submit";
@@ -60,12 +56,37 @@ const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadC
     return fields;
   };
 
+  const validateEmail = (value: string, fieldKey: string) => {
+    if (!value) { setErrors(p => { const n = { ...p }; delete n[fieldKey]; return n; }); return; }
+    if (!EMAIL_REGEX.test(value)) {
+      setErrors(p => ({ ...p, [fieldKey]: "Format invalide. Exemple : nom@domaine.com" }));
+    } else {
+      setErrors(p => { const n = { ...p }; delete n[fieldKey]; return n; });
+    }
+  };
+
+  const validatePhone = (value: string, fieldKey: string) => {
+    if (!value) { setErrors(p => { const n = { ...p }; delete n[fieldKey]; return n; }); return; }
+    const cleaned = value.replace(/[\s\-\.]/g, "");
+    if (!PHONE_REGEX.test(cleaned)) {
+      setErrors(p => ({ ...p, [fieldKey]: "Format invalide. Exemples : 0600000000 ou +212600000000" }));
+    } else {
+      setErrors(p => { const n = { ...p }; delete n[fieldKey]; return n; });
+    }
+  };
+
   const handleBlur = (field: string, value: string) => {
+    if (field === "email") validateEmail(value, "email");
+    if (field === "phone") validatePhone(value, "phone");
     if (!value || !analytics) return;
     const fields: Record<string, string> = { [field]: value, ...collectAllFields() };
     const capiAllowed = leadCaptureMode !== "submit";
     analytics.captureLeadField(fields, 3, capiAllowed);
     analytics.trackFieldCapture(fields);
+  };
+
+  const updateAdditionalDriver = (updates: Partial<AdditionalDriver>) => {
+    updateForm({ additional_driver: { ...formData.additional_driver, ...updates } });
   };
 
   const handleNext = () => {
@@ -76,7 +97,6 @@ const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadC
         analytics.trackFieldCapture(fields);
       }
     }
-    // Store user data in sessionStorage for Advanced Matching
     if (formData.email) sessionStorage.setItem("fb_em", formData.email);
     if (formData.first_name) sessionStorage.setItem("fb_fn", formData.first_name);
     if (formData.last_name) sessionStorage.setItem("fb_ln", formData.last_name);
@@ -84,13 +104,27 @@ const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadC
     onNext();
   };
 
+  const additionalDriverValid = !formData.has_additional_driver || (
+    formData.additional_driver.first_name &&
+    formData.additional_driver.last_name &&
+    formData.additional_driver.phone &&
+    formData.additional_driver.license_number &&
+    !errors.add_email && !errors.add_phone
+  );
+
   const isValid =
     formData.first_name &&
     formData.last_name &&
     formData.email &&
     formData.phone &&
     formData.license_number &&
-    formData.terms_accepted;
+    formData.terms_accepted &&
+    !errors.email && !errors.phone &&
+    additionalDriverValid;
+
+  const ErrorMsg = ({ field }: { field: string }) => errors[field] ? (
+    <p className="text-xs text-destructive mt-1">{errors[field]}</p>
+  ) : null;
 
   return (
     <form autoComplete="on" onSubmit={(e) => e.preventDefault()} className="space-y-6">
@@ -98,7 +132,7 @@ const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadC
 
       <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
         <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-          <User size={16} className="text-primary" /> Informations personnelles
+          <User size={16} className="text-primary" /> Conducteur principal
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -106,14 +140,14 @@ const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadC
             <label className="text-sm font-medium">Prénom *</label>
             <div className="relative">
               <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input className="pl-9" name="fname" autoComplete="given-name" value={formData.first_name} onChange={(e) => updateForm({ first_name: e.target.value })} onBlur={(e) => handleBlur("first_name", e.target.value)} placeholder="Votre prénom" />
+              <Input className="pl-9" name="fname" autoComplete="given-name" value={formData.first_name} onChange={(e) => updateForm({ first_name: e.target.value })} placeholder="Votre prénom" />
             </div>
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Nom *</label>
             <div className="relative">
               <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input className="pl-9" name="lname" autoComplete="family-name" value={formData.last_name} onChange={(e) => updateForm({ last_name: e.target.value })} onBlur={(e) => handleBlur("last_name", e.target.value)} placeholder="Votre nom" />
+              <Input className="pl-9" name="lname" autoComplete="family-name" value={formData.last_name} onChange={(e) => updateForm({ last_name: e.target.value })} placeholder="Votre nom" />
             </div>
           </div>
           <div className="space-y-2">
@@ -122,6 +156,7 @@ const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadC
               <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input className="pl-9" type="email" name="email" autoComplete="email" value={formData.email} onChange={(e) => updateForm({ email: e.target.value })} onBlur={(e) => handleBlur("email", e.target.value)} placeholder="email@exemple.com" />
             </div>
+            <ErrorMsg field="email" />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Téléphone *</label>
@@ -129,12 +164,13 @@ const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadC
               <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input className="pl-9" name="phone" autoComplete="tel" value={formData.phone} onChange={(e) => updateForm({ phone: e.target.value })} onBlur={(e) => handleBlur("phone", e.target.value)} placeholder="+212 6 00 00 00 00" />
             </div>
+            <ErrorMsg field="phone" />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">N° Permis de conduire *</label>
             <div className="relative">
               <CreditCard size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input className="pl-9" name="license" autoComplete="off" value={formData.license_number} onChange={(e) => updateForm({ license_number: e.target.value })} onBlur={(e) => handleBlur("license_number", e.target.value)} placeholder="Numéro du permis" />
+              <Input className="pl-9" name="license" autoComplete="off" value={formData.license_number} onChange={(e) => updateForm({ license_number: e.target.value })} placeholder="Numéro du permis" />
             </div>
           </div>
           <div className="space-y-2">
@@ -152,6 +188,76 @@ const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadC
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Additional driver toggle */}
+      <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+        <label className="flex items-center gap-3 cursor-pointer">
+          <Checkbox
+            checked={formData.has_additional_driver}
+            onCheckedChange={(checked) => updateForm({ has_additional_driver: checked === true })}
+          />
+          <div className="flex items-center gap-2">
+            <UserPlus size={16} className="text-primary" />
+            <span className="text-sm font-medium">Ajouter un conducteur supplémentaire</span>
+          </div>
+        </label>
+
+        {formData.has_additional_driver && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-border">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Prénom *</label>
+              <div className="relative">
+                <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input className="pl-9" value={formData.additional_driver.first_name} onChange={(e) => updateAdditionalDriver({ first_name: e.target.value })} placeholder="Prénom" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Nom *</label>
+              <div className="relative">
+                <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input className="pl-9" value={formData.additional_driver.last_name} onChange={(e) => updateAdditionalDriver({ last_name: e.target.value })} placeholder="Nom" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Email</label>
+              <div className="relative">
+                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input className="pl-9" type="email" value={formData.additional_driver.email} onChange={(e) => updateAdditionalDriver({ email: e.target.value })} onBlur={(e) => validateEmail(e.target.value, "add_email")} placeholder="email@exemple.com" />
+              </div>
+              <ErrorMsg field="add_email" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Téléphone *</label>
+              <div className="relative">
+                <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input className="pl-9" value={formData.additional_driver.phone} onChange={(e) => updateAdditionalDriver({ phone: e.target.value })} onBlur={(e) => validatePhone(e.target.value, "add_phone")} placeholder="+212 6 00 00 00 00" />
+              </div>
+              <ErrorMsg field="add_phone" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">N° Permis de conduire *</label>
+              <div className="relative">
+                <CreditCard size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input className="pl-9" value={formData.additional_driver.license_number} onChange={(e) => updateAdditionalDriver({ license_number: e.target.value })} placeholder="Numéro du permis" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Nationalité</label>
+              <div className="relative">
+                <Globe size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input className="pl-9" value={formData.additional_driver.nationality} onChange={(e) => updateAdditionalDriver({ nationality: e.target.value })} placeholder="Marocaine" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Date de naissance</label>
+              <div className="relative">
+                <CalendarDays size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input className="pl-9" type="date" value={formData.additional_driver.dob} onChange={(e) => updateAdditionalDriver({ dob: e.target.value })} />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex items-start gap-3">

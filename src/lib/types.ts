@@ -54,6 +54,16 @@ export interface Reservation {
   created_at: string;
 }
 
+export interface AdditionalDriver {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  license_number: string;
+  nationality: string;
+  dob: string;
+}
+
 export interface ReservationFormData {
   // Step 1
   pickup_location: string;
@@ -78,4 +88,6 @@ export interface ReservationFormData {
   promo_code: string;
   discount_amount: number;
   coupon_id: string;
+  has_additional_driver: boolean;
+  additional_driver: AdditionalDriver;
 }
