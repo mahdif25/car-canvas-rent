@@ -5,10 +5,12 @@ import { getActiveFeatures } from "@/lib/vehicle-features";
 import Layout from "@/components/layout/Layout";
 import { useVehicles, usePricingTiers, getStartingPriceFromTiers } from "@/hooks/useVehicles";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDeviceType, getScaleForDevice } from "@/hooks/useDeviceScale";
 
 const Fleet = () => {
   const [category, setCategory] = useState<string>("all");
   const [transmission, setTransmission] = useState<string>("all");
+  const deviceType = useDeviceType();
 
   const { data: vehicles = [], isLoading: loadingVehicles } = useVehicles();
   const { data: allTiers = [], isLoading: loadingTiers } = usePricingTiers();
@@ -112,7 +114,7 @@ const Fleet = () => {
                         alt={v.name}
                         className="w-full h-full object-contain transition-transform duration-300"
                         style={{
-                          transform: `${v.image_flipped ? 'scaleX(-1)' : ''} scale(${v.image_scale_fleet ?? 1})`.trim() || 'none'
+                          transform: `${v.image_flipped ? 'scaleX(-1)' : ''} scale(${getScaleForDevice(v, 'fleet', deviceType)})`.trim() || 'none'
                         }}
                       />
                       <div className="absolute top-3 right-3 w-9 h-9 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center">

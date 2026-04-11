@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Users, Fuel, Settings2, Shield } from "lucide-react";
 import { getActiveFeatures } from "@/lib/vehicle-features";
 import { Vehicle, PricingTier, getDailyRateFromTiers } from "@/hooks/useVehicles";
+import { useDeviceType, getScaleForDevice } from "@/hooks/useDeviceScale";
 
 interface Props {
   formData: ReservationFormData;
@@ -16,6 +17,7 @@ interface Props {
 
 const StepVehicle = ({ formData, updateForm, rentalDays, onNext, onBack, vehicles, pricingTiers }: Props) => {
   const available = vehicles.filter((v) => v.is_available);
+  const deviceType = useDeviceType();
 
   const selectVehicle = (id: string) => {
     updateForm({ vehicle_id: id });
@@ -43,7 +45,7 @@ const StepVehicle = ({ formData, updateForm, rentalDays, onNext, onBack, vehicle
               }`}
             >
               <div className="w-full md:w-48 h-32 rounded-md overflow-hidden bg-secondary shrink-0">
-                <img src={v.image_url || "/placeholder.svg"} alt={v.name} className="w-full h-full object-contain" style={{ transform: `${v.image_flipped ? 'scaleX(-1)' : ''} scale(${v.image_scale_reservation ?? 1})`.trim() || 'none' }} />
+                <img src={v.image_url || "/placeholder.svg"} alt={v.name} className="w-full h-full object-contain" style={{ transform: `${v.image_flipped ? 'scaleX(-1)' : ''} scale(${getScaleForDevice(v, 'reservation', deviceType)})`.trim() || 'none' }} />
               </div>
               <div className="flex-1 flex flex-col justify-between">
                 <div>

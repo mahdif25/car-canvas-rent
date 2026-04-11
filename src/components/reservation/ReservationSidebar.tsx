@@ -3,6 +3,7 @@ import { ReservationFormData } from "@/lib/types";
 import { Vehicle, PricingTier, AddonOption, getDailyRateFromTiers } from "@/hooks/useVehicles";
 import { Location } from "@/hooks/useLocations";
 import { CalendarDays, MapPin, Car, ChevronUp, ChevronDown } from "lucide-react";
+import { useDeviceScale } from "@/hooks/useDeviceScale";
 
 interface Props {
   formData: ReservationFormData;
@@ -17,6 +18,7 @@ interface Props {
 const ReservationSidebar = ({ formData, rentalDays, vehicles, pricingTiers, currentStep }: Props) => {
   const [mobileExpanded, setMobileExpanded] = useState(false);
   const vehicle = vehicles.find((v) => v.id === formData.vehicle_id);
+  const sidebarScale = useDeviceScale(vehicle, "sidebar");
   const tiers = pricingTiers.filter((t) => t.vehicle_id === formData.vehicle_id);
   const dailyRate = vehicle ? getDailyRateFromTiers(tiers, rentalDays) : 0;
   const vehicleTotal = dailyRate * rentalDays;
@@ -28,7 +30,7 @@ const ReservationSidebar = ({ formData, rentalDays, vehicles, pricingTiers, curr
     <div className="space-y-4">
       {vehicle?.image_url && (
         <div className="w-full h-28 bg-secondary rounded-lg overflow-hidden">
-          <img src={vehicle.image_url} alt={vehicle.name} className="w-full h-full object-contain" style={{ transform: `${vehicle.image_flipped ? 'scaleX(-1)' : ''} scale(${vehicle.image_scale_sidebar ?? 1})`.trim() || 'none' }} />
+          <img src={vehicle.image_url} alt={vehicle.name} className="w-full h-full object-contain" style={{ transform: `${vehicle.image_flipped ? 'scaleX(-1)' : ''} scale(${sidebarScale})`.trim() || 'none' }} />
         </div>
       )}
       {formData.pickup_location && (

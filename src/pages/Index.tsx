@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Car, Shield, Clock, MapPin, ChevronRight, ChevronLeft, Star, Users, Fuel, Settings2, DoorOpen, Briefcase, Snowflake } from "lucide-react";
+import { useDeviceType, getScaleForDevice } from "@/hooks/useDeviceScale";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { useLocations } from "@/hooks/useLocations";
@@ -46,6 +47,7 @@ const Index = () => {
   const [pickupLocation, setPickupLocation] = useState("");
   const [pickupDate, setPickupDate] = useState("");
   const [returnDate, setReturnDate] = useState("");
+  const deviceType = useDeviceType();
 
   const { data: vehicles = [], isLoading: loadingVehicles } = useVehicles();
   const { data: allTiers = [], isLoading: loadingTiers } = usePricingTiers();
@@ -295,7 +297,7 @@ const Index = () => {
                         alt={v.name}
                         className="relative z-10 w-full h-full object-contain transition-transform duration-300"
                         style={{
-                          transform: `${v.image_flipped ? 'scaleX(-1)' : ''} scale(${v.image_scale_home ?? 1})`.trim() || 'none'
+                          transform: `${v.image_flipped ? 'scaleX(-1)' : ''} scale(${getScaleForDevice(v, 'home', deviceType)})`.trim() || 'none'
                         }}
                       />
                     </div>
