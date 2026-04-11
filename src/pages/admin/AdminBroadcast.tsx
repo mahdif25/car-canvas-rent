@@ -437,6 +437,21 @@ const AdminBroadcast = () => {
                   </>
                 )}
               </div>
+
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Contenu de l'email</label>
+                <EmailBuilder
+                  value={emailBuilderData}
+                  onChange={setEmailBuilderData}
+                  couponMode={couponMode}
+                  discountAmount={discountAmount}
+                  couponPrefix={couponPrefix}
+                  friendDiscountAmount={friendDiscountAmount}
+                  couponExpiresAt={couponExpiresAt}
+                  minTotalPrice={minTotalPrice}
+                  minRentalDays={minRentalDays}
+                />
+              </div>
             </div>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
