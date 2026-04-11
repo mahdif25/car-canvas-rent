@@ -127,7 +127,37 @@ const AdminSettings = () => {
                   <p className="text-xs text-muted-foreground">YouTube ou lien direct .mp4 supporté</p>
                 </div>
               )}
-              <Button onClick={() => save(["hero_bg_type", "hero_bg_value", "hero_overlay_opacity", "hero_video_start_time"])} disabled={updateMutation.isPending}>
+              {form.hero_bg_type === "video" && (
+                <>
+                  <div className="space-y-2">
+                    <Label>Zoom mobile ({((form as any).hero_video_mobile_scale ?? 1.5).toFixed(1)}x)</Label>
+                    <Slider
+                      value={[(form as any).hero_video_mobile_scale ?? 1.5]}
+                      onValueChange={([v]) => setForm({ ...form, hero_video_mobile_scale: v } as any)}
+                      min={1} max={3} step={0.1}
+                    />
+                    <p className="text-xs text-muted-foreground">Agrandir la vidéo sur les écrans mobiles pour éviter les bords noirs</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Zoom desktop ({((form as any).hero_video_desktop_scale ?? 1.2).toFixed(1)}x)</Label>
+                    <Slider
+                      value={[(form as any).hero_video_desktop_scale ?? 1.2]}
+                      onValueChange={([v]) => setForm({ ...form, hero_video_desktop_scale: v } as any)}
+                      min={1} max={3} step={0.1}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Position verticale ({(form as any).hero_video_offset_y ?? 50}%)</Label>
+                    <Slider
+                      value={[(form as any).hero_video_offset_y ?? 50]}
+                      onValueChange={([v]) => setForm({ ...form, hero_video_offset_y: v } as any)}
+                      min={0} max={100} step={1}
+                    />
+                    <p className="text-xs text-muted-foreground">0% = haut, 50% = centré, 100% = bas</p>
+                  </div>
+                </>
+              )}
+              <Button onClick={() => save(["hero_bg_type", "hero_bg_value", "hero_overlay_opacity", "hero_video_start_time", "hero_video_mobile_scale" as any, "hero_video_desktop_scale" as any, "hero_video_offset_y" as any])} disabled={updateMutation.isPending}>
                 Sauvegarder
               </Button>
             </div>

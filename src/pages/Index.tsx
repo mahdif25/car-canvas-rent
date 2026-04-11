@@ -86,29 +86,54 @@ const Index = () => {
   return (
     <Layout>
       {/* Hero */}
-      <section className="relative text-white overflow-hidden" style={heroType === "color" && heroValue ? { backgroundColor: heroValue } : undefined}>
-        {heroType === "color" && !heroValue && <div className="absolute inset-0 bg-dark" />}
-        {heroType === "image" && heroValue && (
-          <img src={heroValue} alt="" className="absolute inset-0 w-full h-full object-cover" />
-        )}
-        {heroType === "video" && heroValue && (() => {
-          const ytId = getYouTubeId(heroValue);
-          return ytId ? (
-            <iframe
-              src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&playlist=${ytId}${videoStartTime ? `&start=${videoStartTime}` : ''}`}
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 min-w-full min-h-full w-[177.78vh] h-[56.25vw] pointer-events-none"
-              allow="autoplay; encrypted-media"
-              frameBorder="0"
-              title="Hero video"
-            />
-          ) : (
-            <video src={heroValue} className="absolute inset-0 w-full h-full object-cover" autoPlay muted loop playsInline />
-          );
-        })()}
-        <div className="absolute inset-0 bg-dark" style={{ opacity: heroType !== "color" ? overlayOpacity : 0 }} />
-        <div className="absolute inset-0 bg-gradient-to-r from-dark/95 to-dark/60" style={{ opacity: heroType === "color" ? 1 : 0 }} />
-        <div className="container relative z-10 py-20 md:py-32">
-          <div className={`max-w-2xl space-y-6 ${titleStyle.textAlign === "center" ? "mx-auto" : ""}`}>
+      <section className="relative text-white overflow-hidden min-h-[85vh] md:min-h-[70vh] flex flex-col justify-center" style={heroType === "color" && heroValue ? { backgroundColor: heroValue } : undefined}>
+        {/* Background media wrapper */}
+        <div className="absolute inset-0 overflow-hidden">
+          {heroType === "color" && !heroValue && <div className="absolute inset-0 bg-dark" />}
+          {heroType === "image" && heroValue && (
+            <img src={heroValue} alt="" className="absolute inset-0 w-full h-full object-cover" />
+          )}
+          {heroType === "video" && heroValue && (() => {
+            const ytId = getYouTubeId(heroValue);
+            const mobileScale = siteSettings?.hero_video_mobile_scale ?? 1.5;
+            const desktopScale = siteSettings?.hero_video_desktop_scale ?? 1.2;
+            const offsetY = siteSettings?.hero_video_offset_y ?? 50;
+            return ytId ? (
+              <>
+                {/* Mobile YouTube */}
+                <iframe
+                  src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&playlist=${ytId}${videoStartTime ? `&start=${videoStartTime}` : ''}`}
+                  className="absolute inset-0 w-full h-full pointer-events-none md:hidden"
+                  style={{ transform: `scale(${mobileScale}) translateY(${offsetY - 50}%)` }}
+                  allow="autoplay; encrypted-media"
+                  frameBorder="0"
+                  title="Hero video"
+                />
+                {/* Desktop YouTube */}
+                <iframe
+                  src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&playlist=${ytId}${videoStartTime ? `&start=${videoStartTime}` : ''}`}
+                  className="absolute inset-0 w-full h-full pointer-events-none hidden md:block"
+                  style={{ transform: `scale(${desktopScale}) translateY(${offsetY - 50}%)` }}
+                  allow="autoplay; encrypted-media"
+                  frameBorder="0"
+                  title="Hero video"
+                />
+              </>
+            ) : (
+              <video
+                src={heroValue}
+                className="absolute inset-0 w-full h-full object-cover"
+                style={{ objectPosition: `center ${offsetY}%` }}
+                autoPlay muted loop playsInline
+              />
+            );
+          })()}
+          <div className="absolute inset-0 bg-dark" style={{ opacity: heroType !== "color" ? overlayOpacity : 0 }} />
+          <div className="absolute inset-0 bg-gradient-to-r from-dark/95 to-dark/60" style={{ opacity: heroType === "color" ? 1 : 0 }} />
+        </div>
+
+        <div className="container relative z-10 py-12 md:py-32">
+          <div className={`max-w-2xl space-y-4 md:space-y-6 ${titleStyle.textAlign === "center" ? "mx-auto" : ""}`}>
             <h1 className={`${getStyleClasses(titleStyle)} leading-tight ${getAnimationClass(titleAnim)}`}>
               {titleText} {titleHighlight && <span className="text-primary">{titleHighlight}</span>}
             </h1>
@@ -118,7 +143,7 @@ const Index = () => {
           </div>
 
           {/* Search Bar */}
-          <div className="mt-10 bg-background text-foreground p-6 md:p-8 rounded-2xl shadow-xl max-w-4xl">
+          <div className="mt-6 md:mt-10 bg-background text-foreground p-4 md:p-8 rounded-2xl shadow-xl max-w-4xl">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
               <div className="space-y-2">
                 <label className="text-sm font-medium flex items-center gap-1.5">

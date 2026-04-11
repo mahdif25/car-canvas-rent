@@ -671,6 +671,9 @@ export type Database = {
           hero_title_highlight: string
           hero_title_style: Json
           hero_title_text: string
+          hero_video_desktop_scale: number
+          hero_video_mobile_scale: number
+          hero_video_offset_y: number
           hero_video_start_time: number
           id: string
           lead_capture_mode: string
@@ -708,6 +711,9 @@ export type Database = {
           hero_title_highlight?: string
           hero_title_style?: Json
           hero_title_text?: string
+          hero_video_desktop_scale?: number
+          hero_video_mobile_scale?: number
+          hero_video_offset_y?: number
           hero_video_start_time?: number
           id?: string
           lead_capture_mode?: string
@@ -745,6 +751,9 @@ export type Database = {
           hero_title_highlight?: string
           hero_title_style?: Json
           hero_title_text?: string
+          hero_video_desktop_scale?: number
+          hero_video_mobile_scale?: number
+          hero_video_offset_y?: number
           hero_video_start_time?: number
           id?: string
           lead_capture_mode?: string
