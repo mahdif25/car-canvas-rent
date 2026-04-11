@@ -117,7 +117,7 @@ const Fleet = () => {
                 const vehicleTiers = allTiers.filter((t) => t.vehicle_id === v.id);
                 const startingPrice = getStartingPriceFromTiers(vehicleTiers);
                 const vehicleColors = allColors.filter((c) => c.vehicle_id === v.id);
-                const displayImage = getDisplayImage(v.id, v.image_url);
+                const { image: displayImage, flipped: imageFlipped, scale: imageScale } = getDisplayInfo(v.id, v);
                 const selectedColorId = selectedColors[v.id]?.id || getDefaultColor(allColors, v.id)?.id;
 
                 return (
@@ -132,7 +132,7 @@ const Fleet = () => {
                         alt={v.name}
                         className="w-full h-full object-contain transition-transform duration-300"
                         style={{
-                          transform: `${v.image_flipped ? 'scaleX(-1)' : ''} scale(${getScaleForDevice(v, 'fleet', deviceType)})`.trim() || 'none'
+                          transform: `${imageFlipped ? 'scaleX(-1)' : ''} scale(${imageScale})`.trim() || 'none'
                         }}
                       />
                       <div className="absolute top-3 right-3 w-9 h-9 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center">
