@@ -785,7 +785,11 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
               >
                 <Save size={14} /> Sauvegarder
               </Button>
-              <Button size="sm" variant="outline" onClick={() => onPrint(calc)} className="gap-1 flex-1 sm:flex-none">
+              <Button size="sm" variant="outline" onClick={() => {
+                // Attach plate number to r for receipt printing
+                r._assignedPlateNumber = availablePlates.find((p: any) => p.id === r.assigned_plate_id)?.plate_number || "";
+                onPrint(calc);
+              }} className="gap-1 flex-1 sm:flex-none">
                 <Printer size={14} /> Imprimer
               </Button>
             </div>
