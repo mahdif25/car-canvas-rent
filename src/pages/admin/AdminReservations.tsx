@@ -6,13 +6,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { useMemo, useState } from "react";
 import { useVehicles, usePricingTiers, getDailyRateFromTiers } from "@/hooks/useVehicles";
-import { useLocations, getDeliveryFee } from "@/hooks/useLocations";
-import { Printer, Save, Pencil, Check, X } from "lucide-react";
+import { useLocations, useAllLocations, getDeliveryFee } from "@/hooks/useLocations";
+import { Printer, Save, Pencil, Check, X, Plus } from "lucide-react";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import type { Database } from "@/integrations/supabase/types";
+import ManualReservationDialog from "@/components/admin/ManualReservationDialog";
 
 type ReservationStatus = Database["public"]["Enums"]["reservation_status"];
 type DepositStatus = Database["public"]["Enums"]["deposit_status"];
@@ -54,7 +56,7 @@ const AdminReservations = () => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editState, setEditState] = useState<Record<string, EditState>>({});
   const [clientEdits, setClientEdits] = useState<Record<string, { field: string; value: string } | null>>({});
-
+  const [manualOpen, setManualOpen] = useState(false);
   const { data: reservations, isLoading } = useQuery({
     queryKey: ["admin-reservations", statusFilter],
     queryFn: async () => {
@@ -71,7 +73,7 @@ const AdminReservations = () => {
   const { data: vehicles = [] } = useVehicles();
   const { data: pricingTiers = [] } = usePricingTiers();
   const { data: locations = [] } = useLocations();
-
+  const { data: allLocations = [] } = useAllLocations();
   const { data: allAddons = [] } = useQuery({
     queryKey: ["all-addons"],
     queryFn: async () => {
@@ -327,18 +329,37 @@ const AdminReservations = () => {
     <AdminLayout>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h1 className="text-2xl font-bold">Réservations</h1>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filtrer par statut" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tous les statuts</SelectItem>
-            {(Object.keys(statusLabels) as ReservationStatus[]).map((s) => (
-              <SelectItem key={s} value={s}>{statusLabels[s]}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button size="sm" onClick={() => setManualOpen(true)} className="gap-1">
+            <Plus size={14} /> Nouvelle réservation
+          </Button>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Filtrer par statut" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les statuts</SelectItem>
+              {(Object.keys(statusLabels) as ReservationStatus[]).map((s) => (
+                <SelectItem key={s} value={s}>{statusLabels[s]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
+
+      <ManualReservationDialog
+        open={manualOpen}
+        onOpenChange={setManualOpen}
+        vehicles={vehicles}
+        pricingTiers={pricingTiers}
+        locations={allLocations.length > 0 ? allLocations : locations}
+        allAddons={allAddons}
+        onSuccess={() => {
+          qc.invalidateQueries({ queryKey: ["admin-reservations"] });
+          qc.invalidateQueries({ queryKey: ["reservation-addons-all"] });
+          qc.invalidateQueries({ queryKey: ["additional-drivers-all"] });
+        }}
+      />
 
       <Card>
         <CardContent className="pt-6">
@@ -476,6 +497,8 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
           <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[r.status as ReservationStatus]}`}>
             {statusLabels[r.status as ReservationStatus]}
           </span>
+          {r.is_manual && <Badge variant="outline" className="text-[10px] px-1.5 py-0">Manuel</Badge>}
+          {r.payment_method === "cash" && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Cash</Badge>}
           <span className="font-medium text-sm">{r.customer_first_name} {r.customer_last_name}</span>
           <span className="text-sm text-muted-foreground">{(r as any).vehicles?.name}</span>
         </div>
@@ -492,9 +515,13 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
       >
         <div className="flex items-center justify-between mb-1">
           <span className="font-medium text-sm">{r.customer_first_name} {r.customer_last_name}</span>
-          <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${statusColors[r.status as ReservationStatus]}`}>
-            {statusLabels[r.status as ReservationStatus]}
-          </span>
+          <div className="flex items-center gap-1">
+            {r.is_manual && <Badge variant="outline" className="text-[10px] px-1.5 py-0">Manuel</Badge>}
+            {r.payment_method === "cash" && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Cash</Badge>}
+            <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${statusColors[r.status as ReservationStatus]}`}>
+              {statusLabels[r.status as ReservationStatus]}
+            </span>
+          </div>
         </div>
         <p className="text-xs text-muted-foreground">{(r as any).vehicles?.name}</p>
         <div className="flex items-center justify-between mt-1.5 text-xs">
