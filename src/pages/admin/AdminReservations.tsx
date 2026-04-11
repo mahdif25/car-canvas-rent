@@ -297,6 +297,7 @@ const AdminReservations = () => {
       <div class="section">
         <div class="section-title">Détails de la Réservation</div>
         <div class="row"><span class="label">Véhicule</span><span class="value">${vehicle?.name || "—"}</span></div>
+        ${r.status === "active" && r.assigned_plate_id ? `<div class="row"><span class="label">Immatriculation</span><span class="value" style="font-family:monospace;font-weight:700">${r._assignedPlateNumber || "—"}</span></div>` : ""}
         <div class="row"><span class="label">Durée</span><span class="value">${calc.days} jour${calc.days > 1 ? "s" : ""}</span></div>
         <div class="row"><span class="label">Du</span><span class="value">${fmtDate(edit.pickup_date)}</span></div>
         <div class="row"><span class="label">Au</span><span class="value">${fmtDate(edit.return_date)}</span></div>
