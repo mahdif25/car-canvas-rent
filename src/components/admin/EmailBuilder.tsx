@@ -460,7 +460,12 @@ const EmailBuilder = ({ value, onChange, couponMode = 'none', discountAmount = '
       </Collapsible>
 
       {/* Blocks */}
-      <ScrollArea className="max-h-[50vh] md:max-h-[60vh]">
+      <ScrollArea className="max-h-[50vh] md:max-h-[60vh]" ref={(node) => {
+        if (node) {
+          const viewport = node.querySelector('[data-radix-scroll-area-viewport]') as HTMLDivElement | null;
+          if (viewport) scrollViewportRef.current = viewport;
+        }
+      }}>
         <div className="space-y-2 pr-2">
           {blocks.map(block => renderBlockEditor(block))}
         </div>
