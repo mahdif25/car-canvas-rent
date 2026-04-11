@@ -59,8 +59,15 @@ const ReservationSidebar = ({ formData, rentalDays, vehicles, pricingTiers, curr
       {vehicle && (
         <div className="flex items-start gap-2 text-sm">
           <Car size={16} className="text-primary mt-0.5 shrink-0" />
-          <div>
-            <p className="font-medium">{vehicle.name}</p>
+          <div className="flex-1">
+            <div className="flex items-center justify-between">
+              <p className="font-medium">{vehicle.name}</p>
+              {onChangeVehicle && currentStep > 2 && (
+                <button onClick={onChangeVehicle} className="text-xs text-primary hover:underline">
+                  Modifier
+                </button>
+              )}
+            </div>
             <p className="text-muted-foreground">{dailyRate} MAD/jour</p>
           </div>
         </div>
