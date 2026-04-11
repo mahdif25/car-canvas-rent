@@ -30,12 +30,14 @@ const Fleet = () => {
   const categories = [...new Set(vehicles.map((v) => v.category))];
   const isLoading = loadingVehicles || loadingTiers;
 
-  const getDisplayImage = (vehicleId: string, defaultImage: string | null) => {
+  const getDisplayInfo = (vehicleId: string, vehicle: any) => {
     const selected = selectedColors[vehicleId];
-    if (selected) return selected.image_url;
     const def = getDefaultColor(allColors, vehicleId);
-    if (def) return def.image_url;
-    return defaultImage || "/placeholder.svg";
+    const activeColor = selected || def;
+    const image = activeColor?.image_url || vehicle.image_url || "/placeholder.svg";
+    const flipped = activeColor ? activeColor.image_flipped : vehicle.image_flipped;
+    const scale = activeColor ? getScaleForColorOnDevice(activeColor, 'fleet', deviceType) : getScaleForDevice(vehicle, 'fleet', deviceType);
+    return { image, flipped, scale };
   };
 
   return (

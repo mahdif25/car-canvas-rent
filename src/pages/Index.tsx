@@ -285,8 +285,11 @@ const Index = () => {
                 const vehicleColors = allColors.filter((c) => c.vehicle_id === v.id);
                 const selected = selectedColors[v.id];
                 const defaultCol = getDefaultColor(allColors, v.id);
-                const displayImage = selected?.image_url || defaultCol?.image_url || v.image_url || "/placeholder.svg";
-                const selectedColorId = selected?.id || defaultCol?.id;
+                const activeColor = selected || defaultCol;
+                const displayImage = activeColor?.image_url || v.image_url || "/placeholder.svg";
+                const selectedColorId = activeColor?.id;
+                const imageFlipped = activeColor ? activeColor.image_flipped : v.image_flipped;
+                const imageScale = activeColor ? getScaleForColorOnDevice(activeColor, 'home', deviceType) : getScaleForDevice(v, 'home', deviceType);
                 return (
                   <Link
                     key={v.id}
@@ -306,7 +309,7 @@ const Index = () => {
                         alt={v.name}
                         className="relative z-10 w-full h-full object-contain transition-transform duration-300"
                         style={{
-                          transform: `${v.image_flipped ? 'scaleX(-1)' : ''} scale(${getScaleForDevice(v, 'home', deviceType)})`.trim() || 'none'
+                          transform: `${imageFlipped ? 'scaleX(-1)' : ''} scale(${imageScale})`.trim() || 'none'
                         }}
                       />
                     </div>
