@@ -129,7 +129,7 @@ const AdminLayout = ({ children }: Props) => {
               key={item.path}
               to={item.path}
               className={`flex flex-col items-center gap-0.5 px-3 py-2 text-[11px] min-h-[44px] justify-center ${
-                location.pathname === item.path ? "text-primary" : "text-foreground/60"
+                location.pathname === item.path ? "text-primary" : "text-dark-foreground/60"
               }`}
             >
               <item.icon size={22} />
@@ -138,7 +138,7 @@ const AdminLayout = ({ children }: Props) => {
           ))}
           <button
             onClick={() => setDrawerOpen(true)}
-            className="flex flex-col items-center gap-0.5 px-3 py-2 text-[11px] text-foreground/60 min-h-[44px] justify-center"
+            className="flex flex-col items-center gap-0.5 px-3 py-2 text-[11px] text-dark-foreground/60 min-h-[44px] justify-center"
           >
             <MoreHorizontal size={22} />
             <span>Plus</span>
