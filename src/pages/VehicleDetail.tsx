@@ -56,6 +56,7 @@ const VehicleDetail = () => {
     );
   }
 
+  const detailScale = useDeviceScale(vehicle, "detail");
   const specs = [
     { icon: Users, label: `${vehicle.seats} Places`, sublabel: "Capacité" },
     { icon: Settings2, label: vehicle.transmission, sublabel: "Transmission" },
@@ -81,7 +82,7 @@ const VehicleDetail = () => {
                   alt={vehicle.name}
                   className="w-full h-full object-cover aspect-video"
                   style={activeIndex === 0 ? {
-                    transform: `${vehicle.image_flipped ? 'scaleX(-1)' : ''} scale(${vehicle.image_scale_detail ?? 1})`.trim() || 'none'
+                    transform: `${vehicle.image_flipped ? 'scaleX(-1)' : ''} scale(${detailScale})`.trim() || 'none'
                   } : undefined}
                 />
               </div>
