@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { VehicleColor } from "./useVehicleColors";
 
 type Placement = "home" | "fleet" | "detail" | "reservation" | "sidebar";
 
@@ -27,6 +28,13 @@ export function getScaleForDevice(vehicle: any, placement: Placement, device: "m
   if (device === "mobile") return Number(vehicle[`image_scale_${placement}_mobile`] ?? 1);
   if (device === "tablet") return Number(vehicle[`image_scale_${placement}_tablet`] ?? 1);
   return Number(vehicle[`image_scale_${placement}`] ?? 1);
+}
+
+export function getScaleForColorOnDevice(color: VehicleColor | undefined, placement: Placement, device: "mobile" | "tablet" | "desktop"): number {
+  if (!color) return 1;
+  if (device === "mobile") return Number((color as any)[`image_scale_${placement}_mobile`] ?? 1);
+  if (device === "tablet") return Number((color as any)[`image_scale_${placement}_tablet`] ?? 1);
+  return Number((color as any)[`image_scale_${placement}`] ?? 1);
 }
 
 export function useDeviceScale(vehicle: any, placement: Placement): number {
