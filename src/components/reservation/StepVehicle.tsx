@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Users, Fuel, Settings2, Shield } from "lucide-react";
 import { getActiveFeatures } from "@/lib/vehicle-features";
 import { Vehicle, PricingTier, getDailyRateFromTiers } from "@/hooks/useVehicles";
-import { useDeviceScale } from "@/hooks/useDeviceScale";
+import { useDeviceType, getScaleForDevice } from "@/hooks/useDeviceScale";
 
 interface Props {
   formData: ReservationFormData;
