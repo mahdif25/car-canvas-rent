@@ -142,6 +142,9 @@ Deno.serve(async (req) => {
         }).eq('id', recipient.id)
       }
 
+      // Detect if body_html is builder-generated (contains HTML tags) vs plain text
+      const isBuilderHtml = broadcast.body_html && broadcast.body_html.includes('<div')
+
       // Send email via send-transactional-email
       const { error: sendErr } = await supabase.functions.invoke('send-transactional-email', {
         body: {
@@ -151,7 +154,8 @@ Deno.serve(async (req) => {
           templateData: {
             recipientName: recipient.name || 'Client',
             subject: broadcast.subject,
-            bodyHtml: broadcast.body_html,
+            bodyHtml: isBuilderHtml ? '' : broadcast.body_html,
+            renderedBodyHtml: isBuilderHtml ? broadcast.body_html : '',
             couponCode,
             discountAmount: broadcast.discount_amount,
             expiresAt: expiresFormatted,
