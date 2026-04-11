@@ -1,6 +1,6 @@
 export interface EmailBlock {
   id: string;
-  type: 'heading' | 'text' | 'image' | 'button' | 'divider' | 'spacer' | 'html';
+  type: 'heading' | 'text' | 'image' | 'button' | 'divider' | 'spacer' | 'html' | 'coupon';
   content?: string;
   settings: BlockSettings;
 }
@@ -66,6 +66,8 @@ export function createBlock(type: EmailBlock['type']): EmailBlock {
       return { ...base, settings: { spacerHeight: '24' } };
     case 'html':
       return { ...base, content: '', settings: { paddingTop: '0', paddingBottom: '0' } };
+    case 'coupon':
+      return { ...base, content: 'coupon', settings: { paddingTop: '10', paddingBottom: '10' } };
   }
 }
 
@@ -91,12 +93,55 @@ export function renderBlocksToHtml(blocks: EmailBlock[], globals: GlobalStyles):
         return `<div style="height:${block.settings.spacerHeight || '24'}px;"></div>`;
       case 'html':
         return `<div style="${wrapStyle}">${block.content || ''}</div>`;
+      case 'coupon':
+        return `<!--COUPON_BLOCK-->`;
       default:
         return '';
     }
   });
 
-  return `<div style="background-color:${globals.emailBgColor};padding:20px 0;"><div style="max-width:600px;margin:0 auto;padding:20px 25px;background-color:${globals.contentBgColor};font-family:${globals.fontFamily};">${blockHtmls.join('')}</div></div>`;
+  // For preview: replace coupon marker with preview HTML
+  let finalHtml = `<div style="background-color:${globals.emailBgColor};padding:20px 0;"><div style="max-width:600px;margin:0 auto;padding:20px 25px;background-color:${globals.contentBgColor};font-family:${globals.fontFamily};">${blockHtmls.join('')}</div></div>`;
+  return finalHtml;
+}
+
+export function renderCouponPreviewHtml(opts: {
+  couponMode: string;
+  discountAmount: string;
+  couponPrefix: string;
+  friendDiscountAmount?: string;
+  couponExpiresAt?: string;
+  minTotalPrice?: string;
+  minRentalDays?: string;
+}): string {
+  const { couponMode, discountAmount, couponPrefix, friendDiscountAmount, couponExpiresAt, minTotalPrice, minRentalDays } = opts;
+  if (couponMode === 'none') return '';
+  const code = couponMode === 'shared' ? 'CODE-PARTAGÉ' : `${couponPrefix || 'PROMO'}-{NOM}`;
+  const friendCode = couponMode === 'referral' ? `AMI-${couponPrefix || 'REF'}-{NOM}` : '';
+  const amt = Number(discountAmount) || 0;
+  const friendAmt = Number(friendDiscountAmount) || amt;
+  const expires = couponExpiresAt ? new Date(couponExpiresAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+
+  let html = `<div style="background:#f8f8f8;border-radius:10px;padding:20px;margin-bottom:16px;text-align:center;">`;
+  html += `<p style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:#00C853;margin:0 0 8px;">VOTRE CODE PROMO</p>`;
+  html += `<p style="font-size:28px;font-weight:700;color:#1A1A1A;margin:0 0 8px;letter-spacing:2px;font-family:monospace;">${code}</p>`;
+  html += `<p style="font-size:14px;color:#00C853;font-weight:600;margin:0 0 4px;">-${amt.toLocaleString('fr-FR')} MAD sur votre prochaine réservation</p>`;
+  if (expires) html += `<p style="font-size:12px;color:#999;margin:0;">Valable jusqu'au ${expires}</p>`;
+  if (minRentalDays) html += `<p style="font-size:12px;color:#999;margin:0;">Min. ${minRentalDays} jours</p>`;
+  if (minTotalPrice) html += `<p style="font-size:12px;color:#999;margin:0;">Min. ${Number(minTotalPrice).toLocaleString('fr-FR')} MAD</p>`;
+  html += `</div>`;
+
+  if (friendCode) {
+    html += `<div style="background:#f8f8f8;border-radius:10px;padding:20px;margin-bottom:16px;text-align:center;">`;
+    html += `<p style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:#00C853;margin:0 0 8px;">CODE POUR VOTRE AMI(E)</p>`;
+    html += `<p style="font-size:28px;font-weight:700;color:#1A1A1A;margin:0 0 8px;letter-spacing:2px;font-family:monospace;">${friendCode}</p>`;
+    html += `<p style="font-size:14px;color:#00C853;font-weight:600;margin:0 0 4px;">-${friendAmt.toLocaleString('fr-FR')} MAD pour son premier séjour</p>`;
+    if (expires) html += `<p style="font-size:12px;color:#999;margin:0;">Valable jusqu'au ${expires}</p>`;
+    html += `<p style="font-size:12px;color:#666;margin:10px 0 0;font-style:italic;">Partagez ce code avec un ami</p>`;
+    html += `</div>`;
+  }
+
+  return html;
 }
 
 function escapeHtml(str: string): string {

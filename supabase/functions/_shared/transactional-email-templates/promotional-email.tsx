@@ -34,42 +34,61 @@ const PromotionalEmail = (props: Props) => {
   } = props
 
   const hasCustomHtml = renderedBodyHtml.length > 0
+  const hasCouponMarker = renderedBodyHtml.includes('<!--COUPON_BLOCK-->')
 
   const fmt = (n: number) => n.toLocaleString('fr-FR')
 
+  const couponBlock = couponCode ? (
+    <>
+      <Section style={couponSection}>
+        <Text style={couponLabel}>VOTRE CODE PROMO</Text>
+        <Text style={couponCodeStyle}>{couponCode}</Text>
+        <Text style={couponDiscount}>-{fmt(discountAmount)} MAD sur votre prochaine réservation</Text>
+        {expiresAt && <Text style={couponExpiry}>Valable jusqu'au {expiresAt}</Text>}
+        {minRentalDays && <Text style={couponExpiry}>Valable pour les réservations de {minRentalDays} jours minimum</Text>}
+        {minTotalPrice && <Text style={couponExpiry}>Valable pour les réservations à partir de {fmt(minTotalPrice)} MAD</Text>}
+      </Section>
+      {friendCouponCode && (
+        <Section style={couponSection}>
+          <Text style={couponLabel}>CODE POUR VOTRE AMI(E)</Text>
+          <Text style={couponCodeStyle}>{friendCouponCode}</Text>
+          <Text style={couponDiscount}>-{fmt(friendDiscountAmount)} MAD pour son premier séjour</Text>
+          {expiresAt && <Text style={couponExpiry}>Valable jusqu'au {expiresAt}</Text>}
+          {minRentalDays && <Text style={couponExpiry}>Valable pour les réservations de {minRentalDays} jours minimum</Text>}
+          {minTotalPrice && <Text style={couponExpiry}>Valable pour les réservations à partir de {fmt(minTotalPrice)} MAD</Text>}
+          <Text style={referralNote}>Partagez ce code avec un ami — vous bénéficiez tous les deux d'une réduction !</Text>
+        </Section>
+      )}
+    </>
+  ) : null
+
   if (hasCustomHtml) {
-    // Builder-generated email: render the pre-built HTML directly
+    if (hasCouponMarker && couponBlock) {
+      // Split at marker and inject coupon
+      const parts = renderedBodyHtml.split('<!--COUPON_BLOCK-->')
+      return (
+        <Html lang="fr" dir="ltr">
+          <Head />
+          <Preview>Offre spéciale de {SITE_NAME}</Preview>
+          <Body style={main}>
+            <Section dangerouslySetInnerHTML={{ __html: parts[0] }} />
+            <Container style={container}>
+              {couponBlock}
+            </Container>
+            {parts[1] && <Section dangerouslySetInnerHTML={{ __html: parts[1] }} />}
+          </Body>
+        </Html>
+      )
+    }
+
+    // Builder-generated email without coupon marker
     return (
       <Html lang="fr" dir="ltr">
         <Head />
         <Preview>Offre spéciale de {SITE_NAME}</Preview>
         <Body style={main}>
           <Section dangerouslySetInnerHTML={{ __html: renderedBodyHtml }} />
-
-          {couponCode && (
-            <Container style={container}>
-              <Section style={couponSection}>
-                <Text style={couponLabel}>VOTRE CODE PROMO</Text>
-                <Text style={couponCodeStyle}>{couponCode}</Text>
-                <Text style={couponDiscount}>-{fmt(discountAmount)} MAD sur votre prochaine réservation</Text>
-                {expiresAt && <Text style={couponExpiry}>Valable jusqu'au {expiresAt}</Text>}
-                {minRentalDays && <Text style={couponExpiry}>Valable pour les réservations de {minRentalDays} jours minimum</Text>}
-                {minTotalPrice && <Text style={couponExpiry}>Valable pour les réservations à partir de {fmt(minTotalPrice)} MAD</Text>}
-              </Section>
-
-              {friendCouponCode && (
-                <Section style={couponSection}>
-                  <Text style={couponLabel}>CODE POUR VOTRE AMI(E)</Text>
-                  <Text style={couponCodeStyle}>{friendCouponCode}</Text>
-                  <Text style={couponDiscount}>-{fmt(friendDiscountAmount)} MAD pour son premier séjour</Text>
-                  {expiresAt && <Text style={couponExpiry}>Valable jusqu'au {expiresAt}</Text>}
-                  {minRentalDays && <Text style={couponExpiry}>Valable pour les réservations de {minRentalDays} jours minimum</Text>}
-                  {minTotalPrice && <Text style={couponExpiry}>Valable pour les réservations à partir de {fmt(minTotalPrice)} MAD</Text>}
-                  <Text style={referralNote}>Partagez ce code avec un ami — vous bénéficiez tous les deux d'une réduction !</Text>
-                </Section>
-              )}
-            </Container>
-          )}
+          {couponBlock && <Container style={container}>{couponBlock}</Container>}
         </Body>
       </Html>
     )

@@ -7,17 +7,24 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Plus, Trash2, ChevronUp, ChevronDown, Copy, Type, AlignLeft, AlignCenter, AlignRight,
-  Image, MousePointerClick, Minus, Space, Code, Palette, Eye, Pencil, Settings2, GripVertical,
+  Image, MousePointerClick, Minus, Space, Code, Palette, Eye, Pencil, Settings2, GripVertical, Ticket,
 } from "lucide-react";
 import {
   EmailBlock, GlobalStyles, EmailBuilderData, DEFAULT_GLOBAL_STYLES,
-  createBlock, renderBlocksToHtml, getStarterTemplates,
+  createBlock, renderBlocksToHtml, renderCouponPreviewHtml, getStarterTemplates,
 } from "@/lib/email-builder-utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface EmailBuilderProps {
   value: EmailBuilderData;
   onChange: (data: EmailBuilderData) => void;
+  couponMode?: string;
+  discountAmount?: string;
+  couponPrefix?: string;
+  friendDiscountAmount?: string;
+  couponExpiresAt?: string;
+  minTotalPrice?: string;
+  minRentalDays?: string;
 }
 
 const BLOCK_TYPE_OPTIONS: { type: EmailBlock['type']; label: string; icon: React.ReactNode }[] = [
@@ -37,13 +44,15 @@ const FONT_OPTIONS = [
   { value: "monospace", label: "Monospace" },
 ];
 
-const EmailBuilder = ({ value, onChange }: EmailBuilderProps) => {
+const EmailBuilder = ({ value, onChange, couponMode = 'none', discountAmount = '', couponPrefix = '', friendDiscountAmount = '', couponExpiresAt = '', minTotalPrice = '', minRentalDays = '' }: EmailBuilderProps) => {
   const isMobile = useIsMobile();
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [mobileView, setMobileView] = useState<'editor' | 'preview'>('editor');
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [globalOpen, setGlobalOpen] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const scrollViewportRef = useRef<HTMLDivElement>(null);
+  const prevBlockCount = useRef(value.blocks.length);
 
   const { blocks, globalStyles } = value;
 
@@ -55,8 +64,36 @@ const EmailBuilder = ({ value, onChange }: EmailBuilderProps) => {
     onChange({ ...value, globalStyles: { ...value.globalStyles, ...partial } });
   }, [value, onChange]);
 
+  // Auto-scroll when blocks are added
+  useEffect(() => {
+    if (blocks.length > prevBlockCount.current) {
+      setTimeout(() => {
+        scrollViewportRef.current?.scrollTo({ top: scrollViewportRef.current.scrollHeight, behavior: 'smooth' });
+      }, 50);
+    }
+    prevBlockCount.current = blocks.length;
+  }, [blocks.length]);
+
+  // Auto-insert/remove coupon block when couponMode changes
+  useEffect(() => {
+    const hasCouponBlock = blocks.some(b => b.type === 'coupon');
+    if (couponMode !== 'none' && !hasCouponBlock) {
+      updateBlocks([...blocks, createBlock('coupon')]);
+    } else if (couponMode === 'none' && hasCouponBlock) {
+      updateBlocks(blocks.filter(b => b.type !== 'coupon'));
+    }
+  }, [couponMode]); // intentionally only couponMode
+
   const addBlock = (type: EmailBlock['type']) => {
-    updateBlocks([...blocks, createBlock(type)]);
+    // Insert before coupon block if present
+    const couponIdx = blocks.findIndex(b => b.type === 'coupon');
+    if (couponIdx >= 0) {
+      const arr = [...blocks];
+      arr.splice(couponIdx, 0, createBlock(type));
+      updateBlocks(arr);
+    } else {
+      updateBlocks([...blocks, createBlock(type)]);
+    }
     setShowAddMenu(false);
   };
 
@@ -102,32 +139,38 @@ const EmailBuilder = ({ value, onChange }: EmailBuilderProps) => {
   // Update preview iframe
   useEffect(() => {
     if (!iframeRef.current) return;
-    const html = renderBlocksToHtml(blocks, globalStyles);
+    let html = renderBlocksToHtml(blocks, globalStyles);
+    // Replace coupon marker with preview
+    if (couponMode !== 'none') {
+      const couponHtml = renderCouponPreviewHtml({ couponMode, discountAmount, couponPrefix, friendDiscountAmount, couponExpiresAt, minTotalPrice, minRentalDays });
+      html = html.replace('<!--COUPON_BLOCK-->', couponHtml);
+    }
     const doc = iframeRef.current.contentDocument;
     if (doc) {
       doc.open();
       doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:0;}</style></head><body>${html}</body></html>`);
       doc.close();
     }
-  }, [blocks, globalStyles]);
+  }, [blocks, globalStyles, couponMode, discountAmount, couponPrefix, friendDiscountAmount, couponExpiresAt, minTotalPrice, minRentalDays]);
 
   const selectedBlock = blocks.find(b => b.id === selectedBlockId);
 
   const renderBlockEditor = (block: EmailBlock) => {
     const isSelected = selectedBlockId === block.id;
     const idx = blocks.findIndex(b => b.id === block.id);
+    const isCoupon = block.type === 'coupon';
 
     return (
       <div
         key={block.id}
-        className={`border rounded-lg transition-colors ${isSelected ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground/30'}`}
-        onClick={() => setSelectedBlockId(block.id)}
+        className={`border rounded-lg transition-colors ${isCoupon ? 'border-primary/40 bg-primary/5' : isSelected ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground/30'}`}
+        onClick={() => !isCoupon && setSelectedBlockId(block.id)}
       >
         {/* Block header */}
         <div className="flex items-center gap-1 px-2 py-1.5 bg-muted/30 rounded-t-lg">
-          <GripVertical size={14} className="text-muted-foreground shrink-0" />
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex-1">
-            {BLOCK_TYPE_OPTIONS.find(o => o.type === block.type)?.label || block.type}
+          {isCoupon ? <Ticket size={14} className="text-primary shrink-0" /> : <GripVertical size={14} className="text-muted-foreground shrink-0" />}
+          <span className={`text-xs font-medium uppercase tracking-wider flex-1 ${isCoupon ? 'text-primary' : 'text-muted-foreground'}`}>
+            {isCoupon ? 'Coupon' : (BLOCK_TYPE_OPTIONS.find(o => o.type === block.type)?.label || block.type)}
           </span>
           <div className="flex items-center gap-0.5">
             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); moveBlock(block.id, -1); }} disabled={idx === 0}>
@@ -136,16 +179,25 @@ const EmailBuilder = ({ value, onChange }: EmailBuilderProps) => {
             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); moveBlock(block.id, 1); }} disabled={idx === blocks.length - 1}>
               <ChevronDown size={12} />
             </Button>
-            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); duplicateBlock(block.id); }}>
-              <Copy size={12} />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); removeBlock(block.id); }}>
-              <Trash2 size={12} />
-            </Button>
+            {!isCoupon && (
+              <>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); duplicateBlock(block.id); }}>
+                  <Copy size={12} />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); removeBlock(block.id); }}>
+                  <Trash2 size={12} />
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
         {/* Block content editor */}
+        {isCoupon ? (
+          <div className="p-3">
+            <p className="text-xs text-muted-foreground italic">Bloc coupon — configuré depuis le mode coupon ci-dessous. Utilisez les flèches pour repositionner.</p>
+          </div>
+        ) : (
         <div className="p-3 space-y-2">
           {(block.type === 'heading' || block.type === 'text') && (
             <>
@@ -333,6 +385,7 @@ const EmailBuilder = ({ value, onChange }: EmailBuilderProps) => {
             </div>
           )}
         </div>
+        )}
       </div>
     );
   };
@@ -407,7 +460,12 @@ const EmailBuilder = ({ value, onChange }: EmailBuilderProps) => {
       </Collapsible>
 
       {/* Blocks */}
-      <ScrollArea className="max-h-[50vh] md:max-h-[60vh]">
+      <ScrollArea className="max-h-[50vh] md:max-h-[60vh]" ref={(node) => {
+        if (node) {
+          const viewport = node.querySelector('[data-radix-scroll-area-viewport]') as HTMLDivElement | null;
+          if (viewport) scrollViewportRef.current = viewport;
+        }
+      }}>
         <div className="space-y-2 pr-2">
           {blocks.map(block => renderBlockEditor(block))}
         </div>
