@@ -6,12 +6,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Trash2, Phone, Mail, Calendar, TrendingUp, DollarSign, Wrench, ArrowDownUp, Car, ImageIcon, Save } from "lucide-react";
-import { differenceInDays, parseISO } from "date-fns";
-import { format } from "date-fns";
+import { Plus, Trash2, Phone, Mail, Calendar, TrendingUp, DollarSign, Wrench, ArrowDownUp, Car, ImageIcon, Save, FlipHorizontal, ZoomIn, ArrowUpDown } from "lucide-react";
+import { differenceInDays, parseISO, format } from "date-fns";
 import {
   EXPENSE_CATEGORIES,
   categoryLabel,
@@ -43,6 +44,9 @@ interface Props {
     vehicle_id: string;
     is_active: boolean;
     image_url: string | null;
+    image_flipped: boolean;
+    image_scale: number;
+    image_offset_y: number;
   };
   vehicleImage: string | null;
   reservations: Reservation[];
@@ -80,15 +84,25 @@ const FleetPlateDetail = ({ plate, vehicleImage, reservations, expenses, onClose
     ? Math.max(0, differenceInDays(parseISO(currentRes.return_date), new Date()))
     : null;
 
-  // Image override
+  // Image override + positioning
   const [imageUrl, setImageUrl] = useState(plate.image_url || "");
+  const [imageFlipped, setImageFlipped] = useState(plate.image_flipped ?? false);
+  const [imageScale, setImageScale] = useState(plate.image_scale ?? 1.0);
+  const [imageOffsetY, setImageOffsetY] = useState(plate.image_offset_y ?? 50);
   const [imageChanged, setImageChanged] = useState(false);
+
+  const markChanged = () => { if (!imageChanged) setImageChanged(true); };
 
   const saveImageMutation = useMutation({
     mutationFn: async () => {
       const { error } = await supabase
         .from("fleet_plates")
-        .update({ image_url: imageUrl.trim() || null })
+        .update({
+          image_url: imageUrl.trim() || null,
+          image_flipped: imageFlipped,
+          image_scale: imageScale,
+          image_offset_y: imageOffsetY,
+        })
         .eq("id", plate.id);
       if (error) throw error;
     },
@@ -137,35 +151,83 @@ const FleetPlateDetail = ({ plate, vehicleImage, reservations, expenses, onClose
 
   const displayImage = vehicleImage;
 
+  const previewStyle: React.CSSProperties = {
+    transform: `${imageFlipped ? "scaleX(-1) " : ""}scale(${imageScale})`,
+    objectPosition: `center ${imageOffsetY}%`,
+  };
+
   return (
     <div className="space-y-4">
       {/* Image Section */}
       <div className="space-y-3">
         <div className="h-36 flex items-center justify-center bg-secondary/30 rounded-lg overflow-hidden">
           {displayImage ? (
-            <img src={displayImage} alt={`${plate.brand} ${plate.model}`} className="h-full object-contain" />
+            <img src={displayImage} alt={`${plate.brand} ${plate.model}`} className="h-full object-contain" style={previewStyle} />
           ) : (
             <Car className="h-12 w-12 text-muted-foreground/40" />
           )}
         </div>
+
+        {/* Image URL */}
         <div className="space-y-1">
           <label className="text-xs font-medium flex items-center gap-1 text-muted-foreground">
             <ImageIcon className="h-3 w-3" /> Image personnalisée (URL)
           </label>
-          <div className="flex gap-2">
-            <Input
-              value={imageUrl}
-              onChange={(e) => { setImageUrl(e.target.value); setImageChanged(true); }}
-              placeholder="https://... (laisser vide pour l'image par défaut)"
-              className="h-8 text-xs"
+          <Input
+            value={imageUrl}
+            onChange={(e) => { setImageUrl(e.target.value); markChanged(); }}
+            placeholder="https://... (laisser vide pour l'image par défaut)"
+            className="h-8 text-xs"
+          />
+        </div>
+
+        {/* Image Controls */}
+        <div className="space-y-3 bg-secondary/20 rounded-lg p-3">
+          {/* Flip */}
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-medium flex items-center gap-1 text-muted-foreground">
+              <FlipHorizontal className="h-3 w-3" /> Retourner
+            </label>
+            <Switch
+              checked={imageFlipped}
+              onCheckedChange={(v) => { setImageFlipped(v); markChanged(); }}
             />
-            {imageChanged && (
-              <Button size="sm" className="h-8 gap-1" onClick={() => saveImageMutation.mutate()} disabled={saveImageMutation.isPending}>
-                <Save className="h-3 w-3" />
-              </Button>
-            )}
+          </div>
+
+          {/* Scale */}
+          <div className="space-y-1">
+            <label className="text-xs font-medium flex items-center gap-1 text-muted-foreground">
+              <ZoomIn className="h-3 w-3" /> Zoom ({imageScale.toFixed(2)}x)
+            </label>
+            <Slider
+              min={0.5}
+              max={2}
+              step={0.05}
+              value={[imageScale]}
+              onValueChange={([v]) => { setImageScale(v); markChanged(); }}
+            />
+          </div>
+
+          {/* Vertical offset */}
+          <div className="space-y-1">
+            <label className="text-xs font-medium flex items-center gap-1 text-muted-foreground">
+              <ArrowUpDown className="h-3 w-3" /> Position verticale ({imageOffsetY}%)
+            </label>
+            <Slider
+              min={0}
+              max={100}
+              step={1}
+              value={[imageOffsetY]}
+              onValueChange={([v]) => { setImageOffsetY(v); markChanged(); }}
+            />
           </div>
         </div>
+
+        {imageChanged && (
+          <Button size="sm" className="w-full gap-1" onClick={() => saveImageMutation.mutate()} disabled={saveImageMutation.isPending}>
+            <Save className="h-3 w-3" /> Enregistrer les modifications d'image
+          </Button>
+        )}
       </div>
 
       {/* Analytics Summary */}

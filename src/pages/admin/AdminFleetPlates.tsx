@@ -23,6 +23,7 @@ const AdminFleetPlates = () => {
   const [plateNumber, setPlateNumber] = useState("");
   const [notes, setNotes] = useState("");
   const [selectedPlateId, setSelectedPlateId] = useState<string | null>(null);
+  const [filterBrand, setFilterBrand] = useState("all");
 
   const { data: plates = [], isLoading } = useQuery({
     queryKey: ["fleet-plates"],
@@ -123,15 +124,31 @@ const AdminFleetPlates = () => {
 
   const selectedPlate = plates.find((p) => p.id === selectedPlateId);
 
+  const uniqueBrands = [...new Set(plates.map((p) => p.brand))].sort();
+  const filteredPlates = filterBrand === "all" ? plates : plates.filter((p) => p.brand === filterBrand);
+
   return (
     <AdminLayout>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h1 className="text-2xl font-bold">Parc Auto</h1>
-        {!showForm && (
-          <Button onClick={() => setShowForm(true)} className="gap-2">
-            <Plus size={18} /> Ajouter un véhicule
-          </Button>
-        )}
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <Select value={filterBrand} onValueChange={setFilterBrand}>
+            <SelectTrigger className="w-full sm:w-[200px]">
+              <SelectValue placeholder="Filtrer par marque" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Toutes les marques</SelectItem>
+              {uniqueBrands.map((brand) => (
+                <SelectItem key={brand} value={brand}>{brand}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {!showForm && (
+            <Button onClick={() => setShowForm(true)} className="gap-2">
+              <Plus size={18} /> Ajouter un véhicule
+            </Button>
+          )}
+        </div>
       </div>
 
       {showForm && (
@@ -190,7 +207,7 @@ const AdminFleetPlates = () => {
         </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {plates.map((plate) => (
+          {filteredPlates.map((plate) => (
             <FleetPlateCard
               key={plate.id}
               plate={plate}

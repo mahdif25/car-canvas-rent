@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Car, Calendar, DollarSign, Wrench, TrendingUp } from "lucide-react";
-import { differenceInDays, parseISO, format } from "date-fns";
+import { differenceInDays, parseISO } from "date-fns";
 
 interface Reservation {
   id: string;
@@ -33,6 +33,9 @@ interface Props {
     is_active: boolean;
     notes: string | null;
     image_url: string | null;
+    image_flipped: boolean;
+    image_scale: number;
+    image_offset_y: number;
   };
   vehicleImage: string | null;
   reservations: Reservation[];
@@ -59,6 +62,11 @@ const FleetPlateCard = ({ plate, vehicleImage, reservations, expenses, isSelecte
     ? Math.max(0, differenceInDays(parseISO(currentRes.return_date), new Date()))
     : null;
 
+  const imageStyle: React.CSSProperties = {
+    transform: `${plate.image_flipped ? "scaleX(-1) " : ""}scale(${plate.image_scale ?? 1})`,
+    objectPosition: `center ${plate.image_offset_y ?? 50}%`,
+  };
+
   return (
     <Card
       className={`cursor-pointer transition-all hover:shadow-md ${isSelected ? "ring-2 ring-primary" : ""} ${!plate.is_active ? "opacity-60" : ""}`}
@@ -68,7 +76,12 @@ const FleetPlateCard = ({ plate, vehicleImage, reservations, expenses, isSelecte
         {/* Vehicle Image */}
         <div className="h-28 flex items-center justify-center mb-3 bg-secondary/30 rounded-lg overflow-hidden">
           {vehicleImage ? (
-            <img src={vehicleImage} alt={`${plate.brand} ${plate.model}`} className="h-full object-contain" />
+            <img
+              src={vehicleImage}
+              alt={`${plate.brand} ${plate.model}`}
+              className="h-full object-contain"
+              style={imageStyle}
+            />
           ) : (
             <Car className="h-12 w-12 text-muted-foreground/40" />
           )}
