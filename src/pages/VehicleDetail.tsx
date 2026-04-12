@@ -14,7 +14,7 @@ const VehicleDetail = () => {
   const { data: tiers = [], isLoading: loadingTiers } = usePricingTiers(vehicle?.id);
   const { data: extraImages = [] } = useVehicleImages(vehicle?.id);
   const [activeIndex, setActiveIndex] = useState(0);
-
+  const detailScale = useDeviceScale(vehicle, "detail");
 
   const allImages = useMemo(() => {
     const imgs: string[] = [];
