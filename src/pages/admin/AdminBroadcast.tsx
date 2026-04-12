@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, ArrowRight, Send, Users, Mail, Gift, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Send, Users, Mail, Gift, Check, History, Plus, Eye, CheckCircle, XCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -32,7 +32,27 @@ interface Coupon {
   is_active: boolean;
 }
 
+interface Broadcast {
+  id: string;
+  subject: string;
+  status: string;
+  recipient_count: number;
+  sent_count: number;
+  created_at: string;
+  coupon_mode: string;
+  discount_amount: number;
+}
+
+interface BroadcastRecipient {
+  id: string;
+  email: string;
+  name: string | null;
+  status: string;
+  created_at: string;
+}
+
 type CouponMode = "none" | "shared" | "unique" | "referral";
+type ViewMode = "create" | "history" | "detail";
 
 const StepIndicator = ({ current }: { current: number }) => {
   const steps = [
@@ -57,8 +77,242 @@ const StepIndicator = ({ current }: { current: number }) => {
   );
 };
 
+const StatusBadge = ({ status }: { status: string }) => {
+  switch (status) {
+    case "sent":
+      return <Badge className="bg-green-100 text-green-800 border-green-200 hover:bg-green-100"><CheckCircle size={12} className="mr-1" /> Envoyé</Badge>;
+    case "failed":
+      return <Badge className="bg-red-100 text-red-800 border-red-200 hover:bg-red-100"><XCircle size={12} className="mr-1" /> Échoué</Badge>;
+    case "pending":
+      return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-100"><Clock size={12} className="mr-1" /> En attente</Badge>;
+    case "draft":
+      return <Badge variant="outline">Brouillon</Badge>;
+    case "sending":
+      return <Badge className="bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-100"><Send size={12} className="mr-1" /> En cours</Badge>;
+    case "completed":
+      return <Badge className="bg-green-100 text-green-800 border-green-200 hover:bg-green-100"><CheckCircle size={12} className="mr-1" /> Terminé</Badge>;
+    default:
+      return <Badge variant="outline">{status}</Badge>;
+  }
+};
+
+// ============ HISTORY VIEW ============
+
+const BroadcastHistoryList = ({ onSelect, onNew }: { onSelect: (id: string) => void; onNew: () => void }) => {
+  const { data: broadcasts = [], isLoading } = useQuery({
+    queryKey: ["broadcast-history"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("email_broadcasts" as any)
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as unknown as Broadcast[];
+    },
+  });
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold flex items-center gap-2"><History size={20} /> Historique des broadcasts</h2>
+        <Button onClick={onNew} className="gap-2"><Plus size={16} /> Nouveau</Button>
+      </div>
+
+      {isLoading ? (
+        <p className="text-center py-8 text-muted-foreground">Chargement...</p>
+      ) : broadcasts.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">
+          <Mail size={40} className="mx-auto mb-3 opacity-50" />
+          <p>Aucun broadcast envoyé</p>
+        </div>
+      ) : (
+        <>
+          {/* Desktop table */}
+          <div className="hidden md:block bg-background rounded-lg border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Objet</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Destinataires</TableHead>
+                  <TableHead>Envoyés</TableHead>
+                  <TableHead>Statut</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {broadcasts.map((b) => (
+                  <TableRow key={b.id} className="cursor-pointer" onClick={() => onSelect(b.id)}>
+                    <TableCell className="font-medium max-w-[250px] truncate">{b.subject}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{format(new Date(b.created_at), "dd/MM/yyyy HH:mm")}</TableCell>
+                    <TableCell>{b.recipient_count}</TableCell>
+                    <TableCell>{b.sent_count}</TableCell>
+                    <TableCell><StatusBadge status={b.status} /></TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="sm" className="gap-1"><Eye size={14} /> Détails</Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="md:hidden space-y-2">
+            {broadcasts.map((b) => (
+              <div
+                key={b.id}
+                className="border rounded-lg p-4 cursor-pointer hover:border-primary/50 transition-colors"
+                onClick={() => onSelect(b.id)}
+              >
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <h3 className="font-medium text-sm truncate flex-1">{b.subject}</h3>
+                  <StatusBadge status={b.status} />
+                </div>
+                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                  <span>{format(new Date(b.created_at), "dd/MM/yyyy HH:mm")}</span>
+                  <span className="flex items-center gap-1"><Users size={12} /> {b.recipient_count}</span>
+                  <span className="flex items-center gap-1"><Send size={12} /> {b.sent_count}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+// ============ DETAIL VIEW ============
+
+const BroadcastDetail = ({ broadcastId, onBack }: { broadcastId: string; onBack: () => void }) => {
+  const { data: broadcast } = useQuery({
+    queryKey: ["broadcast-detail", broadcastId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("email_broadcasts" as any)
+        .select("*")
+        .eq("id", broadcastId)
+        .single();
+      if (error) throw error;
+      return data as unknown as Broadcast;
+    },
+  });
+
+  const { data: recipients = [], isLoading: recipientsLoading } = useQuery({
+    queryKey: ["broadcast-recipients", broadcastId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("broadcast_recipients" as any)
+        .select("*")
+        .eq("broadcast_id", broadcastId)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return (data || []) as unknown as BroadcastRecipient[];
+    },
+  });
+
+  const stats = useMemo(() => {
+    const total = recipients.length;
+    const sent = recipients.filter((r) => r.status === "sent").length;
+    const failed = recipients.filter((r) => r.status === "failed").length;
+    const pending = recipients.filter((r) => r.status === "pending").length;
+    return { total, sent, failed, pending };
+  }, [recipients]);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="sm" onClick={onBack} className="gap-1">
+          <ArrowLeft size={16} /> Retour
+        </Button>
+        <h2 className="text-lg font-semibold truncate">{broadcast?.subject || "..."}</h2>
+      </div>
+
+      {broadcast && (
+        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+          <span>{format(new Date(broadcast.created_at), "dd/MM/yyyy HH:mm")}</span>
+          <StatusBadge status={broadcast.status} />
+        </div>
+      )}
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="border rounded-lg p-4 text-center">
+          <p className="text-2xl font-bold">{stats.total}</p>
+          <p className="text-xs text-muted-foreground">Total</p>
+        </div>
+        <div className="border rounded-lg p-4 text-center">
+          <p className="text-2xl font-bold text-green-600">{stats.sent}</p>
+          <p className="text-xs text-muted-foreground">Envoyés</p>
+        </div>
+        <div className="border rounded-lg p-4 text-center">
+          <p className="text-2xl font-bold text-red-600">{stats.failed}</p>
+          <p className="text-xs text-muted-foreground">Échoués</p>
+        </div>
+        <div className="border rounded-lg p-4 text-center">
+          <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
+          <p className="text-xs text-muted-foreground">En attente</p>
+        </div>
+      </div>
+
+      {/* Recipients */}
+      <div className="space-y-2">
+        <h3 className="text-sm font-semibold">Destinataires</h3>
+        
+        {recipientsLoading ? (
+          <p className="text-center py-8 text-muted-foreground">Chargement...</p>
+        ) : (
+          <>
+            {/* Desktop table */}
+            <div className="hidden md:block bg-background rounded-lg border max-h-[400px] overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nom</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Statut</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {recipients.map((r) => (
+                    <TableRow key={r.id}>
+                      <TableCell>{r.name || "—"}</TableCell>
+                      <TableCell className="text-sm">{r.email}</TableCell>
+                      <TableCell><StatusBadge status={r.status} /></TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Mobile cards */}
+            <div className="md:hidden space-y-2 max-h-[60vh] overflow-auto">
+              {recipients.map((r) => (
+                <div key={r.id} className="border rounded-lg p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-sm truncate">{r.name || "—"}</p>
+                      <p className="text-xs text-muted-foreground truncate">{r.email}</p>
+                    </div>
+                    <StatusBadge status={r.status} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ============ MAIN COMPONENT ============
+
 const AdminBroadcast = () => {
   const queryClient = useQueryClient();
+  const [view, setView] = useState<ViewMode>("create");
+  const [selectedBroadcastId, setSelectedBroadcastId] = useState<string | null>(null);
   const [step, setStep] = useState(1);
 
   // Step 1: Audience
@@ -98,6 +352,7 @@ const AdminBroadcast = () => {
       if (error) throw error;
       return data as Lead[];
     },
+    enabled: view === "create",
   });
 
   const { data: coupons = [] } = useQuery({
@@ -111,6 +366,7 @@ const AdminBroadcast = () => {
       if (error) throw error;
       return data as Coupon[];
     },
+    enabled: view === "create",
   });
 
   const filteredLeads = useMemo(() => {
@@ -171,7 +427,6 @@ const AdminBroadcast = () => {
     if (!canSend) return;
     setSending(true);
     try {
-      // Render blocks to HTML for sending
       const renderedHtml = emailBuilderData.blocks.length > 0
         ? renderBlocksToHtml(emailBuilderData.blocks, emailBuilderData.globalStyles)
         : bodyHtml;
@@ -215,6 +470,7 @@ const AdminBroadcast = () => {
       if (sendErr) throw new Error(sendErr.message);
 
       toast.success(`Broadcast envoyé à ${selectedLeads.length} destinataires`);
+      queryClient.invalidateQueries({ queryKey: ["broadcast-history"] });
       setStep(1);
       setSelectedIds(new Set());
       setSubject("");
@@ -226,6 +482,7 @@ const AdminBroadcast = () => {
       setDiscountAmount("");
       setFriendDiscountAmount("");
       setCouponExpiresAt("");
+      setView("history");
     } catch (e: any) {
       toast.error(e.message || "Erreur lors de l'envoi");
     } finally {
@@ -238,11 +495,38 @@ const AdminBroadcast = () => {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <h1 className="text-2xl font-bold">Broadcast Email</h1>
-          <StepIndicator current={step} />
+          {view === "create" ? (
+            <div className="flex items-center gap-3">
+              <Button variant="outline" size="sm" onClick={() => setView("history")} className="gap-2">
+                <History size={16} /> Historique
+              </Button>
+              <StepIndicator current={step} />
+            </div>
+          ) : view === "history" ? (
+            <Button variant="outline" size="sm" onClick={() => setView("create")} className="gap-2">
+              <Plus size={16} /> Nouveau broadcast
+            </Button>
+          ) : null}
         </div>
 
-        {/* Step 1: Audience */}
-        {step === 1 && (
+        {/* History View */}
+        {view === "history" && (
+          <BroadcastHistoryList
+            onSelect={(id) => { setSelectedBroadcastId(id); setView("detail"); }}
+            onNew={() => setView("create")}
+          />
+        )}
+
+        {/* Detail View */}
+        {view === "detail" && selectedBroadcastId && (
+          <BroadcastDetail
+            broadcastId={selectedBroadcastId}
+            onBack={() => { setSelectedBroadcastId(null); setView("history"); }}
+          />
+        )}
+
+        {/* Create View - Step 1: Audience */}
+        {view === "create" && step === 1 && (
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:flex md:flex-wrap gap-3">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -356,8 +640,8 @@ const AdminBroadcast = () => {
           </div>
         )}
 
-        {/* Step 2: Content */}
-        {step === 2 && (
+        {/* Create View - Step 2: Content */}
+        {view === "create" && step === 2 && (
           <div className="space-y-6">
             <div className="space-y-4">
               <div className="space-y-1 max-w-2xl">
@@ -465,8 +749,8 @@ const AdminBroadcast = () => {
           </div>
         )}
 
-        {/* Step 3: Review & Send */}
-        {step === 3 && (
+        {/* Create View - Step 3: Review & Send */}
+        {view === "create" && step === 3 && (
           <div className="space-y-6 max-w-2xl">
             <div className="border rounded-lg p-4 sm:p-6 bg-card space-y-4">
               <h2 className="text-lg font-semibold">Récapitulatif</h2>
