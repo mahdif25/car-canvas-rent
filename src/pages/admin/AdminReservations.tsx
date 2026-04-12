@@ -11,7 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import { useMemo, useState } from "react";
 import { useVehicles, usePricingTiers, getDailyRateFromTiers } from "@/hooks/useVehicles";
 import { useLocations, useAllLocations, getDeliveryFee } from "@/hooks/useLocations";
-import { Printer, Save, Pencil, Check, X, Plus, AlertTriangle, Search } from "lucide-react";
+import { Printer, Save, Pencil, Check, X, Plus, AlertTriangle, Search, Download } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAvailablePlates } from "@/hooks/useFleetPlates";
 import { DatePickerField } from "@/components/ui/date-picker-field";
@@ -383,7 +383,7 @@ const AdminReservations = () => {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Rechercher par ID, nom, email, permis..."
+            placeholder="Rechercher par ID, nom, email, permis, CIN, passeport..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
@@ -402,6 +402,9 @@ const AdminReservations = () => {
         </Select>
         <DatePickerField value={dateFrom} onChange={setDateFrom} placeholder="Date début" className="w-full sm:w-40" />
         <DatePickerField value={dateTo} onChange={setDateTo} placeholder="Date fin" className="w-full sm:w-40" />
+        <Button variant="outline" size="sm" className="gap-1 whitespace-nowrap" onClick={() => handleDownloadReport()}>
+          <Download size={14} /> Télécharger
+        </Button>
       </div>
 
       <ManualReservationDialog
