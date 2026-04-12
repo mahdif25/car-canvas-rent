@@ -29,6 +29,8 @@ const LandingOffer = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const leadIdRef = useRef<string | null>(null);
+  const stableVisitorId = useRef(`landing_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`);
 
   // Autofill detection — poll DOM values for 3s after mount
   useEffect(() => {
@@ -101,23 +103,29 @@ const LandingOffer = () => {
     setSubmitting(true);
 
     try {
-      const visitorId = `landing_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-
       // Store user data in sessionStorage for CAPI hashing
       if (form.email) sessionStorage.setItem("fb_em", form.email);
       if (form.phone) sessionStorage.setItem("fb_ph", form.phone);
       if (form.first_name) sessionStorage.setItem("fb_fn", form.first_name);
 
-      await supabase.from("leads").insert({
-        source: "facebook_landing",
+      const leadPayload = {
+        source: "facebook_landing" as const,
         first_name: form.first_name,
         phone: form.phone,
         email: form.email || null,
-        visitor_id: visitorId,
+        visitor_id: stableVisitorId.current,
         session_id: `landing_${utmParams.utm_campaign || "direct"}`,
         last_reservation_step: 1,
         capi_allowed: true,
-      });
+        updated_at: new Date().toISOString(),
+      };
+
+      if (leadIdRef.current) {
+        await supabase.from("leads").update(leadPayload).eq("id", leadIdRef.current);
+      } else {
+        const { data } = await supabase.from("leads").insert(leadPayload).select("id").single();
+        if (data) leadIdRef.current = data.id;
+      }
 
       // Fire Facebook Lead event via Pixel + CAPI
       trackFacebookEvent("Lead", {
@@ -143,16 +151,24 @@ const LandingOffer = () => {
   const handleBlur = async () => {
     if (!form.phone && !form.email) return;
     try {
-      await supabase.from("leads").insert({
-        source: "facebook_landing",
+      const blurPayload = {
+        source: "facebook_landing" as const,
         first_name: form.first_name || null,
         phone: form.phone || null,
         email: form.email || null,
-        visitor_id: `landing_blur_${Date.now()}`,
+        visitor_id: stableVisitorId.current,
         session_id: `landing_${utmParams.utm_campaign || "direct"}`,
         last_reservation_step: 0,
         capi_allowed: false,
-      });
+        updated_at: new Date().toISOString(),
+      };
+
+      if (leadIdRef.current) {
+        await supabase.from("leads").update(blurPayload).eq("id", leadIdRef.current);
+      } else {
+        const { data } = await supabase.from("leads").insert(blurPayload).select("id").single();
+        if (data) leadIdRef.current = data.id;
+      }
     } catch {}
   };
 
