@@ -1,77 +1,50 @@
 
 
-# Agency Financial Dashboard — Loans, Analytics & Visual Reports
+# Per-Car Report Period Selector & Download + Reservations Search & Date Filter
 
-## Overview
-Create a dedicated `/admin/finances` page for managing bank loans per vehicle, tracking agency-wide financials, and generating per-car visual reports with charts showing monthly earnings, rental days, idle days, and expense breakdowns.
+## Part 1 — AdminFinances: Period Selection & Downloadable Report
 
-## Database Changes
+### Period Selector
+- Add `reportStartDate` and `reportEndDate` state (default: 12 months ago → today)
+- Place two `DatePickerField` inputs next to the vehicle selector in the "Rapport par véhicule" tab
+- All charts, KPIs, and reservation data in the per-car report filter by this date range instead of hardcoded "last 12 months" / "current month"
 
-**New table: `fleet_loans`**
-- `id` uuid PK default gen_random_uuid()
-- `plate_id` uuid NOT NULL (references fleet_plates conceptually)
-- `bank_name` text NOT NULL
-- `loan_amount` numeric NOT NULL
-- `monthly_payment` numeric NOT NULL
-- `loan_duration_months` integer NOT NULL
-- `start_date` date NOT NULL
-- `interest_rate` numeric DEFAULT 0
-- `remaining_amount` numeric NOT NULL
-- `notes` text nullable
-- `is_active` boolean DEFAULT true
-- `created_at` timestamptz DEFAULT now()
+### Reservation Breakdown Table
+- Below the 4 charts, add a table listing all reservations for the selected plate within the period:
+  - Reservation ID (first 8 chars uppercase), start date, end date, number of days, amount paid
+  - No customer personal details (no name, email, phone, license)
 
-RLS: admin-only ALL policy using `has_role(auth.uid(), 'admin')`
+### Download Report as PDF
+- Add a "Télécharger le rapport" button
+- Uses `window.print()` on a styled printable view (same approach as the receipt printer) containing:
+  - Vehicle info (plate, brand, model)
+  - Period selected
+  - KPI summary (loan monthly, expenses, revenue, net)
+  - All 4 charts rendered as static content
+  - Reservation breakdown table
+- The print view opens in a new window with `@media print` styles
 
-## Page Sections (`AdminFinances.tsx`)
+## Part 2 — AdminReservations: Search, Reservation ID & Date Filter
 
-### Section 1 — Agency Overview Cards
-- Total monthly loan payments, total loan balance, monthly expenses, monthly revenue, net monthly profit
+### Reservation ID Display
+- Show the reservation ID (first 8 chars, uppercase) in each reservation row — both desktop and mobile layouts
+- Positioned prominently near the customer name
 
-### Section 2 — Loan Management
-- Table of all loans with CRUD (add/edit/delete)
-- **Loan Simulator**: input fields for a hypothetical new loan showing projected total monthly payment
+### Search Bar
+- Add a search `Input` with placeholder "Rechercher par ID, nom, email, permis, passeport..."
+- Filter reservations client-side by matching against: `id` (short), `customer_first_name`, `customer_last_name`, `customer_email`, `customer_phone`, `customer_license`
+- Place it in the header bar next to the status filter
 
-### Section 3 — Per-Car Financial Report with Charts
-When a plate is selected from a dropdown, display:
-- Loan details card (bank, monthly payment, remaining, months left)
-- Expenses breakdown by category
-- Revenue from reservations assigned to that plate
-- Net profit/loss
-
-**Charts (using Recharts, already installed):**
-- **Monthly Earnings Bar Chart**: revenue per month for the selected car over the last 12 months
-- **Rental Utilization Donut Chart**: days rented vs. days idle in the selected month
-- **Expense Category Pie Chart**: breakdown of cleaning, oil change, repair, parts, other
-- **Monthly Progress Line Chart**: cumulative revenue vs. cumulative expenses+loan over time, showing financial trajectory
-
-Each chart is interactive with tooltips using the existing `ChartContainer`/`ChartTooltip` components.
-
-### Section 4 — Agency Summary Table
-- All plates listed: plate, brand/model, loan monthly, expenses total, revenue total, net profit
-- Totals row at bottom
-
-## Files to Create
-- **Migration**: create `fleet_loans` table with RLS
-- **`src/hooks/useFleetLoans.ts`**: query, add, update, delete hooks
-- **`src/pages/admin/AdminFinances.tsx`**: full page with all 4 sections + charts
+### Date Range Filter
+- Add two `DatePickerField` inputs for filtering reservations by pickup date range
+- Filter applied client-side alongside status and search filters
+- On mobile: filters stack vertically; on desktop: inline row
 
 ## Files to Modify
-- **`src/App.tsx`**: add route `/admin/finances`
-- **`src/components/admin/AdminLayout.tsx`**: add "Finances" nav item with `Banknote` icon
-
-## Chart Details
-
-The per-car report charts pull data from:
-- `reservations` (filtered by `assigned_plate_id`) for revenue and rental days
-- `fleet_expenses` (filtered by `plate_id`) for expense amounts and categories
-- `fleet_loans` (filtered by `plate_id`) for loan cost overlay
-
-Month selector allows viewing any month's breakdown. Default: current month.
+- **`src/pages/admin/AdminFinances.tsx`**: add period selector, reservation breakdown table, download button
+- **`src/pages/admin/AdminReservations.tsx`**: add search input, reservation ID display, date range filter
 
 ## Responsive
-- Overview cards: 2 cols mobile, 3 tablet, 5 desktop
-- Charts: full-width stacked on mobile, 2x2 grid on desktop
-- Loan table and summary table: horizontal scroll on mobile
-- Per-car report: stacked on mobile, side-by-side cards + charts on desktop
+- Finances period selectors: stacked on mobile, inline on desktop
+- Reservations search + filters: stacked on mobile, inline row on desktop
 
