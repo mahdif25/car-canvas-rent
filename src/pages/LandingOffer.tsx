@@ -27,6 +27,46 @@ const LandingOffer = () => {
   const [form, setForm] = useState({ first_name: "", phone: "", email: "", vehicle_id: "" });
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  // Autofill detection — poll DOM values for 3s after mount
+  useEffect(() => {
+    let attempts = 0;
+    const maxAttempts = 15;
+    const interval = setInterval(() => {
+      attempts++;
+      if (!formRef.current || attempts > maxAttempts) {
+        clearInterval(interval);
+        return;
+      }
+      const inputs = formRef.current.querySelectorAll("input");
+      const values: Record<string, string> = {};
+      inputs.forEach((input) => {
+        if (input.name && input.value) values[input.name] = input.value;
+      });
+      setForm((prev) => ({
+        ...prev,
+        first_name: values.fname || prev.first_name,
+        phone: values.tel || prev.phone,
+        email: values.email || prev.email,
+      }));
+    }, 200);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleAutofillAnimation = useCallback((e: React.AnimationEvent<HTMLInputElement>) => {
+    if (e.animationName === "onAutoFillStart") {
+      const input = e.currentTarget;
+      if (input.name && input.value) {
+        setForm((prev) => ({
+          ...prev,
+          ...(input.name === "fname" && { first_name: input.value }),
+          ...(input.name === "tel" && { phone: input.value }),
+          ...(input.name === "email" && { email: input.value }),
+        }));
+      }
+    }
+  }, []);
 
   const { data: vehicles = [] } = useQuery({
     queryKey: ["landing-vehicles"],
