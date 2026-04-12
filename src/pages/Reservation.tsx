@@ -41,7 +41,7 @@ const defaultFormData: ReservationFormData = {
   email: "",
   phone: "",
   license_number: "",
-  nationality: "",
+  nationality: "Marocaine",
   dob: "",
   terms_accepted: false,
   promo_code: "",
@@ -49,14 +49,22 @@ const defaultFormData: ReservationFormData = {
   coupon_id: "",
   has_additional_driver: false,
   selected_color_id: "",
+  cin: "",
+  passport: "",
+  license_delivery_date: "",
+  cin_expiry_date: "",
   additional_driver: {
     first_name: "",
     last_name: "",
     email: "",
     phone: "",
     license_number: "",
-    nationality: "",
+    nationality: "Marocaine",
     dob: "",
+    cin: "",
+    passport: "",
+    license_delivery_date: "",
+    cin_expiry_date: "",
   },
 };
 
@@ -200,6 +208,10 @@ const Reservation = () => {
           customer_license: formData.license_number,
           customer_nationality: formData.nationality || null,
           customer_dob: formData.dob || null,
+          customer_cin: formData.cin || null,
+          customer_passport: formData.passport || null,
+          customer_license_delivery_date: formData.license_delivery_date || null,
+          customer_cin_expiry_date: formData.cin_expiry_date || null,
           total_price: finalTotal,
           deposit_amount: depositAmount,
           delivery_fee: deliveryFee,
@@ -207,7 +219,7 @@ const Reservation = () => {
           discount_amount: formData.discount_amount,
           marketing_consent: true,
           selected_color_id: formData.selected_color_id || null,
-        })
+        } as any)
         .select()
         .single();
 
@@ -241,7 +253,11 @@ const Reservation = () => {
           license_number: formData.additional_driver.license_number,
           nationality: formData.additional_driver.nationality || null,
           dob: formData.additional_driver.dob || null,
-        });
+          cin: formData.additional_driver.cin || null,
+          passport: formData.additional_driver.passport || null,
+          license_delivery_date: formData.additional_driver.license_delivery_date || null,
+          cin_expiry_date: formData.additional_driver.cin_expiry_date || null,
+        } as any);
         if (addDriverErr) console.error("Additional driver insert error:", addDriverErr);
       }
 
