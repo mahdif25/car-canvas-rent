@@ -151,6 +151,7 @@ const LandingOffer = () => {
         visitor_id: `landing_blur_${Date.now()}`,
         session_id: `landing_${utmParams.utm_campaign || "direct"}`,
         last_reservation_step: 0,
+        capi_allowed: false,
       });
     } catch {}
   };
