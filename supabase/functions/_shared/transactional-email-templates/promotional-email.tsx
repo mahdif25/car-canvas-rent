@@ -71,11 +71,11 @@ const PromotionalEmail = (props: Props) => {
           <Head />
           <Preview>Offre spéciale de {SITE_NAME}</Preview>
           <Body style={main}>
-            <Section dangerouslySetInnerHTML={{ __html: parts[0] }} />
+            <div dangerouslySetInnerHTML={{ __html: parts[0] }} />
             <Container style={container}>
               {couponBlock}
             </Container>
-            {parts[1] && <Section dangerouslySetInnerHTML={{ __html: parts[1] }} />}
+            {parts[1] && <div dangerouslySetInnerHTML={{ __html: parts[1] }} />}
           </Body>
         </Html>
       )
@@ -87,7 +87,7 @@ const PromotionalEmail = (props: Props) => {
         <Head />
         <Preview>Offre spéciale de {SITE_NAME}</Preview>
         <Body style={main}>
-          <Section dangerouslySetInnerHTML={{ __html: renderedBodyHtml }} />
+          <div dangerouslySetInnerHTML={{ __html: renderedBodyHtml }} />
           {couponBlock && <Container style={container}>{couponBlock}</Container>}
         </Body>
       </Html>
