@@ -12,6 +12,11 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Plus, ChevronDown, ChevronRight, Copy } from "lucide-react";
 import { toast } from "sonner";
 
+const copyCode = (code: string) => {
+  navigator.clipboard.writeText(code);
+  toast.success("Code copié");
+};
+
 interface Coupon {
   id: string;
   code: string;
