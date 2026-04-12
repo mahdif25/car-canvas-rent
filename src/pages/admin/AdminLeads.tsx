@@ -252,7 +252,8 @@ const AdminLeads = () => {
                       </div>
                     </div>
                     <p className="text-xs text-muted-foreground truncate">{group.latestEmail || "—"}</p>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
+                      {sourceBadge(group.latestSource)}
                       <span>{stepLabels[group.maxStep] || `Étape ${group.maxStep}`}</span>
                       <span>{group.entryCount} entrée{group.entryCount > 1 ? "s" : ""}</span>
                       <span>{group.resCount} rés.</span>
