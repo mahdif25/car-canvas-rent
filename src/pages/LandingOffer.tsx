@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { useAnalytics } from "@/hooks/useAnalytics";
 import { Car, Shield, Star, Phone, ChevronRight, CheckCircle2 } from "lucide-react";
 import logo from "@/assets/logo.png";
 
@@ -14,7 +15,7 @@ const LandingOffer = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { data: settings } = useSiteSettings();
-
+  const { trackFacebookEvent } = useAnalytics();
   // Capture UTM params
   const utmParams = useMemo(() => ({
     utm_source: searchParams.get("utm_source") || "",
@@ -101,6 +102,12 @@ const LandingOffer = () => {
 
     try {
       const visitorId = `landing_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+      // Store user data in sessionStorage for CAPI hashing
+      if (form.email) sessionStorage.setItem("fb_em", form.email);
+      if (form.phone) sessionStorage.setItem("fb_ph", form.phone);
+      if (form.first_name) sessionStorage.setItem("fb_fn", form.first_name);
+
       await supabase.from("leads").insert({
         source: "facebook_landing",
         first_name: form.first_name,
@@ -109,11 +116,17 @@ const LandingOffer = () => {
         visitor_id: visitorId,
         session_id: `landing_${utmParams.utm_campaign || "direct"}`,
         last_reservation_step: 1,
+        capi_allowed: true,
+      });
+
+      // Fire Facebook Lead event via Pixel + CAPI
+      trackFacebookEvent("Lead", {
+        content_name: "landing_offer",
+        ...(form.vehicle_id && { content_ids: [form.vehicle_id] }),
       });
 
       setSubmitted(true);
 
-      // Redirect to reservation with pre-filled data after a brief moment
       setTimeout(() => {
         const params = new URLSearchParams();
         if (form.vehicle_id) params.set("vehicle", form.vehicle_id);
@@ -138,6 +151,7 @@ const LandingOffer = () => {
         visitor_id: `landing_blur_${Date.now()}`,
         session_id: `landing_${utmParams.utm_campaign || "direct"}`,
         last_reservation_step: 0,
+        capi_allowed: false,
       });
     } catch {}
   };
