@@ -57,7 +57,6 @@ const VehicleDetail = () => {
     );
   }
 
-  const detailScale = useDeviceScale(vehicle, "detail");
   const specs = [
     { icon: Users, label: `${vehicle.seats} Places`, sublabel: "Capacité" },
     { icon: Settings2, label: vehicle.transmission, sublabel: "Transmission" },
