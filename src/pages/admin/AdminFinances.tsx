@@ -656,10 +656,10 @@ const AdminFinances = () => {
                 {/* Charts grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {/* Monthly Earnings Bar */}
-                  <Card>
+                  <Card className="overflow-hidden">
                     <CardHeader><CardTitle className="text-sm">Revenus mensuels</CardTitle></CardHeader>
                     <CardContent>
-                      <ChartContainer config={{ revenue: { label: "Revenus", color: "hsl(var(--primary))" } }} className="h-[250px]">
+                      <ChartContainer config={{ revenue: { label: "Revenus", color: "hsl(var(--primary))" } }} className="h-[200px] sm:h-[250px] w-full aspect-auto">
                         <BarChart data={monthlyEarnings}>
                           <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                           <YAxis tick={{ fontSize: 11 }} />
@@ -671,10 +671,10 @@ const AdminFinances = () => {
                   </Card>
 
                   {/* Utilization Donut */}
-                  <Card>
+                  <Card className="overflow-hidden">
                     <CardHeader><CardTitle className="text-sm">Utilisation (période)</CardTitle></CardHeader>
                     <CardContent>
-                      <ChartContainer config={{ rented: { label: "Loués", color: "hsl(var(--primary))" }, idle: { label: "Libres", color: "hsl(var(--muted))" } }} className="h-[250px]">
+                      <ChartContainer config={{ rented: { label: "Loués", color: "hsl(var(--primary))" }, idle: { label: "Libres", color: "hsl(var(--muted))" } }} className="h-[200px] sm:h-[250px] w-full aspect-auto">
                         <PieChart>
                           <Pie data={utilization} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={2}>
                             {utilization.map((_, i) => (
@@ -692,11 +692,11 @@ const AdminFinances = () => {
                   </Card>
 
                   {/* Expense Pie */}
-                  <Card>
+                  <Card className="overflow-hidden">
                     <CardHeader><CardTitle className="text-sm">Dépenses par catégorie</CardTitle></CardHeader>
                     <CardContent>
                       {expensePie.length > 0 ? (
-                        <ChartContainer config={Object.fromEntries(expensePie.map((e, i) => [e.name, { label: e.name, color: CHART_COLORS[i % CHART_COLORS.length] }]))} className="h-[250px]">
+                        <ChartContainer config={Object.fromEntries(expensePie.map((e, i) => [e.name, { label: e.name, color: CHART_COLORS[i % CHART_COLORS.length] }]))} className="h-[200px] sm:h-[250px] w-full aspect-auto">
                           <PieChart>
                             <Pie data={expensePie} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90}>
                               {expensePie.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
@@ -711,10 +711,10 @@ const AdminFinances = () => {
                   </Card>
 
                   {/* Cumulative Progress Line */}
-                  <Card>
+                  <Card className="overflow-hidden">
                     <CardHeader><CardTitle className="text-sm">Progression financière</CardTitle></CardHeader>
                     <CardContent>
-                      <ChartContainer config={{ revenue: { label: "Revenus cumulés", color: "hsl(142, 71%, 45%)" }, costs: { label: "Coûts cumulés", color: "hsl(0, 84%, 60%)" } }} className="h-[250px]">
+                      <ChartContainer config={{ revenue: { label: "Revenus cumulés", color: "hsl(142, 71%, 45%)" }, costs: { label: "Coûts cumulés", color: "hsl(0, 84%, 60%)" } }} className="h-[200px] sm:h-[250px] w-full aspect-auto">
                         <LineChart data={progressData}>
                           <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                           <YAxis tick={{ fontSize: 11 }} />
