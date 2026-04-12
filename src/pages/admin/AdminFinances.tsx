@@ -10,12 +10,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { DatePickerField } from "@/components/ui/date-picker-field";
-import { useFleetLoans, useAddLoan, useDeleteLoan, type FleetLoan } from "@/hooks/useFleetLoans";
+import { useFleetLoans, useAddLoan, useDeleteLoan, useUpdateLoan, type FleetLoan } from "@/hooks/useFleetLoans";
 import { useFleetPlates } from "@/hooks/useFleetPlates";
 import { useFleetExpenses, categoryLabel, EXPENSE_CATEGORIES } from "@/hooks/useFleetExpenses";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Trash2, TrendingUp, TrendingDown, Banknote, Calculator, Download } from "lucide-react";
+import { Plus, Trash2, TrendingUp, TrendingDown, Banknote, Calculator, Download, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { format, subMonths, startOfMonth, endOfMonth, differenceInDays, parseISO, eachMonthOfInterval } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -31,6 +31,58 @@ const AdminFinances = () => {
   const { data: expenses = [] } = useFleetExpenses();
   const addLoan = useAddLoan();
   const deleteLoan = useDeleteLoan();
+  const updateLoan = useUpdateLoan();
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    id: "",
+    plate_id: "",
+    bank_name: "",
+    loan_amount: "",
+    monthly_payment: "",
+    loan_duration_months: "",
+    start_date: "",
+    interest_rate: "0",
+    remaining_amount: "",
+    notes: "",
+  });
+
+  const openEditDialog = (loan: FleetLoan) => {
+    setEditForm({
+      id: loan.id,
+      plate_id: loan.plate_id,
+      bank_name: loan.bank_name,
+      loan_amount: String(loan.loan_amount),
+      monthly_payment: String(loan.monthly_payment),
+      loan_duration_months: String(loan.loan_duration_months),
+      start_date: loan.start_date,
+      interest_rate: String(loan.interest_rate),
+      remaining_amount: String(loan.remaining_amount),
+      notes: loan.notes || "",
+    });
+    setEditOpen(true);
+  };
+
+  const handleEdit = async () => {
+    if (!editForm.plate_id || !editForm.bank_name || !editForm.loan_amount || !editForm.monthly_payment || !editForm.loan_duration_months || !editForm.start_date) {
+      toast.error("Veuillez remplir tous les champs obligatoires");
+      return;
+    }
+    await updateLoan.mutateAsync({
+      id: editForm.id,
+      plate_id: editForm.plate_id,
+      bank_name: editForm.bank_name,
+      loan_amount: Number(editForm.loan_amount),
+      monthly_payment: Number(editForm.monthly_payment),
+      loan_duration_months: Number(editForm.loan_duration_months),
+      start_date: editForm.start_date,
+      interest_rate: Number(editForm.interest_rate),
+      remaining_amount: Number(editForm.remaining_amount || editForm.loan_amount),
+      notes: editForm.notes || null,
+    });
+    toast.success("Crédit mis à jour");
+    setEditOpen(false);
+  };
 
   const [addOpen, setAddOpen] = useState(false);
   const [selectedPlateId, setSelectedPlateId] = useState<string>("");
@@ -520,6 +572,40 @@ const AdminFinances = () => {
               </Dialog>
             </div>
 
+            {/* Edit Loan Dialog */}
+            <Dialog open={editOpen} onOpenChange={setEditOpen}>
+              <DialogContent className="max-w-lg">
+                <DialogHeader><DialogTitle>Modifier le crédit</DialogTitle></DialogHeader>
+                <div className="grid gap-3">
+                  <div>
+                    <Label>Véhicule (Immatriculation)</Label>
+                    <Select value={editForm.plate_id} onValueChange={(v) => setEditForm({ ...editForm, plate_id: v })}>
+                      <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                      <SelectContent>{plates?.map((p) => <SelectItem key={p.id} value={p.id}>{p.plate_number} — {p.brand} {p.model}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Banque</Label>
+                    <Input value={editForm.bank_name} onChange={(e) => setEditForm({ ...editForm, bank_name: e.target.value })} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Montant total</Label><Input type="number" value={editForm.loan_amount} onChange={(e) => setEditForm({ ...editForm, loan_amount: e.target.value })} /></div>
+                    <div><Label>Mensualité</Label><Input type="number" value={editForm.monthly_payment} onChange={(e) => setEditForm({ ...editForm, monthly_payment: e.target.value })} /></div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Durée (mois)</Label><Input type="number" value={editForm.loan_duration_months} onChange={(e) => setEditForm({ ...editForm, loan_duration_months: e.target.value })} /></div>
+                    <div><Label>Taux (%)</Label><Input type="number" step="0.01" value={editForm.interest_rate} onChange={(e) => setEditForm({ ...editForm, interest_rate: e.target.value })} /></div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Date début</Label><Input type="date" value={editForm.start_date} onChange={(e) => setEditForm({ ...editForm, start_date: e.target.value })} /></div>
+                    <div><Label>Restant</Label><Input type="number" value={editForm.remaining_amount} onChange={(e) => setEditForm({ ...editForm, remaining_amount: e.target.value })} placeholder={editForm.loan_amount || "Auto"} /></div>
+                  </div>
+                  <div><Label>Notes</Label><Input value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} /></div>
+                  <Button onClick={handleEdit} disabled={updateLoan.isPending}>Enregistrer</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
             {/* Credits — Mobile cards / Desktop table */}
             {isMobile ? (
               <div className="space-y-3">
@@ -533,9 +619,14 @@ const AdminFinances = () => {
                             <p className="font-semibold text-sm">{plate ? plate.plate_number : "—"}</p>
                             <p className="text-xs text-muted-foreground">{plate ? `${plate.brand} ${plate.model}` : ""}</p>
                           </div>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { deleteLoan.mutate(loan.id); toast.success("Crédit supprimé"); }}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditDialog(loan)}>
+                              <Pencil className="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { deleteLoan.mutate(loan.id); toast.success("Crédit supprimé"); }}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
                         </div>
                         <p className="text-xs text-muted-foreground">{loan.bank_name} • {loan.start_date} • {loan.loan_duration_months} mois</p>
                         <div className="grid grid-cols-3 gap-2 pt-1">
@@ -588,9 +679,14 @@ const AdminFinances = () => {
                           <TableCell>{loan.start_date}</TableCell>
                           <TableCell className="text-right">{loan.loan_duration_months} mois</TableCell>
                           <TableCell>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="icon" onClick={() => openEditDialog(loan)}>
+                              <Pencil className="h-4 w-4 text-muted-foreground" />
+                            </Button>
                             <Button variant="ghost" size="icon" onClick={() => { deleteLoan.mutate(loan.id); toast.success("Crédit supprimé"); }}>
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
+                          </div>
                           </TableCell>
                         </TableRow>
                       );
