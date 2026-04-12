@@ -27,6 +27,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CautionPolicy from "./pages/CautionPolicy";
 import TrackReservation from "./pages/TrackReservation";
 import Unsubscribe from "./pages/Unsubscribe";
+import LandingOffer from "./pages/LandingOffer";
 import TrackingScripts from "./components/TrackingScripts";
 import ScrollToTop from "./components/ScrollToTop";
 
@@ -51,6 +52,7 @@ const App = () => (
             <Route path="/politique-caution" element={<CautionPolicy />} />
             <Route path="/suivi-reservation" element={<TrackReservation />} />
             <Route path="/unsubscribe" element={<Unsubscribe />} />
+            <Route path="/offre" element={<LandingOffer />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/fleet" element={<AdminFleet />} />
