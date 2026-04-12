@@ -20,10 +20,12 @@ import { toast } from "sonner";
 import { format, subMonths, startOfMonth, endOfMonth, differenceInDays, parseISO, eachMonthOfInterval } from "date-fns";
 import { fr } from "date-fns/locale";
 import { BarChart, Bar, XAxis, YAxis, PieChart, Pie, Cell, LineChart, Line, ResponsiveContainer } from "recharts";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const CHART_COLORS = ["hsl(var(--primary))", "hsl(var(--muted-foreground))", "#f59e0b", "#ef4444", "#10b981", "#8b5cf6"];
 
 const AdminFinances = () => {
+  const isMobile = useIsMobile();
   const { data: loans = [], isLoading: loansLoading } = useFleetLoans();
   const { data: plates = [] } = useFleetPlates();
   const { data: expenses = [] } = useFleetExpenses();
@@ -470,11 +472,11 @@ const AdminFinances = () => {
         </div>
 
         <Tabs defaultValue="loans" className="space-y-4">
-          <TabsList className="flex-wrap">
-            <TabsTrigger value="loans"><Banknote className="mr-1 h-4 w-4" />Crédits</TabsTrigger>
-            <TabsTrigger value="report">Rapport par véhicule</TabsTrigger>
-            <TabsTrigger value="summary">Résumé agence</TabsTrigger>
-            <TabsTrigger value="simulator"><Calculator className="mr-1 h-4 w-4" />Simulateur</TabsTrigger>
+          <TabsList className="w-full justify-start overflow-x-auto flex-nowrap h-auto p-1">
+            <TabsTrigger value="loans" className="flex-shrink-0"><Banknote className="mr-1 h-4 w-4" />Crédits</TabsTrigger>
+            <TabsTrigger value="report" className="flex-shrink-0">Rapport véhicule</TabsTrigger>
+            <TabsTrigger value="summary" className="flex-shrink-0">Résumé agence</TabsTrigger>
+            <TabsTrigger value="simulator" className="flex-shrink-0"><Calculator className="mr-1 h-4 w-4" />Simulateur</TabsTrigger>
           </TabsList>
 
           {/* Section 2 — Loan Management */}
@@ -483,7 +485,7 @@ const AdminFinances = () => {
               <h2 className="text-lg font-semibold">Gestion des crédits</h2>
               <Dialog open={addOpen} onOpenChange={setAddOpen}>
                 <DialogTrigger asChild>
-                  <Button size="sm"><Plus className="mr-1 h-4 w-4" />Ajouter un crédit</Button>
+                  <Button size="sm"><Plus className="mr-1 h-4 w-4" />Ajouter</Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-lg">
                   <DialogHeader><DialogTitle>Nouveau crédit</DialogTitle></DialogHeader>
@@ -517,46 +519,89 @@ const AdminFinances = () => {
                 </DialogContent>
               </Dialog>
             </div>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Véhicule</TableHead>
-                    <TableHead>Banque</TableHead>
-                    <TableHead className="text-right">Montant</TableHead>
-                    <TableHead className="text-right">Mensualité</TableHead>
-                    <TableHead className="text-right">Restant</TableHead>
-                    <TableHead>Début</TableHead>
-                    <TableHead className="text-right">Durée</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {loans.map((loan) => {
-                    const plate = plates?.find((p) => p.id === loan.plate_id);
-                    return (
-                      <TableRow key={loan.id}>
-                        <TableCell className="font-medium">{plate ? `${plate.plate_number}` : "—"}</TableCell>
-                        <TableCell>{loan.bank_name}</TableCell>
-                        <TableCell className="text-right">{fmt(loan.loan_amount)}</TableCell>
-                        <TableCell className="text-right">{fmt(loan.monthly_payment)}</TableCell>
-                        <TableCell className="text-right">{fmt(loan.remaining_amount)}</TableCell>
-                        <TableCell>{loan.start_date}</TableCell>
-                        <TableCell className="text-right">{loan.loan_duration_months} mois</TableCell>
-                        <TableCell>
-                          <Button variant="ghost" size="icon" onClick={() => { deleteLoan.mutate(loan.id); toast.success("Crédit supprimé"); }}>
+
+            {/* Credits — Mobile cards / Desktop table */}
+            {isMobile ? (
+              <div className="space-y-3">
+                {loans.map((loan) => {
+                  const plate = plates?.find((p) => p.id === loan.plate_id);
+                  return (
+                    <Card key={loan.id}>
+                      <CardContent className="p-4 space-y-2">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-semibold text-sm">{plate ? plate.plate_number : "—"}</p>
+                            <p className="text-xs text-muted-foreground">{plate ? `${plate.brand} ${plate.model}` : ""}</p>
+                          </div>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { deleteLoan.mutate(loan.id); toast.success("Crédit supprimé"); }}>
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                  {loans.length === 0 && (
-                    <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Aucun crédit enregistré</TableCell></TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{loan.bank_name} • {loan.start_date} • {loan.loan_duration_months} mois</p>
+                        <div className="grid grid-cols-3 gap-2 pt-1">
+                          <div>
+                            <p className="text-[10px] text-muted-foreground uppercase">Montant</p>
+                            <p className="text-sm font-semibold">{fmt(loan.loan_amount)}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-muted-foreground uppercase">Mensualité</p>
+                            <p className="text-sm font-semibold">{fmt(loan.monthly_payment)}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-muted-foreground uppercase">Restant</p>
+                            <p className="text-sm font-semibold">{fmt(loan.remaining_amount)}</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+                {loans.length === 0 && (
+                  <p className="text-center text-muted-foreground py-8">Aucun crédit enregistré</p>
+                )}
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Véhicule</TableHead>
+                      <TableHead>Banque</TableHead>
+                      <TableHead className="text-right">Montant</TableHead>
+                      <TableHead className="text-right">Mensualité</TableHead>
+                      <TableHead className="text-right">Restant</TableHead>
+                      <TableHead>Début</TableHead>
+                      <TableHead className="text-right">Durée</TableHead>
+                      <TableHead></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {loans.map((loan) => {
+                      const plate = plates?.find((p) => p.id === loan.plate_id);
+                      return (
+                        <TableRow key={loan.id}>
+                          <TableCell className="font-medium">{plate ? `${plate.plate_number}` : "—"}</TableCell>
+                          <TableCell>{loan.bank_name}</TableCell>
+                          <TableCell className="text-right">{fmt(loan.loan_amount)}</TableCell>
+                          <TableCell className="text-right">{fmt(loan.monthly_payment)}</TableCell>
+                          <TableCell className="text-right">{fmt(loan.remaining_amount)}</TableCell>
+                          <TableCell>{loan.start_date}</TableCell>
+                          <TableCell className="text-right">{loan.loan_duration_months} mois</TableCell>
+                          <TableCell>
+                            <Button variant="ghost" size="icon" onClick={() => { deleteLoan.mutate(loan.id); toast.success("Crédit supprimé"); }}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    {loans.length === 0 && (
+                      <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Aucun crédit enregistré</TableCell></TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </TabsContent>
 
           {/* Section 3 — Per-Car Report */}
@@ -575,8 +620,8 @@ const AdminFinances = () => {
                 <span className="text-muted-foreground hidden sm:block">→</span>
                 <DatePickerField value={reportEndDate} onChange={setReportEndDate} placeholder="Date fin" className="w-full sm:w-44" />
                 {selectedPlateId && (
-                  <Button size="sm" variant="outline" onClick={handleDownloadReport} className="gap-1">
-                    <Download className="h-4 w-4" /> Télécharger le rapport
+                  <Button size="sm" variant="outline" onClick={handleDownloadReport} className="gap-1 w-full sm:w-auto">
+                    <Download className="h-4 w-4" /> Télécharger
                   </Button>
                 )}
               </div>
@@ -682,44 +727,67 @@ const AdminFinances = () => {
                   </Card>
                 </div>
 
-                {/* Reservation Breakdown Table */}
+                {/* Reservation Breakdown — Mobile cards / Desktop table */}
                 <Card>
                   <CardHeader><CardTitle className="text-sm">Détail des réservations ({reservationBreakdown.length})</CardTitle></CardHeader>
                   <CardContent>
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>ID</TableHead>
-                            <TableHead>Date début</TableHead>
-                            <TableHead>Date fin</TableHead>
-                            <TableHead className="text-right">Jours</TableHead>
-                            <TableHead className="text-right">Montant</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {reservationBreakdown.map((r) => (
-                            <TableRow key={r.id}>
-                              <TableCell className="font-mono font-semibold">{r.id}</TableCell>
-                              <TableCell>{r.startDate}</TableCell>
-                              <TableCell>{r.endDate}</TableCell>
-                              <TableCell className="text-right">{r.days}</TableCell>
-                              <TableCell className="text-right">{Number(r.amount).toLocaleString("fr-FR")} MAD</TableCell>
+                    {isMobile ? (
+                      <div className="space-y-3">
+                        {reservationBreakdown.map((r) => (
+                          <div key={r.id} className="border rounded-lg p-3 space-y-1">
+                            <div className="flex justify-between items-center">
+                              <span className="font-mono font-semibold text-sm">{r.id}</span>
+                              <span className="font-semibold text-sm">{Number(r.amount).toLocaleString("fr-FR")} MAD</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">{r.startDate} → {r.endDate} • {r.days} jours</p>
+                          </div>
+                        ))}
+                        {reservationBreakdown.length === 0 && (
+                          <p className="text-center text-muted-foreground py-8">Aucune réservation dans cette période</p>
+                        )}
+                        {reservationBreakdown.length > 0 && (
+                          <div className="border-t pt-2 flex justify-between font-bold text-sm">
+                            <span>Total ({reservationBreakdown.reduce((s, r) => s + r.days, 0)} jours)</span>
+                            <span>{reservationBreakdown.reduce((s, r) => s + r.amount, 0).toLocaleString("fr-FR")} MAD</span>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>ID</TableHead>
+                              <TableHead>Date début</TableHead>
+                              <TableHead>Date fin</TableHead>
+                              <TableHead className="text-right">Jours</TableHead>
+                              <TableHead className="text-right">Montant</TableHead>
                             </TableRow>
-                          ))}
-                          {reservationBreakdown.length === 0 && (
-                            <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Aucune réservation dans cette période</TableCell></TableRow>
-                          )}
-                          {reservationBreakdown.length > 0 && (
-                            <TableRow className="border-t-2 font-bold">
-                              <TableCell colSpan={3}>Total</TableCell>
-                              <TableCell className="text-right">{reservationBreakdown.reduce((s, r) => s + r.days, 0)}</TableCell>
-                              <TableCell className="text-right">{reservationBreakdown.reduce((s, r) => s + r.amount, 0).toLocaleString("fr-FR")} MAD</TableCell>
-                            </TableRow>
-                          )}
-                        </TableBody>
-                      </Table>
-                    </div>
+                          </TableHeader>
+                          <TableBody>
+                            {reservationBreakdown.map((r) => (
+                              <TableRow key={r.id}>
+                                <TableCell className="font-mono font-semibold">{r.id}</TableCell>
+                                <TableCell>{r.startDate}</TableCell>
+                                <TableCell>{r.endDate}</TableCell>
+                                <TableCell className="text-right">{r.days}</TableCell>
+                                <TableCell className="text-right">{Number(r.amount).toLocaleString("fr-FR")} MAD</TableCell>
+                              </TableRow>
+                            ))}
+                            {reservationBreakdown.length === 0 && (
+                              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Aucune réservation dans cette période</TableCell></TableRow>
+                            )}
+                            {reservationBreakdown.length > 0 && (
+                              <TableRow className="border-t-2 font-bold">
+                                <TableCell colSpan={3}>Total</TableCell>
+                                <TableCell className="text-right">{reservationBreakdown.reduce((s, r) => s + r.days, 0)}</TableCell>
+                                <TableCell className="text-right">{reservationBreakdown.reduce((s, r) => s + r.amount, 0).toLocaleString("fr-FR")} MAD</TableCell>
+                              </TableRow>
+                            )}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </>
@@ -731,50 +799,109 @@ const AdminFinances = () => {
 
           {/* Section 4 — Summary Table */}
           <TabsContent value="summary" className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center flex-wrap">
+            <div className="flex flex-col gap-3">
               <Label className="shrink-0 font-semibold text-lg">Résumé par véhicule</Label>
-              <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center ml-auto">
+              <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
                 <DatePickerField value={summaryStartDate} onChange={setSummaryStartDate} placeholder="Date début" className="w-full sm:w-44" />
                 <span className="text-muted-foreground hidden sm:block">→</span>
                 <DatePickerField value={summaryEndDate} onChange={setSummaryEndDate} placeholder="Date fin" className="w-full sm:w-44" />
-                <Button size="sm" variant="outline" onClick={handleDownloadAgencyReport} className="gap-1">
-                  <Download className="h-4 w-4" /> Télécharger le rapport
+                <Button size="sm" variant="outline" onClick={handleDownloadAgencyReport} className="gap-1 w-full sm:w-auto">
+                  <Download className="h-4 w-4" /> Télécharger
                 </Button>
               </div>
             </div>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                     <TableHead>Immatriculation</TableHead>
-                     <TableHead>Véhicule</TableHead>
-                     <TableHead className="text-right">Crédit/mois</TableHead>
-                    <TableHead className="text-right">Dépenses total</TableHead>
-                    <TableHead className="text-right">Revenus total</TableHead>
-                    <TableHead className="text-right">Bénéfice net</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {summaryRows.map((row) => (
-                    <TableRow key={row.id}>
-                      <TableCell className="font-medium">{row.plate}</TableCell>
-                      <TableCell>{row.brand}</TableCell>
-                      <TableCell className="text-right">{fmt(row.loanMonthly)}</TableCell>
-                      <TableCell className="text-right">{fmt(row.expenses)}</TableCell>
-                      <TableCell className="text-right">{fmt(row.revenue)}</TableCell>
-                      <TableCell className={`text-right font-semibold ${row.net >= 0 ? "text-green-600" : "text-red-500"}`}>{fmt(row.net)}</TableCell>
+
+            {/* Summary — Mobile cards / Desktop table */}
+            {isMobile ? (
+              <div className="space-y-3">
+                {summaryRows.map((row) => (
+                  <Card key={row.id}>
+                    <CardContent className="p-4 space-y-2">
+                      <div>
+                        <p className="font-semibold text-sm">{row.plate}</p>
+                        <p className="text-xs text-muted-foreground">{row.brand}</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 pt-1">
+                        <div>
+                          <p className="text-[10px] text-muted-foreground uppercase">Crédit/mois</p>
+                          <p className="text-sm font-semibold">{fmt(row.loanMonthly)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-muted-foreground uppercase">Dépenses</p>
+                          <p className="text-sm font-semibold">{fmt(row.expenses)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-muted-foreground uppercase">Revenus</p>
+                          <p className="text-sm font-semibold text-green-600">{fmt(row.revenue)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-muted-foreground uppercase">Bénéfice</p>
+                          <p className={`text-sm font-semibold ${row.net >= 0 ? "text-green-600" : "text-red-500"}`}>{fmt(row.net)}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                {/* Summary totals card */}
+                <Card className="border-2">
+                  <CardContent className="p-4">
+                    <p className="font-bold text-sm mb-2">Total agence</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <p className="text-[10px] text-muted-foreground uppercase">Crédit/mois</p>
+                        <p className="text-sm font-bold">{fmt(summaryTotals.loanMonthly)}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-muted-foreground uppercase">Dépenses</p>
+                        <p className="text-sm font-bold">{fmt(summaryTotals.expenses)}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-muted-foreground uppercase">Revenus</p>
+                        <p className="text-sm font-bold text-green-600">{fmt(summaryTotals.revenue)}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-muted-foreground uppercase">Bénéfice</p>
+                        <p className={`text-sm font-bold ${summaryTotals.net >= 0 ? "text-green-600" : "text-red-500"}`}>{fmt(summaryTotals.net)}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                       <TableHead>Immatriculation</TableHead>
+                       <TableHead>Véhicule</TableHead>
+                       <TableHead className="text-right">Crédit/mois</TableHead>
+                      <TableHead className="text-right">Dépenses total</TableHead>
+                      <TableHead className="text-right">Revenus total</TableHead>
+                      <TableHead className="text-right">Bénéfice net</TableHead>
                     </TableRow>
-                  ))}
-                  <TableRow className="border-t-2 font-bold">
-                    <TableCell colSpan={2}>Total</TableCell>
-                    <TableCell className="text-right">{fmt(summaryTotals.loanMonthly)}</TableCell>
-                    <TableCell className="text-right">{fmt(summaryTotals.expenses)}</TableCell>
-                    <TableCell className="text-right">{fmt(summaryTotals.revenue)}</TableCell>
-                    <TableCell className={`text-right ${summaryTotals.net >= 0 ? "text-green-600" : "text-red-500"}`}>{fmt(summaryTotals.net)}</TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {summaryRows.map((row) => (
+                      <TableRow key={row.id}>
+                        <TableCell className="font-medium">{row.plate}</TableCell>
+                        <TableCell>{row.brand}</TableCell>
+                        <TableCell className="text-right">{fmt(row.loanMonthly)}</TableCell>
+                        <TableCell className="text-right">{fmt(row.expenses)}</TableCell>
+                        <TableCell className="text-right">{fmt(row.revenue)}</TableCell>
+                        <TableCell className={`text-right font-semibold ${row.net >= 0 ? "text-green-600" : "text-red-500"}`}>{fmt(row.net)}</TableCell>
+                      </TableRow>
+                    ))}
+                    <TableRow className="border-t-2 font-bold">
+                      <TableCell colSpan={2}>Total</TableCell>
+                      <TableCell className="text-right">{fmt(summaryTotals.loanMonthly)}</TableCell>
+                      <TableCell className="text-right">{fmt(summaryTotals.expenses)}</TableCell>
+                      <TableCell className="text-right">{fmt(summaryTotals.revenue)}</TableCell>
+                      <TableCell className={`text-right ${summaryTotals.net >= 0 ? "text-green-600" : "text-red-500"}`}>{fmt(summaryTotals.net)}</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </TabsContent>
 
           {/* Simulator */}
