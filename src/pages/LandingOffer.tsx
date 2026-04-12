@@ -261,9 +261,12 @@ const LandingOffer = () => {
                   <Label htmlFor="first_name">Prénom *</Label>
                   <Input
                     id="first_name"
+                    name="fname"
+                    autoComplete="given-name"
                     value={form.first_name}
                     onChange={(e) => setForm({ ...form, first_name: e.target.value })}
                     onBlur={handleBlur}
+                    onAnimationStart={handleAutofillAnimation}
                     placeholder="Votre prénom"
                     required
                   />
