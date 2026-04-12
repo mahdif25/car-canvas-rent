@@ -513,6 +513,61 @@ const AdminSettings = () => {
                 Sauvegarder
               </Button>
             </div>
+
+            {/* Facebook Lead Ads Webhook */}
+            <div className="bg-card rounded-xl p-4 md:p-6 space-y-5 border border-border">
+              <h2 className="font-semibold text-lg">Facebook Lead Ads Webhook</h2>
+              <p className="text-sm text-muted-foreground">
+                Collez cette URL dans Facebook Business Manager → Votre App → Webhooks → Abonnez-vous aux événements <strong>leadgen</strong>.
+              </p>
+              <div className="space-y-2">
+                <Label>URL du Webhook</Label>
+                <div className="flex gap-2">
+                  <Input
+                    readOnly
+                    value={`https://mtcxliurdruvrzjtxful.supabase.co/functions/v1/facebook-leadads-webhook`}
+                    className="font-mono text-xs"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      navigator.clipboard.writeText("https://mtcxliurdruvrzjtxful.supabase.co/functions/v1/facebook-leadads-webhook");
+                      toast.success("URL copiée !");
+                    }}
+                  >
+                    Copier
+                  </Button>
+                </div>
+              </div>
+              <div className="bg-secondary rounded-lg p-4 space-y-2 text-sm">
+                <p className="font-medium">Instructions de configuration :</p>
+                <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                  <li>Allez dans Facebook Business Manager → votre App → Webhooks</li>
+                  <li>Ajoutez un webhook pour l'objet "Page"</li>
+                  <li>Collez l'URL ci-dessus et votre token de vérification</li>
+                  <li>Abonnez-vous au champ "leadgen"</li>
+                  <li>Les leads apparaîtront automatiquement dans l'onglet Leads</li>
+                </ol>
+              </div>
+              <div className="bg-secondary rounded-lg p-4 space-y-2 text-sm">
+                <p className="font-medium">Landing Page Facebook :</p>
+                <div className="flex gap-2 items-center">
+                  <Input readOnly value="https://centreluxcar.com/offre" className="font-mono text-xs" />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      navigator.clipboard.writeText("https://centreluxcar.com/offre");
+                      toast.success("URL copiée !");
+                    }}
+                  >
+                    Copier
+                  </Button>
+                </div>
+                <p className="text-muted-foreground">Utilisez cette URL comme destination pour vos publicités Facebook de type "Trafic".</p>
+              </div>
+            </div>
           </TabsContent>
 
           {/* Emails */}

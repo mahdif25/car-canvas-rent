@@ -5,7 +5,7 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, ChevronDown, ChevronUp, Globe, Facebook, Megaphone } from "lucide-react";
 
 const stepLabels: Record<number, string> = {
   1: "Dates & Lieu",
@@ -13,6 +13,12 @@ const stepLabels: Record<number, string> = {
   3: "Options",
   4: "Informations",
   5: "Confirmation",
+};
+
+const sourceLabels: Record<string, { label: string; color: string; icon: any }> = {
+  website: { label: "Site web", color: "bg-blue-100 text-blue-700", icon: Globe },
+  facebook_lead_ad: { label: "FB Lead Ad", color: "bg-indigo-100 text-indigo-700", icon: Facebook },
+  facebook_landing: { label: "Landing Page", color: "bg-purple-100 text-purple-700", icon: Megaphone },
 };
 
 interface LeadRow {
@@ -28,6 +34,7 @@ interface LeadRow {
   reservation_completed: boolean | null;
   reservation_id: string | null;
   capi_allowed: boolean;
+  source: string;
   created_at: string | null;
   updated_at: string | null;
 }
@@ -39,6 +46,7 @@ interface GroupedLead {
   latestFirstName: string | null;
   latestLastName: string | null;
   latestLicense: string | null;
+  latestSource: string;
   maxStep: number;
   completed: boolean;
   entryCount: number;
@@ -51,6 +59,7 @@ interface GroupedLead {
 const AdminLeads = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [sourceFilter, setSourceFilter] = useState("all");
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
   const { data: leads = [], isLoading } = useQuery({
@@ -101,6 +110,7 @@ const AdminLeads = () => {
         latestFirstName: latest.first_name,
         latestLastName: latest.last_name,
         latestLicense: latest.license_number,
+        latestSource: latest.source || "website",
         maxStep,
         completed,
         entryCount: entries.length,
@@ -117,6 +127,9 @@ const AdminLeads = () => {
     if (statusFilter !== "all") {
       result = result.filter((g) => g.status === statusFilter);
     }
+    if (sourceFilter !== "all") {
+      result = result.filter((g) => g.latestSource === sourceFilter);
+    }
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter(
@@ -128,7 +141,18 @@ const AdminLeads = () => {
       );
     }
     return result;
-  }, [grouped, statusFilter, search]);
+  }, [grouped, statusFilter, sourceFilter, search]);
+
+  const sourceBadge = (source: string) => {
+    const info = sourceLabels[source] || { label: source, color: "bg-secondary text-muted-foreground", icon: Globe };
+    const Icon = info.icon;
+    return (
+      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${info.color}`}>
+        <Icon size={10} />
+        {info.label}
+      </span>
+    );
+  };
 
   const statusBadge = (status: string) => {
     const map: Record<string, string> = {
@@ -166,6 +190,15 @@ const AdminLeads = () => {
               <SelectItem value="abandonné">Abandonné</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={sourceFilter} onValueChange={setSourceFilter}>
+            <SelectTrigger className="w-full sm:w-40"><SelectValue placeholder="Source" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Toutes sources</SelectItem>
+              <SelectItem value="website">Site web</SelectItem>
+              <SelectItem value="facebook_lead_ad">FB Lead Ad</SelectItem>
+              <SelectItem value="facebook_landing">Landing Page</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -176,10 +209,11 @@ const AdminLeads = () => {
           ) : filtered.length > 0 ? (
             <div className="space-y-2">
               {/* Desktop header */}
-              <div className="hidden md:grid grid-cols-7 gap-2 px-4 py-2 text-xs font-medium text-muted-foreground uppercase">
+              <div className="hidden md:grid grid-cols-8 gap-2 px-4 py-2 text-xs font-medium text-muted-foreground uppercase">
                 <span>Nom</span>
                 <span>Email</span>
                 <span>Téléphone</span>
+                <span>Source</span>
                 <span>Étape max</span>
                 <span>Entrées</span>
                 <span>Réservations</span>
@@ -189,12 +223,13 @@ const AdminLeads = () => {
                 <div key={group.key} className="border rounded-lg">
                   {/* Desktop row */}
                   <div
-                    className="hidden md:grid grid-cols-7 gap-2 px-4 py-3 cursor-pointer hover:bg-secondary/50 items-center text-sm"
+                    className="hidden md:grid grid-cols-8 gap-2 px-4 py-3 cursor-pointer hover:bg-secondary/50 items-center text-sm"
                     onClick={() => setExpandedKey(expandedKey === group.key ? null : group.key)}
                   >
                     <span className="font-medium">{[group.latestFirstName, group.latestLastName].filter(Boolean).join(" ") || "—"}</span>
                     <span className="break-all text-muted-foreground">{group.latestEmail || "—"}</span>
                     <span className="text-muted-foreground">{group.latestPhone || "—"}</span>
+                    <span>{sourceBadge(group.latestSource)}</span>
                     <span>{stepLabels[group.maxStep] || `Étape ${group.maxStep}`}</span>
                     <span>{group.entryCount}</span>
                     <span>{group.resCount}</span>
@@ -217,7 +252,8 @@ const AdminLeads = () => {
                       </div>
                     </div>
                     <p className="text-xs text-muted-foreground truncate">{group.latestEmail || "—"}</p>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
+                      {sourceBadge(group.latestSource)}
                       <span>{stepLabels[group.maxStep] || `Étape ${group.maxStep}`}</span>
                       <span>{group.entryCount} entrée{group.entryCount > 1 ? "s" : ""}</span>
                       <span>{group.resCount} rés.</span>

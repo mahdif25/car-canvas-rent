@@ -1,0 +1,1 @@
+ALTER TABLE public.leads ADD COLUMN source text NOT NULL DEFAULT 'website';

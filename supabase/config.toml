@@ -17,3 +17,5 @@ project_id = "mtcxliurdruvrzjtxful"
     verify_jwt = false
   [functions.facebook-capi]
     verify_jwt = false
+  [functions.facebook-leadads-webhook]
+    verify_jwt = false
