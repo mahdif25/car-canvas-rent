@@ -3,7 +3,8 @@ import { ReservationFormData, AdditionalDriver } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { User, Mail, Phone, CreditCard, Globe, CalendarDays, UserPlus } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { User, Mail, Phone, CreditCard, Globe, CalendarDays, UserPlus, FileText } from "lucide-react";
 import { Vehicle } from "@/hooks/useVehicles";
 import { Link } from "react-router-dom";
 
@@ -34,12 +35,47 @@ const AUTOFILL_FIELDS = [
   { name: "phone", key: "phone" },
 ] as const;
 
+const NATIONALITIES = [
+  "Marocaine",
+  "Algérienne",
+  "Allemande",
+  "Américaine",
+  "Belge",
+  "Britannique",
+  "Canadienne",
+  "Chinoise",
+  "Égyptienne",
+  "Émiratie",
+  "Espagnole",
+  "Française",
+  "Indienne",
+  "Italienne",
+  "Jordanienne",
+  "Koweïtienne",
+  "Libanaise",
+  "Libyenne",
+  "Mauritanienne",
+  "Néerlandaise",
+  "Nigériane",
+  "Portugaise",
+  "Qatarie",
+  "Saoudienne",
+  "Sénégalaise",
+  "Suisse",
+  "Tunisienne",
+  "Turque",
+  "Autre",
+];
+
 const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadCaptureMode = "blur" }: Props) => {
   const prevFieldsRef = useRef<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const formRef = useRef<HTMLFormElement>(null);
 
-  // Autofill detection: poll DOM values after mount
+  const isMoroccan = formData.nationality === "Marocaine";
+  const addIsMoroccan = formData.additional_driver.nationality === "Marocaine";
+
+  // Autofill detection
   useEffect(() => {
     let attempts = 0;
     const interval = setInterval(() => {
@@ -133,11 +169,8 @@ const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadC
     if (formData.last_name) sessionStorage.setItem("fb_ln", formData.last_name);
     if (formData.phone) sessionStorage.setItem("fb_ph", formData.phone);
 
-    // Fire Lead event on submit
     if (analytics) {
-      analytics.trackFacebookEvent("Lead", {
-        content_name: "reservation_driver_info",
-      });
+      analytics.trackFacebookEvent("Lead", { content_name: "reservation_driver_info" });
       analytics.trackTikTokEvent("SubmitForm");
       analytics.trackGAEvent("generate_lead", { event_category: "reservation" });
     }
@@ -150,8 +183,11 @@ const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadC
     formData.additional_driver.last_name &&
     formData.additional_driver.phone &&
     formData.additional_driver.license_number &&
+    (addIsMoroccan ? formData.additional_driver.cin : formData.additional_driver.passport) &&
     !errors.add_email && !errors.add_phone
   );
+
+  const idValid = isMoroccan ? !!formData.cin : !!formData.passport;
 
   const isValid =
     formData.first_name &&
@@ -160,6 +196,7 @@ const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadC
     formData.phone &&
     formData.license_number &&
     formData.terms_accepted &&
+    idValid &&
     !errors.email && !errors.phone &&
     additionalDriverValid;
 
@@ -207,6 +244,55 @@ const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadC
             </div>
             <ErrorMsg field="phone" />
           </div>
+
+          {/* Nationality dropdown */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Nationalité *</label>
+            <Select value={formData.nationality} onValueChange={(v) => {
+              updateForm({ nationality: v, cin: "", passport: "", cin_expiry_date: "" });
+            }}>
+              <SelectTrigger>
+                <div className="flex items-center gap-2">
+                  <Globe size={16} className="text-muted-foreground shrink-0" />
+                  <SelectValue placeholder="Sélectionner" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                {NATIONALITIES.map((n) => (
+                  <SelectItem key={n} value={n}>{n}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Conditional CIN / Passport */}
+          {isMoroccan ? (
+            <>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">N° CIN *</label>
+                <div className="relative">
+                  <FileText size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input className="pl-9" value={formData.cin} onChange={(e) => updateForm({ cin: e.target.value })} placeholder="Ex: AB123456" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Date d'expiration CIN</label>
+                <div className="relative">
+                  <CalendarDays size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input className="pl-9" type="date" value={formData.cin_expiry_date} onChange={(e) => updateForm({ cin_expiry_date: e.target.value })} />
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">N° Passeport *</label>
+              <div className="relative">
+                <FileText size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input className="pl-9" value={formData.passport} onChange={(e) => updateForm({ passport: e.target.value })} placeholder="Numéro de passeport" />
+              </div>
+            </div>
+          )}
+
           <div className="space-y-2">
             <label className="text-sm font-medium">N° Permis de conduire *</label>
             <div className="relative">
@@ -215,10 +301,10 @@ const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadC
             </div>
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Nationalité</label>
+            <label className="text-sm font-medium">Date de délivrance du permis</label>
             <div className="relative">
-              <Globe size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input className="pl-9" name="nationality" autoComplete="country-name" value={formData.nationality} onChange={(e) => updateForm({ nationality: e.target.value })} placeholder="Marocaine" />
+              <CalendarDays size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input className="pl-9" type="date" value={formData.license_delivery_date} onChange={(e) => updateForm({ license_delivery_date: e.target.value })} />
             </div>
           </div>
           <div className="space-y-2">
@@ -276,6 +362,55 @@ const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadC
               </div>
               <ErrorMsg field="add_phone" />
             </div>
+
+            {/* Additional driver nationality */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Nationalité *</label>
+              <Select value={formData.additional_driver.nationality} onValueChange={(v) => {
+                updateAdditionalDriver({ nationality: v, cin: "", passport: "", cin_expiry_date: "" });
+              }}>
+                <SelectTrigger>
+                  <div className="flex items-center gap-2">
+                    <Globe size={16} className="text-muted-foreground shrink-0" />
+                    <SelectValue placeholder="Sélectionner" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  {NATIONALITIES.map((n) => (
+                    <SelectItem key={n} value={n}>{n}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Additional driver CIN / Passport */}
+            {addIsMoroccan ? (
+              <>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">N° CIN *</label>
+                  <div className="relative">
+                    <FileText size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Input className="pl-9" value={formData.additional_driver.cin} onChange={(e) => updateAdditionalDriver({ cin: e.target.value })} placeholder="Ex: AB123456" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Date d'expiration CIN</label>
+                  <div className="relative">
+                    <CalendarDays size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Input className="pl-9" type="date" value={formData.additional_driver.cin_expiry_date} onChange={(e) => updateAdditionalDriver({ cin_expiry_date: e.target.value })} />
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">N° Passeport *</label>
+                <div className="relative">
+                  <FileText size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input className="pl-9" value={formData.additional_driver.passport} onChange={(e) => updateAdditionalDriver({ passport: e.target.value })} placeholder="Numéro de passeport" />
+                </div>
+              </div>
+            )}
+
             <div className="space-y-2">
               <label className="text-sm font-medium">N° Permis de conduire *</label>
               <div className="relative">
@@ -284,10 +419,10 @@ const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadC
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Nationalité</label>
+              <label className="text-sm font-medium">Date de délivrance du permis</label>
               <div className="relative">
-                <Globe size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <Input className="pl-9" value={formData.additional_driver.nationality} onChange={(e) => updateAdditionalDriver({ nationality: e.target.value })} placeholder="Marocaine" />
+                <CalendarDays size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input className="pl-9" type="date" value={formData.additional_driver.license_delivery_date} onChange={(e) => updateAdditionalDriver({ license_delivery_date: e.target.value })} />
               </div>
             </div>
             <div className="space-y-2">

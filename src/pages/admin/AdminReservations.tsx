@@ -11,7 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import { useMemo, useState } from "react";
 import { useVehicles, usePricingTiers, getDailyRateFromTiers } from "@/hooks/useVehicles";
 import { useLocations, useAllLocations, getDeliveryFee } from "@/hooks/useLocations";
-import { Printer, Save, Pencil, Check, X, Plus, AlertTriangle, Search } from "lucide-react";
+import { Printer, Save, Pencil, Check, X, Plus, AlertTriangle, Search, Download } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAvailablePlates } from "@/hooks/useFleetPlates";
 import { DatePickerField } from "@/components/ui/date-picker-field";
@@ -93,7 +93,9 @@ const AdminReservations = () => {
           r.customer_last_name?.toLowerCase().includes(q) ||
           r.customer_email?.toLowerCase().includes(q) ||
           r.customer_phone?.toLowerCase().includes(q) ||
-          r.customer_license?.toLowerCase().includes(q)
+          r.customer_license?.toLowerCase().includes(q) ||
+          r.customer_cin?.toLowerCase().includes(q) ||
+          r.customer_passport?.toLowerCase().includes(q)
         );
       });
     }
@@ -369,6 +371,69 @@ const AdminReservations = () => {
     w.print();
   };
 
+  const handleDownloadReport = () => {
+    if (!filteredReservations || filteredReservations.length === 0) return;
+    const fmtDate = (d: string) => new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+    const rows = filteredReservations.map((r: any) => {
+      const days = Math.max(1, Math.ceil((new Date(r.return_date).getTime() - new Date(r.pickup_date).getTime()) / 86400000));
+      const vehicle = vehicles.find((v: any) => v.id === r.vehicle_id);
+      const plate = r.assigned_plate_id ? "Assigné" : "—";
+      const cinPassport = r.customer_cin || r.customer_passport || "—";
+      const licenseDate = r.customer_license_delivery_date ? new Date(r.customer_license_delivery_date).toLocaleDateString("fr-FR") : "—";
+      const cautionOui = r.deposit_status === "collected" || r.deposit_status === "returned" ? "Oui" : "Non";
+      return `<tr>
+        <td>${r.id.slice(0, 8).toUpperCase()}</td>
+        <td>${vehicle?.name || "—"}</td>
+        <td>${r.customer_first_name} ${r.customer_last_name}</td>
+        <td>${r.customer_phone}</td>
+        <td>${cinPassport}</td>
+        <td>${r.pickup_location}</td>
+        <td>${r.return_location || r.pickup_location}</td>
+        <td>${r.customer_license}</td>
+        <td>${licenseDate}</td>
+        <td>${days}j</td>
+        <td>${Number(r.total_price).toLocaleString("fr-FR")} MAD</td>
+        <td>${cautionOui}</td>
+        <td>${statusLabels[r.status as ReservationStatus] || r.status}</td>
+      </tr>`;
+    }).join("");
+
+    const periodLabel = dateFrom || dateTo
+      ? `Période: ${dateFrom ? fmtDate(dateFrom) : "—"} → ${dateTo ? fmtDate(dateTo) : "—"}`
+      : "Toutes les dates";
+
+    const w = window.open("", "_blank", "width=1100,height=800");
+    if (!w) return;
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
+      <title>Rapport Réservations</title>
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; padding: 30px; font-size: 11px; }
+        h1 { font-size: 18px; margin-bottom: 4px; }
+        .meta { color: #666; margin-bottom: 16px; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; }
+        th { background: #f5f5f5; font-weight: 600; font-size: 10px; text-transform: uppercase; }
+        tr:nth-child(even) { background: #fafafa; }
+        .total { margin-top: 12px; font-size: 13px; font-weight: 600; }
+        @media print { body { padding: 10px; } }
+      </style></head><body>
+      <h1>Centre Lux Car — Rapport Réservations</h1>
+      <p class="meta">${periodLabel} • ${filteredReservations.length} réservation(s)</p>
+      <table>
+        <thead><tr>
+          <th>ID</th><th>Véhicule</th><th>Nom</th><th>Tél</th><th>CIN/Passeport</th>
+          <th>Lieu départ</th><th>Lieu retour</th><th>Permis</th><th>Délivrance permis</th>
+          <th>Jours</th><th>Montant</th><th>Caution</th><th>Statut</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <p class="total">Total: ${filteredReservations.reduce((s: number, r: any) => s + Number(r.total_price), 0).toLocaleString("fr-FR")} MAD</p>
+      </body></html>`);
+    w.document.close();
+    w.print();
+  };
+
   return (
     <AdminLayout>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
@@ -383,7 +448,7 @@ const AdminReservations = () => {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Rechercher par ID, nom, email, permis..."
+            placeholder="Rechercher par ID, nom, email, permis, CIN, passeport..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
@@ -402,6 +467,9 @@ const AdminReservations = () => {
         </Select>
         <DatePickerField value={dateFrom} onChange={setDateFrom} placeholder="Date début" className="w-full sm:w-40" />
         <DatePickerField value={dateTo} onChange={setDateTo} placeholder="Date fin" className="w-full sm:w-40" />
+        <Button variant="outline" size="sm" className="gap-1 whitespace-nowrap" onClick={() => handleDownloadReport()}>
+          <Download size={14} /> Télécharger
+        </Button>
       </div>
 
       <ManualReservationDialog
@@ -619,10 +687,18 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
               { label: "Email", field: "email", value: r.customer_email },
               { label: "Téléphone", field: "phone", value: r.customer_phone },
               { label: "Permis", field: "license", value: r.customer_license },
+              { label: "Délivrance permis", field: "none_ld", value: r.customer_license_delivery_date ? new Date(r.customer_license_delivery_date).toLocaleDateString("fr-FR") : "—" },
+              { label: "Nationalité", field: "none_nat", value: r.customer_nationality || "—" },
+              ...(r.customer_nationality === "Marocaine" || (!r.customer_nationality && r.customer_cin)
+                ? [
+                    { label: "CIN", field: "none_cin", value: r.customer_cin || "—" },
+                    { label: "Expiration CIN", field: "none_cinexp", value: r.customer_cin_expiry_date ? new Date(r.customer_cin_expiry_date).toLocaleDateString("fr-FR") : "—" },
+                  ]
+                : [{ label: "Passeport", field: "none_pass", value: r.customer_passport || "—" }]),
             ].map(({ label, field, value }) => (
               <div key={field}>
                 <p className="text-muted-foreground">{label}</p>
-                {clientEdit?.field === field ? (
+                {clientEdit?.field === field && !field.startsWith("none_") ? (
                   <div className="flex items-center gap-1 mt-1">
                     <Input
                       className="h-7 text-sm"
@@ -636,7 +712,9 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
                 ) : (
                   <div className="flex items-center gap-1">
                     <p className={field === "email" ? "break-all" : ""}>{value}</p>
-                    <button onClick={() => onStartClientEdit(field, value)} className="text-muted-foreground hover:text-primary"><Pencil size={13} /></button>
+                    {!field.startsWith("none_") && (
+                      <button onClick={() => onStartClientEdit(field, value)} className="text-muted-foreground hover:text-primary"><Pencil size={13} /></button>
+                    )}
                   </div>
                 )}
               </div>

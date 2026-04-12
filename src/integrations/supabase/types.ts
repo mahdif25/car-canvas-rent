@@ -16,38 +16,50 @@ export type Database = {
     Tables: {
       additional_drivers: {
         Row: {
+          cin: string | null
+          cin_expiry_date: string | null
           created_at: string
           dob: string | null
           email: string | null
           first_name: string
           id: string
           last_name: string
+          license_delivery_date: string | null
           license_number: string
           nationality: string | null
+          passport: string | null
           phone: string | null
           reservation_id: string
         }
         Insert: {
+          cin?: string | null
+          cin_expiry_date?: string | null
           created_at?: string
           dob?: string | null
           email?: string | null
           first_name: string
           id?: string
           last_name: string
+          license_delivery_date?: string | null
           license_number: string
           nationality?: string | null
+          passport?: string | null
           phone?: string | null
           reservation_id: string
         }
         Update: {
+          cin?: string | null
+          cin_expiry_date?: string | null
           created_at?: string
           dob?: string | null
           email?: string | null
           first_name?: string
           id?: string
           last_name?: string
+          license_delivery_date?: string | null
           license_number?: string
           nationality?: string | null
+          passport?: string | null
           phone?: string | null
           reservation_id?: string
         }
@@ -695,12 +707,16 @@ export type Database = {
           assigned_plate_id: string | null
           coupon_id: string | null
           created_at: string
+          customer_cin: string | null
+          customer_cin_expiry_date: string | null
           customer_dob: string | null
           customer_email: string
           customer_first_name: string
           customer_last_name: string
           customer_license: string
+          customer_license_delivery_date: string | null
           customer_nationality: string | null
+          customer_passport: string | null
           customer_phone: string
           delivery_fee: number
           deposit_amount: number
@@ -726,12 +742,16 @@ export type Database = {
           assigned_plate_id?: string | null
           coupon_id?: string | null
           created_at?: string
+          customer_cin?: string | null
+          customer_cin_expiry_date?: string | null
           customer_dob?: string | null
           customer_email: string
           customer_first_name: string
           customer_last_name: string
           customer_license: string
+          customer_license_delivery_date?: string | null
           customer_nationality?: string | null
+          customer_passport?: string | null
           customer_phone: string
           delivery_fee?: number
           deposit_amount?: number
@@ -757,12 +777,16 @@ export type Database = {
           assigned_plate_id?: string | null
           coupon_id?: string | null
           created_at?: string
+          customer_cin?: string | null
+          customer_cin_expiry_date?: string | null
           customer_dob?: string | null
           customer_email?: string
           customer_first_name?: string
           customer_last_name?: string
           customer_license?: string
+          customer_license_delivery_date?: string | null
           customer_nationality?: string | null
+          customer_passport?: string | null
           customer_phone?: string
           delivery_fee?: number
           deposit_amount?: number

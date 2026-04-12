@@ -62,6 +62,10 @@ export interface AdditionalDriver {
   license_number: string;
   nationality: string;
   dob: string;
+  cin: string;
+  passport: string;
+  license_delivery_date: string;
+  cin_expiry_date: string;
 }
 
 export interface ReservationFormData {
@@ -91,4 +95,8 @@ export interface ReservationFormData {
   has_additional_driver: boolean;
   additional_driver: AdditionalDriver;
   selected_color_id: string;
+  cin: string;
+  passport: string;
+  license_delivery_date: string;
+  cin_expiry_date: string;
 }
