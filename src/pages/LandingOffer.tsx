@@ -29,6 +29,8 @@ const LandingOffer = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const leadIdRef = useRef<string | null>(null);
+  const stableVisitorId = useRef(`landing_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`);
 
   // Autofill detection — poll DOM values for 3s after mount
   useEffect(() => {
