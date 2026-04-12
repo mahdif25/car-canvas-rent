@@ -1,23 +1,40 @@
 
 
-# Sticky Sidebar Footer & Plate Number in Report
+# Mobile Optimization for Finance Dashboard
 
-## Problem 1 — Sidebar Settings/Logout scrolling away
-The desktop sidebar uses `overflow-hidden` on the `<aside>` and `overflow-y-auto` on the `<nav>`, but when the nav items overflow, the bottom section (Settings + Logout) can get pushed out of view. The fix is to ensure the sidebar uses `h-screen sticky top-0` so it stays fixed to the viewport, and the nav section scrolls independently while the bottom section stays pinned.
+## Problems Identified
+1. **Tabs overlapping**: 4 tab triggers ("Crédits", "Rapport par véhicule", "Résumé agence", "Simulateur") wrap/overlap on 390px screens
+2. **Summary table too wide**: 6 columns (Immat, Véhicule, Crédit/mois, Dépenses, Revenus, Bénéfice) force horizontal scroll
+3. **Credits table too wide**: 8 columns requiring scroll
+4. **Per-vehicle report**: date pickers and filters not well stacked
+5. **Reservation breakdown table**: dates get cramped
 
-## Problem 2 — Missing plate number (immatriculation) in downloaded report
-The report currently shows "Assigné" or "—" for the plate column. It needs to show the actual `plate_number` from the available plates data.
+## Changes — File: `src/pages/admin/AdminFinances.tsx`
 
-## Changes
+### 1. Scrollable Tabs
+- Add `overflow-x-auto` to `TabsList` and make it a single horizontal scroll row with `flex-nowrap w-full` so tabs don't wrap or overlap
 
-### File: `src/components/admin/AdminLayout.tsx`
-**Desktop sidebar** (line ~156): Change `<aside>` from `overflow-hidden` to `sticky top-0 h-screen` so it never scrolls with the page. The inner `<nav>` already has `overflow-y-auto` and `flex-1` so it will scroll independently while the bottom div stays pinned.
+### 2. Summary Tab — Card Layout on Mobile
+- Import `useIsMobile` hook
+- On mobile: replace the 6-column summary `<Table>` with a stacked card list where each vehicle is a card showing plate number, vehicle name, and a 2x2 grid of values (Crédit/mois, Dépenses, Revenus, Bénéfice net)
+- On desktop: keep existing table
+- Date pickers already stack on mobile (using `flex-col sm:flex-row`), just ensure download button is full-width
 
-### File: `src/pages/admin/AdminReservations.tsx`
-**Report download** (line ~380): Replace `const plate = r.assigned_plate_id ? "Assigné" : "—"` with a lookup that finds the actual plate number from the available plates data. Add an "Immatriculation" column to the report table header and row, showing the plate number next to the vehicle name.
+### 3. Credits Tab — Card Layout on Mobile
+- On mobile: replace the 8-column loans table with cards showing key info (Véhicule, Banque, Mensualité, Restant, delete button)
+- On desktop: keep existing table
+
+### 4. Per-Vehicle Report Tab
+- Ensure vehicle selector is full-width on mobile
+- KPI cards already use `grid-cols-2` which works
+- Charts already use `grid-cols-1 lg:grid-cols-2` which works
+- Reservation breakdown table: on mobile, show as cards (ID, dates, days, amount)
+
+### 5. Simulator Tab
+- Already uses `grid-cols-1 sm:grid-cols-3` — works fine
 
 ## Scope
-- 2 files modified
+- 1 file modified: `AdminFinances.tsx`
 - No database changes
-- Responsive: sidebar fix is desktop-only (mobile uses bottom nav already)
+- Desktop layout unchanged
 
