@@ -102,6 +102,12 @@ const LandingOffer = () => {
 
     try {
       const visitorId = `landing_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+      // Store user data in sessionStorage for CAPI hashing
+      if (form.email) sessionStorage.setItem("fb_em", form.email);
+      if (form.phone) sessionStorage.setItem("fb_ph", form.phone);
+      if (form.first_name) sessionStorage.setItem("fb_fn", form.first_name);
+
       await supabase.from("leads").insert({
         source: "facebook_landing",
         first_name: form.first_name,
@@ -110,11 +116,17 @@ const LandingOffer = () => {
         visitor_id: visitorId,
         session_id: `landing_${utmParams.utm_campaign || "direct"}`,
         last_reservation_step: 1,
+        capi_allowed: true,
+      });
+
+      // Fire Facebook Lead event via Pixel + CAPI
+      trackFacebookEvent("Lead", {
+        content_name: "landing_offer",
+        ...(form.vehicle_id && { content_ids: [form.vehicle_id] }),
       });
 
       setSubmitted(true);
 
-      // Redirect to reservation with pre-filled data after a brief moment
       setTimeout(() => {
         const params = new URLSearchParams();
         if (form.vehicle_id) params.set("vehicle", form.vehicle_id);
