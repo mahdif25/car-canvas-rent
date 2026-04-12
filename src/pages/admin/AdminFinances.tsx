@@ -572,6 +572,40 @@ const AdminFinances = () => {
               </Dialog>
             </div>
 
+            {/* Edit Loan Dialog */}
+            <Dialog open={editOpen} onOpenChange={setEditOpen}>
+              <DialogContent className="max-w-lg">
+                <DialogHeader><DialogTitle>Modifier le crédit</DialogTitle></DialogHeader>
+                <div className="grid gap-3">
+                  <div>
+                    <Label>Véhicule (Immatriculation)</Label>
+                    <Select value={editForm.plate_id} onValueChange={(v) => setEditForm({ ...editForm, plate_id: v })}>
+                      <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                      <SelectContent>{plates?.map((p) => <SelectItem key={p.id} value={p.id}>{p.plate_number} — {p.brand} {p.model}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Banque</Label>
+                    <Input value={editForm.bank_name} onChange={(e) => setEditForm({ ...editForm, bank_name: e.target.value })} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Montant total</Label><Input type="number" value={editForm.loan_amount} onChange={(e) => setEditForm({ ...editForm, loan_amount: e.target.value })} /></div>
+                    <div><Label>Mensualité</Label><Input type="number" value={editForm.monthly_payment} onChange={(e) => setEditForm({ ...editForm, monthly_payment: e.target.value })} /></div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Durée (mois)</Label><Input type="number" value={editForm.loan_duration_months} onChange={(e) => setEditForm({ ...editForm, loan_duration_months: e.target.value })} /></div>
+                    <div><Label>Taux (%)</Label><Input type="number" step="0.01" value={editForm.interest_rate} onChange={(e) => setEditForm({ ...editForm, interest_rate: e.target.value })} /></div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Date début</Label><Input type="date" value={editForm.start_date} onChange={(e) => setEditForm({ ...editForm, start_date: e.target.value })} /></div>
+                    <div><Label>Restant</Label><Input type="number" value={editForm.remaining_amount} onChange={(e) => setEditForm({ ...editForm, remaining_amount: e.target.value })} placeholder={editForm.loan_amount || "Auto"} /></div>
+                  </div>
+                  <div><Label>Notes</Label><Input value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} /></div>
+                  <Button onClick={handleEdit} disabled={updateLoan.isPending}>Enregistrer</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
             {/* Credits — Mobile cards / Desktop table */}
             {isMobile ? (
               <div className="space-y-3">
@@ -585,9 +619,14 @@ const AdminFinances = () => {
                             <p className="font-semibold text-sm">{plate ? plate.plate_number : "—"}</p>
                             <p className="text-xs text-muted-foreground">{plate ? `${plate.brand} ${plate.model}` : ""}</p>
                           </div>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { deleteLoan.mutate(loan.id); toast.success("Crédit supprimé"); }}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditDialog(loan)}>
+                              <Pencil className="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { deleteLoan.mutate(loan.id); toast.success("Crédit supprimé"); }}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
                         </div>
                         <p className="text-xs text-muted-foreground">{loan.bank_name} • {loan.start_date} • {loan.loan_duration_months} mois</p>
                         <div className="grid grid-cols-3 gap-2 pt-1">
@@ -640,9 +679,14 @@ const AdminFinances = () => {
                           <TableCell>{loan.start_date}</TableCell>
                           <TableCell className="text-right">{loan.loan_duration_months} mois</TableCell>
                           <TableCell>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="icon" onClick={() => openEditDialog(loan)}>
+                              <Pencil className="h-4 w-4 text-muted-foreground" />
+                            </Button>
                             <Button variant="ghost" size="icon" onClick={() => { deleteLoan.mutate(loan.id); toast.success("Crédit supprimé"); }}>
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
+                          </div>
                           </TableCell>
                         </TableRow>
                       );

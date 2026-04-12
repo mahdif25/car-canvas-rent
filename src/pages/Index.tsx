@@ -290,62 +290,72 @@ const Index = () => {
                 const selectedColorId = activeColor?.id;
                 const imageFlipped = activeColor ? activeColor.image_flipped : v.image_flipped;
                 const imageScale = activeColor ? getScaleForColorOnDevice(activeColor, 'home', deviceType) : getScaleForDevice(v, 'home', deviceType);
-                return (
-                  <Link
-                    key={v.id}
-                    to={`/reservation?vehicle=${v.id}${selectedColorId ? `&color=${selectedColorId}` : ''}`}
-                    className="group bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
-                  >
-                    <div className="p-4 pb-0 space-y-1">
-                      <span className="text-xs font-semibold text-primary uppercase tracking-wider">{v.category}</span>
-                      <h3 className="font-bold text-base">{v.name}</h3>
-                      <p className="text-xs text-muted-foreground">ou véhicule similaire...</p>
-                    </div>
+                  return (
+                    <Link
+                      key={v.id}
+                      to={`/fleet/${v.slug || v.id}`}
+                      className="group bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+                    >
+                      <div className="p-4 pb-0 space-y-1">
+                        <span className="text-xs font-semibold text-primary uppercase tracking-wider">{v.category}</span>
+                        <h3 className="font-bold text-base">{v.name}</h3>
+                        <p className="text-xs text-muted-foreground">ou véhicule similaire...</p>
+                      </div>
 
-                    <div className="relative mx-4 mt-3 rounded-xl overflow-hidden h-36 bg-secondary">
-                      <div className="absolute inset-0 bg-primary translate-x-full group-hover:translate-x-0 transition-transform duration-500 ease-out" />
-                      <img
-                        src={displayImage}
-                        alt={v.name}
-                        className="relative z-10 w-full h-full object-contain transition-transform duration-300"
-                        style={{
-                          transform: `${imageFlipped ? 'scaleX(-1)' : ''} scale(${imageScale})`.trim() || 'none'
-                        }}
-                      />
-                    </div>
-
-                    <div className="p-4 space-y-3">
-                      {vehicleColors.length > 0 && (
-                        <VehicleColorPicker
-                          colors={vehicleColors}
-                          selectedColorId={selectedColorId}
-                          onSelect={(color) => setSelectedColors((prev) => ({ ...prev, [v.id]: color }))}
+                      <div className="relative mx-4 mt-3 rounded-xl overflow-hidden h-36 bg-secondary">
+                        <div className="absolute inset-0 bg-primary translate-x-full group-hover:translate-x-0 transition-transform duration-500 ease-out" />
+                        <img
+                          src={displayImage}
+                          alt={v.name}
+                          className="relative z-10 w-full h-full object-contain transition-transform duration-300"
+                          style={{
+                            transform: `${imageFlipped ? 'scaleX(-1)' : ''} scale(${imageScale})`.trim() || 'none'
+                          }}
                         />
-                      )}
+                      </div>
 
-                      <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1.5"><Settings2 size={12} className="text-primary" />{v.transmission}</span>
-                        <span className="flex items-center gap-1.5"><Fuel size={12} className="text-primary" />{v.fuel}</span>
-                        <span className="flex items-center gap-1.5"><Users size={12} className="text-primary" />{v.seats} places</span>
-                        <span className="flex items-center gap-1.5"><DoorOpen size={12} className="text-primary" />{v.doors} portes</span>
-                        <span className="flex items-center gap-1.5"><Briefcase size={12} className="text-primary" />{v.luggage} valises</span>
-                        {v.has_climatisation && (
-                          <span className="flex items-center gap-1.5"><Snowflake size={12} className="text-primary" />Clim.</span>
+                      <div className="p-4 space-y-3">
+                        {vehicleColors.length > 0 && (
+                          <VehicleColorPicker
+                            colors={vehicleColors}
+                            selectedColorId={selectedColorId}
+                            onSelect={(color) => {
+                              setSelectedColors((prev) => ({ ...prev, [v.id]: color }));
+                            }}
+                          />
                         )}
-                      </div>
 
-                      <div className="flex justify-between items-center pt-3 border-t border-border">
-                        <div>
-                          <span className="text-xl font-bold text-primary">{startingPrice}</span>
-                          <span className="text-sm text-muted-foreground"> MAD/jour</span>
+                        <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1.5"><Settings2 size={12} className="text-primary" />{v.transmission}</span>
+                          <span className="flex items-center gap-1.5"><Fuel size={12} className="text-primary" />{v.fuel}</span>
+                          <span className="flex items-center gap-1.5"><Users size={12} className="text-primary" />{v.seats} places</span>
+                          <span className="flex items-center gap-1.5"><DoorOpen size={12} className="text-primary" />{v.doors} portes</span>
+                          <span className="flex items-center gap-1.5"><Briefcase size={12} className="text-primary" />{v.luggage} valises</span>
+                          {v.has_climatisation && (
+                            <span className="flex items-center gap-1.5"><Snowflake size={12} className="text-primary" />Clim.</span>
+                          )}
                         </div>
-                        <span className="border border-primary text-primary px-3 py-1.5 text-sm font-semibold rounded-xl group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                          Réserver
-                        </span>
+
+                        <div className="flex justify-between items-center pt-3 border-t border-border">
+                          <div>
+                            <span className="text-xl font-bold text-primary">{startingPrice}</span>
+                            <span className="text-sm text-muted-foreground"> MAD/jour</span>
+                          </div>
+                          <span
+                            role="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              navigate(`/reservation?vehicle=${v.id}${selectedColorId ? `&color=${selectedColorId}` : ''}`);
+                            }}
+                            className="border border-primary text-primary px-3 py-1.5 text-sm font-semibold rounded-xl group-hover:bg-primary group-hover:text-primary-foreground transition-colors cursor-pointer"
+                          >
+                            Réserver
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  </Link>
-                );
+                    </Link>
+                  );
               })}
             </div>
           )}
