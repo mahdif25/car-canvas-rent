@@ -539,6 +539,7 @@ const AdminSettings = () => {
                 Sauvegarder
               </Button>
             </div>
+            <EmailHistoryDashboard />
           </TabsContent>
 
           {/* WhatsApp */}
