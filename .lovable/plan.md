@@ -1,22 +1,33 @@
 
 
-# Fix Charts Display on Mobile — Per-Vehicle Report
+# Manual Reservation Enhancements, Coupon Copy Button & Form Persistence
 
-## Problem
-The charts in the "Rapport par véhicule" tab overflow horizontally on mobile (390px). This is because `ChartContainer` applies `aspect-video` (16:9 ratio) by default, which forces the container wider than the screen width. Combined with the fixed `h-[250px]`, the charts don't fit.
+## Changes
 
-## Solution — File: `src/pages/admin/AdminFinances.tsx`
+### 1. Manual Reservation — Coupon & Custom Daily Rate (`ManualReservationDialog.tsx`)
 
-For all 4 chart `ChartContainer` instances (lines ~662, 677, 699, 717):
-- Change className from `h-[250px]` to `h-[200px] w-full aspect-auto` on mobile
-- Use a responsive class: `className="h-[200px] sm:h-[250px] w-full aspect-auto"`
+**Coupon discount**: Add a promo code input field with "Appliquer" button in the price preview section. Validates against the `coupons` table (same logic as public checkout). Stores `coupon_id` and `discount_amount` on the reservation insert.
 
-The `aspect-auto` overrides the default `aspect-video` from ChartContainer, allowing the charts to respect the parent width. The slightly reduced height on mobile (200px) ensures the chart fits comfortably.
+**Custom daily rate override**: Add an editable "Prix/jour" input next to the vehicle selector, pre-filled with the tier rate. When the admin changes it, the override is used for all calculations instead of the tier rate. The `calc` memo will check for a `customDailyRate` state and use it when set.
 
-Additionally, add `overflow-hidden` to each chart `Card` to prevent any bleed.
+**Price breakdown update**: Show discount line when a coupon is applied. Total = vehicleTotal + addonsTotal + deliveryFee - discount.
 
-## Scope
-- 1 file: `AdminFinances.tsx`
-- 4 ChartContainer className updates
-- Desktop layout unchanged
+### 2. Manual Reservation — Form Persistence via localStorage
+
+On every field change, serialize the entire form state to `localStorage` under `manual_reservation_draft`. On component mount, check for a saved draft and restore all fields.
+
+Clear the draft only on successful submission or when the admin clicks a new **"Réinitialiser"** (reset) button.
+
+**Reset button**: Add a visible "Réinitialiser" button alongside "Annuler" and "Créer" in the footer. On mobile it will be full-width above the other buttons. Clears localStorage draft and resets all fields.
+
+### 3. Coupon Copy Button (`AdminMarketing.tsx`)
+
+Add a copy icon button next to each coupon code (both desktop table and mobile cards). On click, copies the code to clipboard and shows a toast "Code copié".
+
+### Files Modified
+- `src/components/admin/ManualReservationDialog.tsx` — coupon input, custom daily rate, localStorage persistence, reset button
+- `src/pages/admin/AdminMarketing.tsx` — copy button next to coupon codes
+
+### No database changes needed
+The `reservations` table already has `coupon_id` and `discount_amount` columns.
 
