@@ -19,10 +19,30 @@ async function verifySignature(payload: string, signature: string, appSecret: st
   return `sha256=${hex}` === signature;
 }
 
+async function getSettings(supabase: ReturnType<typeof createClient>) {
+  const { data } = await supabase
+    .from("site_settings")
+    .select("fb_leadads_app_secret, fb_leadads_verify_token, fb_leadads_page_access_token")
+    .limit(1)
+    .single();
+  return {
+    appSecret: data?.fb_leadads_app_secret || Deno.env.get("FACEBOOK_APP_SECRET") || "",
+    verifyToken: data?.fb_leadads_verify_token || Deno.env.get("FB_LEADADS_VERIFY_TOKEN") || "",
+    pageAccessToken: data?.fb_leadads_page_access_token || Deno.env.get("FACEBOOK_PAGE_ACCESS_TOKEN") || "",
+  };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
+
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  );
+
+  const secrets = await getSettings(supabase);
 
   // GET = Facebook verification handshake
   if (req.method === "GET") {
@@ -30,9 +50,8 @@ Deno.serve(async (req) => {
     const mode = url.searchParams.get("hub.mode");
     const token = url.searchParams.get("hub.verify_token");
     const challenge = url.searchParams.get("hub.challenge");
-    const verifyToken = Deno.env.get("FB_LEADADS_VERIFY_TOKEN");
 
-    if (mode === "subscribe" && token === verifyToken) {
+    if (mode === "subscribe" && token === secrets.verifyToken) {
       console.log("Facebook webhook verified");
       return new Response(challenge, { status: 200, headers: corsHeaders });
     }
@@ -41,13 +60,12 @@ Deno.serve(async (req) => {
 
   // POST = incoming lead data
   if (req.method === "POST") {
-    const appSecret = Deno.env.get("FACEBOOK_APP_SECRET");
     const body = await req.text();
 
     // Verify signature if app secret is set
-    if (appSecret) {
+    if (secrets.appSecret) {
       const signature = req.headers.get("x-hub-signature-256") || "";
-      const valid = await verifySignature(body, signature, appSecret);
+      const valid = await verifySignature(body, signature, secrets.appSecret);
       if (!valid) {
         console.error("Invalid signature");
         return new Response(JSON.stringify({ error: "Invalid signature" }), {
@@ -60,11 +78,6 @@ Deno.serve(async (req) => {
     const data = JSON.parse(body);
     console.log("Received webhook:", JSON.stringify(data));
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
     // Process each entry
     const entries = data.entry || [];
     for (const entry of entries) {
@@ -76,11 +89,8 @@ Deno.serve(async (req) => {
 
         if (!leadgenId) continue;
 
-        // Fetch lead data from Facebook Graph API
-        const accessToken = Deno.env.get("FACEBOOK_PAGE_ACCESS_TOKEN");
-        if (!accessToken) {
-          console.error("FACEBOOK_PAGE_ACCESS_TOKEN not set, storing minimal lead");
-          // Store what we have
+        if (!secrets.pageAccessToken) {
+          console.error("Page Access Token not set, storing minimal lead");
           await supabase.from("leads").insert({
             source: "facebook_lead_ad",
             visitor_id: `fb_lead_${leadgenId}`,
@@ -91,7 +101,7 @@ Deno.serve(async (req) => {
 
         try {
           const res = await fetch(
-            `https://graph.facebook.com/v19.0/${leadgenId}?access_token=${accessToken}`
+            `https://graph.facebook.com/v19.0/${leadgenId}?access_token=${secrets.pageAccessToken}`
           );
           const leadData = await res.json();
           console.log("Lead data from FB:", JSON.stringify(leadData));
@@ -114,7 +124,6 @@ Deno.serve(async (req) => {
           console.log("Lead inserted successfully");
         } catch (err) {
           console.error("Error fetching lead from FB:", err);
-          // Still store minimal data
           await supabase.from("leads").insert({
             source: "facebook_lead_ad",
             visitor_id: `fb_lead_${leadgenId}`,
