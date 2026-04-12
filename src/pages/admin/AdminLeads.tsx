@@ -127,6 +127,9 @@ const AdminLeads = () => {
     if (statusFilter !== "all") {
       result = result.filter((g) => g.status === statusFilter);
     }
+    if (sourceFilter !== "all") {
+      result = result.filter((g) => g.latestSource === sourceFilter);
+    }
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter(
@@ -138,7 +141,18 @@ const AdminLeads = () => {
       );
     }
     return result;
-  }, [grouped, statusFilter, search]);
+  }, [grouped, statusFilter, sourceFilter, search]);
+
+  const sourceBadge = (source: string) => {
+    const info = sourceLabels[source] || { label: source, color: "bg-secondary text-muted-foreground", icon: Globe };
+    const Icon = info.icon;
+    return (
+      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${info.color}`}>
+        <Icon size={10} />
+        {info.label}
+      </span>
+    );
+  };
 
   const statusBadge = (status: string) => {
     const map: Record<string, string> = {
