@@ -1,26 +1,57 @@
 
 
-# Match Fleet Page Cards to Homepage Hover Effects + Navigation Flow
+# Replace Vehicle Category Text with Icons
 
-## Problem
-Fleet page vehicle cards lack the homepage's hover effects (lift + colored background sweep) and link directly to the reservation page instead of opening the vehicle detail page first.
+## Overview
+Create a shared category icon mapping utility and replace all text-only category labels with icon + label combos across the Fleet page, Homepage, VehicleDetail, StepVehicle, WhatsAppPopup, and AdminFleet.
 
-## Changes to `src/pages/Fleet.tsx`
+## Icon Mapping
+Using Lucide icons that visually represent each category:
 
-### 1. Add homepage hover effects to fleet cards
-- Add `hover:-translate-y-1` to the card Link class
-- Add the primary color sweep overlay behind the car image (the `bg-primary translate-x-full group-hover:translate-x-0` div)
-- Restructure the card layout to match homepage style: title/category above the image, specs below
+| Category | Icon | Rationale |
+|----------|------|-----------|
+| SUV | `Truck` | Rugged/tall vehicle silhouette |
+| Sedan | `Car` | Classic car shape |
+| Compact | `CircleDot` | Small/compact feel |
+| Luxury | `Crown` | Premium/luxury |
+| Minivan | `Bus` | Multi-passenger vehicle |
 
-### 2. Change card navigation flow
-- Card Link → `/fleet/{slug || id}` (opens vehicle detail page)
-- Add a separate "Réserver" button that navigates to `/reservation?vehicle={id}&color={colorId}` using `e.preventDefault()` + `e.stopPropagation()` + `navigate()` (same pattern as homepage)
+## Changes
 
-### 3. Import changes
-- Add `useNavigate` from react-router-dom
-- Add `DoorOpen`, `Briefcase`, `Snowflake` icons (if matching homepage spec grid)
-- Remove `Heart` icon (or keep — user preference)
+### 1. New file: `src/lib/vehicle-categories.ts`
+Shared utility mapping category strings to Lucide icons and labels. Exports:
+- `CATEGORY_ICON_MAP` — maps category name → `{ icon: LucideIcon, label: string }`
+- `CategoryIcon` component — renders icon + optional label, accepts size prop
+
+### 2. Update `src/pages/Fleet.tsx`
+- Filter chips: replace text-only buttons with icon + text chips
+- Card category badge: replace `{v.category}` text with `CategoryIcon`
+
+### 3. Update `src/pages/Index.tsx`
+- Card category badge (line ~300): replace `{v.category}` with `CategoryIcon`
+
+### 4. Update `src/pages/VehicleDetail.tsx`
+- Category badge (line ~122): replace text with `CategoryIcon`
+
+### 5. Update `src/components/reservation/StepVehicle.tsx`
+- Category badge (line ~97): replace text with `CategoryIcon`
+
+### 6. Update `src/components/WhatsAppPopup.tsx`
+- Category text (line ~183): replace with `CategoryIcon`
+
+### 7. Update `src/pages/admin/AdminFleet.tsx`
+- Vehicle table category column (line ~758): replace text with `CategoryIcon`
+- Mobile vehicle list (line ~787): replace text with icon
+
+## Responsive
+Icons render at consistent small sizes (12–14px) matching existing text sizes. No layout breakage on mobile/tablet.
 
 ## Files Modified
-- `src/pages/Fleet.tsx` — update card structure, hover effects, and navigation
+- `src/lib/vehicle-categories.ts` (new)
+- `src/pages/Fleet.tsx`
+- `src/pages/Index.tsx`
+- `src/pages/VehicleDetail.tsx`
+- `src/components/reservation/StepVehicle.tsx`
+- `src/components/WhatsAppPopup.tsx`
+- `src/pages/admin/AdminFleet.tsx`
 
