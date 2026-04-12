@@ -107,7 +107,7 @@ const BroadcastHistoryList = ({ onSelect, onNew }: { onSelect: (id: string) => v
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data || []) as Broadcast[];
+      return (data || []) as unknown as Broadcast[];
     },
   });
 
@@ -195,7 +195,7 @@ const BroadcastDetail = ({ broadcastId, onBack }: { broadcastId: string; onBack:
         .eq("id", broadcastId)
         .single();
       if (error) throw error;
-      return data as Broadcast;
+      return data as unknown as Broadcast;
     },
   });
 
@@ -208,7 +208,7 @@ const BroadcastDetail = ({ broadcastId, onBack }: { broadcastId: string; onBack:
         .eq("broadcast_id", broadcastId)
         .order("created_at", { ascending: true });
       if (error) throw error;
-      return (data || []) as BroadcastRecipient[];
+      return (data || []) as unknown as BroadcastRecipient[];
     },
   });
 
