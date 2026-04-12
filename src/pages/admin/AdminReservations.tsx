@@ -434,7 +434,7 @@ const AdminReservations = () => {
     w.print();
   };
 
-
+  return (
     <AdminLayout>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
         <h1 className="text-2xl font-bold">Réservations</h1>
