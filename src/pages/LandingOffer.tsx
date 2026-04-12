@@ -290,10 +290,13 @@ const LandingOffer = () => {
                   <Label htmlFor="email">Email (optionnel)</Label>
                   <Input
                     id="email"
+                    name="email"
                     type="email"
+                    autoComplete="email"
                     value={form.email}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
                     onBlur={handleBlur}
+                    onAnimationStart={handleAutofillAnimation}
                     placeholder="votre@email.com"
                   />
                 </div>
