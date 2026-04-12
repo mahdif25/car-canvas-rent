@@ -13,7 +13,7 @@ import { useVehicles, usePricingTiers, getDailyRateFromTiers } from "@/hooks/use
 import { useLocations, useAllLocations, getDeliveryFee } from "@/hooks/useLocations";
 import { Printer, Save, Pencil, Check, X, Plus, AlertTriangle, Search, Download } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useAvailablePlates } from "@/hooks/useFleetPlates";
+import { useAvailablePlates, useFleetPlates } from "@/hooks/useFleetPlates";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import type { Database } from "@/integrations/supabase/types";
 import ManualReservationDialog from "@/components/admin/ManualReservationDialog";
