@@ -1,28 +1,26 @@
 
 
-# Fix Email Sender Domain Mismatch
+# Match Fleet Page Cards to Homepage Hover Effects + Navigation Flow
 
 ## Problem
-The verified email domain is `mail.centreluxcar.com`, but the two edge functions that send emails use incorrect sender domains:
-- `send-transactional-email/index.ts` → `SENDER_DOMAIN = "notify.centreluxcar.com"` (wrong)
-- `auth-email-hook/index.ts` → `SENDER_DOMAIN = "notif.centreluxcar.com"` (wrong)
+Fleet page vehicle cards lack the homepage's hover effects (lift + colored background sweep) and link directly to the reservation page instead of opening the vehicle detail page first.
 
-This causes the email API to reject every send with: **"No sender domain matches the requested sender domain"** (403 error). This affects ALL emails — reservation confirmations, updates, welcome emails, broadcasts, and auth emails.
+## Changes to `src/pages/Fleet.tsx`
 
-## Fix
+### 1. Add homepage hover effects to fleet cards
+- Add `hover:-translate-y-1` to the card Link class
+- Add the primary color sweep overlay behind the car image (the `bg-primary translate-x-full group-hover:translate-x-0` div)
+- Restructure the card layout to match homepage style: title/category above the image, specs below
 
-### 1. Update `SENDER_DOMAIN` in both edge functions
-Change the `SENDER_DOMAIN` constant to `"mail.centreluxcar.com"` in:
-- `supabase/functions/send-transactional-email/index.ts` (line 12)
-- `supabase/functions/auth-email-hook/index.ts` (line 40)
+### 2. Change card navigation flow
+- Card Link → `/fleet/{slug || id}` (opens vehicle detail page)
+- Add a separate "Réserver" button that navigates to `/reservation?vehicle={id}&color={colorId}` using `e.preventDefault()` + `e.stopPropagation()` + `navigate()` (same pattern as homepage)
 
-### 2. Redeploy both edge functions
-Deploy `send-transactional-email` and `auth-email-hook` so the fix takes effect.
-
-### 3. Verify
-Test by updating a reservation or sending a test email to confirm delivery.
+### 3. Import changes
+- Add `useNavigate` from react-router-dom
+- Add `DoorOpen`, `Briefcase`, `Snowflake` icons (if matching homepage spec grid)
+- Remove `Heart` icon (or keep — user preference)
 
 ## Files Modified
-- `supabase/functions/send-transactional-email/index.ts` — fix SENDER_DOMAIN
-- `supabase/functions/auth-email-hook/index.ts` — fix SENDER_DOMAIN
+- `src/pages/Fleet.tsx` — update card structure, hover effects, and navigation
 
