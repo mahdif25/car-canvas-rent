@@ -190,6 +190,15 @@ const AdminLeads = () => {
               <SelectItem value="abandonné">Abandonné</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={sourceFilter} onValueChange={setSourceFilter}>
+            <SelectTrigger className="w-full sm:w-40"><SelectValue placeholder="Source" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Toutes sources</SelectItem>
+              <SelectItem value="website">Site web</SelectItem>
+              <SelectItem value="facebook_lead_ad">FB Lead Ad</SelectItem>
+              <SelectItem value="facebook_landing">Landing Page</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
