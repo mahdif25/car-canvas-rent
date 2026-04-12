@@ -53,6 +53,9 @@ export interface SiteSettings {
   hero_video_tablet_offset_y: number;
   hero_video_desktop_offset_x: number;
   hero_video_desktop_offset_y: number;
+  fb_leadads_app_secret: string;
+  fb_leadads_verify_token: string;
+  fb_leadads_page_access_token: string;
   updated_at: string;
 }
 

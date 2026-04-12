@@ -540,6 +540,39 @@ const AdminSettings = () => {
                   </Button>
                 </div>
               </div>
+
+              {/* Credentials */}
+              <div className="space-y-2">
+                <Label>Facebook App Secret</Label>
+                <Input
+                  type="password"
+                  value={form.fb_leadads_app_secret ?? ""}
+                  onChange={e => setForm(f => ({ ...f, fb_leadads_app_secret: e.target.value }))}
+                  placeholder="••••••••"
+                />
+                <p className="text-xs text-muted-foreground">Facebook Developer Console → App Settings → Basic → App Secret</p>
+              </div>
+              <div className="space-y-2">
+                <Label>Verify Token</Label>
+                <Input
+                  type="password"
+                  value={form.fb_leadads_verify_token ?? ""}
+                  onChange={e => setForm(f => ({ ...f, fb_leadads_verify_token: e.target.value }))}
+                  placeholder="••••••••"
+                />
+                <p className="text-xs text-muted-foreground">Un token aléatoire de votre choix, à coller aussi dans Facebook Webhooks</p>
+              </div>
+              <div className="space-y-2">
+                <Label>Page Access Token</Label>
+                <Input
+                  type="password"
+                  value={form.fb_leadads_page_access_token ?? ""}
+                  onChange={e => setForm(f => ({ ...f, fb_leadads_page_access_token: e.target.value }))}
+                  placeholder="••••••••"
+                />
+                <p className="text-xs text-muted-foreground">Facebook Business Manager → votre Page → Settings → Page Access Token</p>
+              </div>
+
               <div className="bg-secondary rounded-lg p-4 space-y-2 text-sm">
                 <p className="font-medium">Instructions de configuration :</p>
                 <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
