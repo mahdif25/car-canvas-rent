@@ -1,0 +1,1 @@
+ALTER TABLE public.fleet_plates ADD COLUMN image_url text;

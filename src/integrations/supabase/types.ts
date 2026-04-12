@@ -462,6 +462,7 @@ export type Database = {
           brand: string
           created_at: string
           id: string
+          image_url: string | null
           is_active: boolean
           model: string
           notes: string | null
@@ -472,6 +473,7 @@ export type Database = {
           brand: string
           created_at?: string
           id?: string
+          image_url?: string | null
           is_active?: boolean
           model: string
           notes?: string | null
@@ -482,6 +484,7 @@ export type Database = {
           brand?: string
           created_at?: string
           id?: string
+          image_url?: string | null
           is_active?: boolean
           model?: string
           notes?: string | null

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { toast } from "@/hooks/use-toast";
 import { Plus, Car } from "lucide-react";
 import { useVehicles } from "@/hooks/useVehicles";
@@ -193,24 +194,38 @@ const AdminFleetPlates = () => {
             <FleetPlateCard
               key={plate.id}
               plate={plate}
-              vehicleImage={getVehicleImage(plate.vehicle_id)}
+              vehicleImage={plate.image_url || getVehicleImage(plate.vehicle_id)}
               reservations={reservations}
               expenses={expenses}
               isSelected={selectedPlateId === plate.id}
               onClick={() => setSelectedPlateId(selectedPlateId === plate.id ? null : plate.id)}
             />
           ))}
-
-          {selectedPlate && (
-            <FleetPlateDetail
-              plate={selectedPlate}
-              reservations={reservations}
-              expenses={expenses}
-              onClose={() => setSelectedPlateId(null)}
-            />
-          )}
         </div>
       )}
+
+      {/* Sheet detail panel — slides in from the right */}
+      <Sheet open={!!selectedPlate} onOpenChange={(open) => { if (!open) setSelectedPlateId(null); }}>
+        <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto p-0">
+          {selectedPlate && (
+            <div className="p-6">
+              <SheetHeader className="mb-4">
+                <SheetTitle className="flex items-center gap-2">
+                  <span className="font-mono bg-muted px-2 py-1 rounded text-base">{selectedPlate.plate_number}</span>
+                  <span className="text-muted-foreground font-normal text-sm">{selectedPlate.brand} {selectedPlate.model}</span>
+                </SheetTitle>
+              </SheetHeader>
+              <FleetPlateDetail
+                plate={selectedPlate}
+                vehicleImage={selectedPlate.image_url || getVehicleImage(selectedPlate.vehicle_id)}
+                reservations={reservations}
+                expenses={expenses}
+                onClose={() => setSelectedPlateId(null)}
+              />
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </AdminLayout>
   );
 };

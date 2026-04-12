@@ -32,6 +32,7 @@ interface Props {
     vehicle_id: string;
     is_active: boolean;
     notes: string | null;
+    image_url: string | null;
   };
   vehicleImage: string | null;
   reservations: Reservation[];
