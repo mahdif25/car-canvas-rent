@@ -275,10 +275,13 @@ const LandingOffer = () => {
                   <Label htmlFor="phone">Téléphone *</Label>
                   <Input
                     id="phone"
+                    name="tel"
                     type="tel"
+                    autoComplete="tel"
                     value={form.phone}
                     onChange={(e) => setForm({ ...form, phone: e.target.value })}
                     onBlur={handleBlur}
+                    onAnimationStart={handleAutofillAnimation}
                     placeholder="+212 6XX XXX XXX"
                     required
                   />
