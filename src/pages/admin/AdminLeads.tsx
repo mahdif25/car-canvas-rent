@@ -209,10 +209,11 @@ const AdminLeads = () => {
           ) : filtered.length > 0 ? (
             <div className="space-y-2">
               {/* Desktop header */}
-              <div className="hidden md:grid grid-cols-7 gap-2 px-4 py-2 text-xs font-medium text-muted-foreground uppercase">
+              <div className="hidden md:grid grid-cols-8 gap-2 px-4 py-2 text-xs font-medium text-muted-foreground uppercase">
                 <span>Nom</span>
                 <span>Email</span>
                 <span>Téléphone</span>
+                <span>Source</span>
                 <span>Étape max</span>
                 <span>Entrées</span>
                 <span>Réservations</span>
@@ -222,12 +223,13 @@ const AdminLeads = () => {
                 <div key={group.key} className="border rounded-lg">
                   {/* Desktop row */}
                   <div
-                    className="hidden md:grid grid-cols-7 gap-2 px-4 py-3 cursor-pointer hover:bg-secondary/50 items-center text-sm"
+                    className="hidden md:grid grid-cols-8 gap-2 px-4 py-3 cursor-pointer hover:bg-secondary/50 items-center text-sm"
                     onClick={() => setExpandedKey(expandedKey === group.key ? null : group.key)}
                   >
                     <span className="font-medium">{[group.latestFirstName, group.latestLastName].filter(Boolean).join(" ") || "—"}</span>
                     <span className="break-all text-muted-foreground">{group.latestEmail || "—"}</span>
                     <span className="text-muted-foreground">{group.latestPhone || "—"}</span>
+                    <span>{sourceBadge(group.latestSource)}</span>
                     <span>{stepLabels[group.maxStep] || `Étape ${group.maxStep}`}</span>
                     <span>{group.entryCount}</span>
                     <span>{group.resCount}</span>
