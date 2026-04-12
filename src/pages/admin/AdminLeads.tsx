@@ -5,7 +5,7 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, ChevronDown, ChevronUp, Globe, Facebook, Megaphone } from "lucide-react";
 
 const stepLabels: Record<number, string> = {
   1: "Dates & Lieu",
@@ -13,6 +13,12 @@ const stepLabels: Record<number, string> = {
   3: "Options",
   4: "Informations",
   5: "Confirmation",
+};
+
+const sourceLabels: Record<string, { label: string; color: string; icon: any }> = {
+  website: { label: "Site web", color: "bg-blue-100 text-blue-700", icon: Globe },
+  facebook_lead_ad: { label: "FB Lead Ad", color: "bg-indigo-100 text-indigo-700", icon: Facebook },
+  facebook_landing: { label: "Landing Page", color: "bg-purple-100 text-purple-700", icon: Megaphone },
 };
 
 interface LeadRow {
