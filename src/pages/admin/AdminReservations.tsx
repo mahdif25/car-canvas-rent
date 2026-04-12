@@ -93,7 +93,9 @@ const AdminReservations = () => {
           r.customer_last_name?.toLowerCase().includes(q) ||
           r.customer_email?.toLowerCase().includes(q) ||
           r.customer_phone?.toLowerCase().includes(q) ||
-          r.customer_license?.toLowerCase().includes(q)
+          r.customer_license?.toLowerCase().includes(q) ||
+          r.customer_cin?.toLowerCase().includes(q) ||
+          r.customer_passport?.toLowerCase().includes(q)
         );
       });
     }
