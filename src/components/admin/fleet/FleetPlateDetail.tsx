@@ -11,7 +11,7 @@ import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Trash2, Phone, Mail, Calendar, TrendingUp, DollarSign, Wrench, ArrowDownUp, Car, ImageIcon, Save, FlipHorizontal, ZoomIn, ArrowUpDown } from "lucide-react";
+import { Plus, Trash2, Phone, Mail, Calendar, TrendingUp, DollarSign, Wrench, ArrowDownUp, Car, ImageIcon, Save, FlipHorizontal, ZoomIn, ArrowUpDown, Pencil } from "lucide-react";
 import { differenceInDays, parseISO, format } from "date-fns";
 import {
   EXPENSE_CATEGORIES,
@@ -52,6 +52,7 @@ interface Props {
   reservations: Reservation[];
   expenses: FleetExpense[];
   onClose: () => void;
+  onEdit: () => void;
 }
 
 const statusLabels: Record<string, string> = {
@@ -69,7 +70,7 @@ const statusColors: Record<string, string> = {
   cancelled: "bg-red-100 text-red-700",
 };
 
-const FleetPlateDetail = ({ plate, vehicleImage, reservations, expenses, onClose }: Props) => {
+const FleetPlateDetail = ({ plate, vehicleImage, reservations, expenses, onClose, onEdit }: Props) => {
   const qc = useQueryClient();
   const plateRes = reservations.filter((r) => r.assigned_plate_id === plate.id);
   const currentRes = plateRes.find((r) => r.status === "active" || r.status === "confirmed");

@@ -216,6 +216,7 @@ const AdminFleetPlates = () => {
               expenses={expenses}
               isSelected={selectedPlateId === plate.id}
               onClick={() => setSelectedPlateId(selectedPlateId === plate.id ? null : plate.id)}
+              onEdit={() => editPlate(plate)}
             />
           ))}
         </div>
@@ -238,6 +239,7 @@ const AdminFleetPlates = () => {
                 reservations={reservations}
                 expenses={expenses}
                 onClose={() => setSelectedPlateId(null)}
+                onEdit={() => { setSelectedPlateId(null); editPlate(selectedPlate); }}
               />
             </div>
           )}
