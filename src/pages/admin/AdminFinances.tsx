@@ -730,14 +730,24 @@ const AdminFinances = () => {
 
           {/* Section 4 — Summary Table */}
           <TabsContent value="summary" className="space-y-4">
-            <h2 className="text-lg font-semibold">Résumé par véhicule</h2>
+            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center flex-wrap">
+              <Label className="shrink-0 font-semibold text-lg">Résumé par véhicule</Label>
+              <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center ml-auto">
+                <DatePickerField value={summaryStartDate} onChange={setSummaryStartDate} placeholder="Date début" className="w-full sm:w-44" />
+                <span className="text-muted-foreground hidden sm:block">→</span>
+                <DatePickerField value={summaryEndDate} onChange={setSummaryEndDate} placeholder="Date fin" className="w-full sm:w-44" />
+                <Button size="sm" variant="outline" onClick={handleDownloadAgencyReport} className="gap-1">
+                  <Download className="h-4 w-4" /> Télécharger le rapport
+                </Button>
+              </div>
+            </div>
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Immatriculation</TableHead>
-                    <TableHead>Véhicule</TableHead>
-                    <TableHead className="text-right">Crédit/mois</TableHead>
+                     <TableHead>Immatriculation</TableHead>
+                     <TableHead>Véhicule</TableHead>
+                     <TableHead className="text-right">Crédit/mois</TableHead>
                     <TableHead className="text-right">Dépenses total</TableHead>
                     <TableHead className="text-right">Revenus total</TableHead>
                     <TableHead className="text-right">Bénéfice net</TableHead>
