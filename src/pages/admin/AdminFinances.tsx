@@ -433,7 +433,8 @@ const AdminFinances = () => {
     setTimeout(() => w.print(), 400);
   };
 
-  return (
+  const fmt = (n: number) => n.toLocaleString("fr-MA", { style: "currency", currency: "MAD", minimumFractionDigits: 0 });
+
     <AdminLayout>
       <div className="space-y-6">
         <h1 className="text-2xl font-bold">Finances</h1>
