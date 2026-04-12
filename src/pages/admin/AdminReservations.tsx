@@ -371,7 +371,70 @@ const AdminReservations = () => {
     w.print();
   };
 
-  return (
+  const handleDownloadReport = () => {
+    if (!filteredReservations || filteredReservations.length === 0) return;
+    const fmtDate = (d: string) => new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+    const rows = filteredReservations.map((r: any) => {
+      const days = Math.max(1, Math.ceil((new Date(r.return_date).getTime() - new Date(r.pickup_date).getTime()) / 86400000));
+      const vehicle = vehicles.find((v: any) => v.id === r.vehicle_id);
+      const plate = r.assigned_plate_id ? "Assigné" : "—";
+      const cinPassport = r.customer_cin || r.customer_passport || "—";
+      const licenseDate = r.customer_license_delivery_date ? new Date(r.customer_license_delivery_date).toLocaleDateString("fr-FR") : "—";
+      const cautionOui = r.deposit_status === "collected" || r.deposit_status === "returned" ? "Oui" : "Non";
+      return `<tr>
+        <td>${r.id.slice(0, 8).toUpperCase()}</td>
+        <td>${vehicle?.name || "—"}</td>
+        <td>${r.customer_first_name} ${r.customer_last_name}</td>
+        <td>${r.customer_phone}</td>
+        <td>${cinPassport}</td>
+        <td>${r.pickup_location}</td>
+        <td>${r.return_location || r.pickup_location}</td>
+        <td>${r.customer_license}</td>
+        <td>${licenseDate}</td>
+        <td>${days}j</td>
+        <td>${Number(r.total_price).toLocaleString("fr-FR")} MAD</td>
+        <td>${cautionOui}</td>
+        <td>${statusLabels[r.status as ReservationStatus] || r.status}</td>
+      </tr>`;
+    }).join("");
+
+    const periodLabel = dateFrom || dateTo
+      ? `Période: ${dateFrom ? fmtDate(dateFrom) : "—"} → ${dateTo ? fmtDate(dateTo) : "—"}`
+      : "Toutes les dates";
+
+    const w = window.open("", "_blank", "width=1100,height=800");
+    if (!w) return;
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
+      <title>Rapport Réservations</title>
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; padding: 30px; font-size: 11px; }
+        h1 { font-size: 18px; margin-bottom: 4px; }
+        .meta { color: #666; margin-bottom: 16px; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; }
+        th { background: #f5f5f5; font-weight: 600; font-size: 10px; text-transform: uppercase; }
+        tr:nth-child(even) { background: #fafafa; }
+        .total { margin-top: 12px; font-size: 13px; font-weight: 600; }
+        @media print { body { padding: 10px; } }
+      </style></head><body>
+      <h1>Centre Lux Car — Rapport Réservations</h1>
+      <p class="meta">${periodLabel} • ${filteredReservations.length} réservation(s)</p>
+      <table>
+        <thead><tr>
+          <th>ID</th><th>Véhicule</th><th>Nom</th><th>Tél</th><th>CIN/Passeport</th>
+          <th>Lieu départ</th><th>Lieu retour</th><th>Permis</th><th>Délivrance permis</th>
+          <th>Jours</th><th>Montant</th><th>Caution</th><th>Statut</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <p class="total">Total: ${filteredReservations.reduce((s: number, r: any) => s + Number(r.total_price), 0).toLocaleString("fr-FR")} MAD</p>
+      </body></html>`);
+    w.document.close();
+    w.print();
+  };
+
+
     <AdminLayout>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
         <h1 className="text-2xl font-bold">Réservations</h1>
