@@ -9,14 +9,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useFleetLoans, useAddLoan, useDeleteLoan, type FleetLoan } from "@/hooks/useFleetLoans";
 import { useFleetPlates } from "@/hooks/useFleetPlates";
 import { useFleetExpenses, categoryLabel, EXPENSE_CATEGORIES } from "@/hooks/useFleetExpenses";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Trash2, TrendingUp, TrendingDown, Banknote, Calculator } from "lucide-react";
+import { Plus, Trash2, TrendingUp, TrendingDown, Banknote, Calculator, Download } from "lucide-react";
 import { toast } from "sonner";
-import { format, subMonths, startOfMonth, endOfMonth, differenceInDays, parseISO } from "date-fns";
+import { format, subMonths, startOfMonth, endOfMonth, differenceInDays, parseISO, eachMonthOfInterval } from "date-fns";
 import { fr } from "date-fns/locale";
 import { BarChart, Bar, XAxis, YAxis, PieChart, Pie, Cell, LineChart, Line, ResponsiveContainer } from "recharts";
 
@@ -34,6 +35,10 @@ const AdminFinances = () => {
   const [simAmount, setSimAmount] = useState("");
   const [simMonths, setSimMonths] = useState("");
   const [simRate, setSimRate] = useState("");
+
+  // Report period state
+  const [reportStartDate, setReportStartDate] = useState(() => format(subMonths(new Date(), 12), "yyyy-MM-dd"));
+  const [reportEndDate, setReportEndDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
 
   // Fetch all reservations for revenue calculation
   const { data: reservations = [] } = useQuery({
@@ -115,52 +120,56 @@ const AdminFinances = () => {
     return (P * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
   }, [simAmount, simMonths, simRate]);
 
-  // ---- Per-Car Report ----
+  // ---- Per-Car Report (filtered by period) ----
+  const reportStart = parseISO(reportStartDate);
+  const reportEnd = parseISO(reportEndDate);
+
   const selectedPlate = plates?.find((p) => p.id === selectedPlateId);
   const plateLoans = loans.filter((l) => l.plate_id === selectedPlateId);
-  const plateExpenses = expenses.filter((e) => e.plate_id === selectedPlateId);
-  const plateReservations = reservations.filter((r) => r.assigned_plate_id === selectedPlateId);
+  const plateExpenses = expenses.filter((e) => {
+    if (e.plate_id !== selectedPlateId) return false;
+    const d = parseISO(e.expense_date);
+    return d >= reportStart && d <= reportEnd;
+  });
+  const plateReservations = reservations.filter((r) => {
+    if (r.assigned_plate_id !== selectedPlateId) return false;
+    const pickup = parseISO(r.pickup_date);
+    return pickup >= reportStart && pickup <= reportEnd;
+  });
   const plateTotalRevenue = plateReservations.reduce((s, r) => s + r.total_price, 0);
   const plateTotalExpenses = plateExpenses.reduce((s, e) => s + e.amount, 0);
   const plateTotalLoanMonthly = plateLoans.filter((l) => l.is_active).reduce((s, l) => s + l.monthly_payment, 0);
 
-  // Monthly earnings bar chart (last 12 months)
+  // Monthly earnings bar chart (within report period)
   const monthlyEarnings = useMemo(() => {
-    const months = [];
-    for (let i = 11; i >= 0; i--) {
-      const m = subMonths(now, i);
+    if (!reportStartDate || !reportEndDate) return [];
+    const months = eachMonthOfInterval({ start: reportStart, end: reportEnd });
+    return months.map((m) => {
       const mStart = startOfMonth(m);
       const mEnd = endOfMonth(m);
       const rev = plateReservations
         .filter((r) => { const d = parseISO(r.pickup_date); return d >= mStart && d <= mEnd; })
         .reduce((s, r) => s + r.total_price, 0);
-      months.push({ month: format(m, "MMM yy", { locale: fr }), revenue: rev });
-    }
-    return months;
-  }, [plateReservations, now]);
+      return { month: format(m, "MMM yy", { locale: fr }), revenue: rev };
+    });
+  }, [plateReservations, reportStart, reportEnd]);
 
-  // Rental utilization donut (current month)
+  // Rental utilization donut (within report period)
   const utilization = useMemo(() => {
-    const daysInMonth = differenceInDays(monthEnd, monthStart) + 1;
-    const rentedDays = plateReservations
-      .filter((r) => {
-        const p = parseISO(r.pickup_date);
-        const ret = parseISO(r.return_date);
-        return p <= monthEnd && ret >= monthStart;
-      })
-      .reduce((s, r) => {
-        const start = parseISO(r.pickup_date) < monthStart ? monthStart : parseISO(r.pickup_date);
-        const end = parseISO(r.return_date) > monthEnd ? monthEnd : parseISO(r.return_date);
-        return s + differenceInDays(end, start) + 1;
-      }, 0);
-    const idle = Math.max(0, daysInMonth - rentedDays);
+    const totalDays = Math.max(1, differenceInDays(reportEnd, reportStart) + 1);
+    const rentedDays = plateReservations.reduce((s, r) => {
+      const p = parseISO(r.pickup_date) < reportStart ? reportStart : parseISO(r.pickup_date);
+      const ret = parseISO(r.return_date) > reportEnd ? reportEnd : parseISO(r.return_date);
+      return s + Math.max(0, differenceInDays(ret, p) + 1);
+    }, 0);
+    const idle = Math.max(0, totalDays - rentedDays);
     return [
-      { name: "Jours loués", value: Math.min(rentedDays, daysInMonth) },
+      { name: "Jours loués", value: Math.min(rentedDays, totalDays) },
       { name: "Jours libres", value: idle },
     ];
-  }, [plateReservations, monthStart, monthEnd]);
+  }, [plateReservations, reportStart, reportEnd]);
 
-  // Expense category pie
+  // Expense category pie (within period)
   const expensePie = useMemo(() => {
     const map: Record<string, number> = {};
     plateExpenses.forEach((e) => {
@@ -170,13 +179,13 @@ const AdminFinances = () => {
     return Object.entries(map).map(([name, value]) => ({ name, value }));
   }, [plateExpenses]);
 
-  // Cumulative progress line chart
+  // Cumulative progress line chart (within period)
   const progressData = useMemo(() => {
-    const months = [];
+    if (!reportStartDate || !reportEndDate) return [];
+    const months = eachMonthOfInterval({ start: reportStart, end: reportEnd });
     let cumRev = 0;
     let cumCost = 0;
-    for (let i = 11; i >= 0; i--) {
-      const m = subMonths(now, i);
+    return months.map((m) => {
       const mStart = startOfMonth(m);
       const mEnd = endOfMonth(m);
       const rev = plateReservations
@@ -187,10 +196,117 @@ const AdminFinances = () => {
         .reduce((s, e) => s + e.amount, 0);
       cumRev += rev;
       cumCost += exp + plateTotalLoanMonthly;
-      months.push({ month: format(m, "MMM yy", { locale: fr }), revenue: cumRev, costs: cumCost });
-    }
-    return months;
-  }, [plateReservations, plateExpenses, plateTotalLoanMonthly, now]);
+      return { month: format(m, "MMM yy", { locale: fr }), revenue: cumRev, costs: cumCost };
+    });
+  }, [plateReservations, plateExpenses, plateTotalLoanMonthly, reportStart, reportEnd]);
+
+  // ---- Reservation breakdown for selected plate ----
+  const reservationBreakdown = useMemo(() => {
+    return plateReservations.map((r) => {
+      const days = Math.max(1, differenceInDays(parseISO(r.return_date), parseISO(r.pickup_date)));
+      return {
+        id: r.id.slice(0, 8).toUpperCase(),
+        startDate: r.pickup_date,
+        endDate: r.return_date,
+        days,
+        amount: r.total_price,
+      };
+    }).sort((a, b) => a.startDate.localeCompare(b.startDate));
+  }, [plateReservations]);
+
+  // ---- Download Report ----
+  const handleDownloadReport = () => {
+    if (!selectedPlate) return;
+    const fmtDate = (d: string) => new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+    const netPlate = plateTotalRevenue - plateTotalExpenses - plateTotalLoanMonthly * Math.max(1, Math.round(differenceInDays(reportEnd, reportStart) / 30));
+
+    const w = window.open("", "_blank", "width=900,height=800");
+    if (!w) return;
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
+      <title>Rapport - ${selectedPlate.plate_number}</title>
+      <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; color: #1A1A1A; padding: 30px; max-width: 850px; margin: auto; font-size: 13px; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h1 { font-size: 18px; font-weight: 700; }
+        .header .sub { font-size: 12px; color: #666; margin-top: 4px; }
+        .accent-line { height: 3px; background: linear-gradient(90deg, #00C853, #00C853 40%, #e0e0e0 40%); border-radius: 2px; margin: 16px 0; }
+        .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+        .kpi { background: #f8f8f8; border-radius: 8px; padding: 14px; }
+        .kpi .label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 4px; }
+        .kpi .val { font-size: 16px; font-weight: 700; }
+        .kpi .val.green { color: #16a34a; }
+        .kpi .val.red { color: #dc2626; }
+        table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+        th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #888; padding: 6px 8px; border-bottom: 2px solid #eee; }
+        td { padding: 6px 8px; border-bottom: 1px solid #f0f0f0; font-size: 12px; }
+        td.right, th.right { text-align: right; }
+        .section-title { font-size: 13px; font-weight: 600; margin-top: 24px; margin-bottom: 8px; color: #00C853; text-transform: uppercase; letter-spacing: 1px; }
+        .footer { text-align: center; margin-top: 24px; font-size: 11px; color: #999; }
+        @media print { body { padding: 15px; } .kpi { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+      </style></head><body>
+      <div class="header">
+        <h1>Centre Lux Car — Rapport Financier</h1>
+        <p class="sub">${selectedPlate.plate_number} — ${selectedPlate.brand} ${selectedPlate.model}</p>
+        <p class="sub">Période : ${fmtDate(reportStartDate)} — ${fmtDate(reportEndDate)}</p>
+      </div>
+      <div class="accent-line"></div>
+
+      <div class="kpis">
+        <div class="kpi"><div class="label">Crédit mensuel</div><div class="val">${fmt(plateTotalLoanMonthly)}</div></div>
+        <div class="kpi"><div class="label">Total dépenses</div><div class="val">${fmt(plateTotalExpenses)}</div></div>
+        <div class="kpi"><div class="label">Total revenus</div><div class="val green">${fmt(plateTotalRevenue)}</div></div>
+        <div class="kpi"><div class="label">Bénéfice net</div><div class="val ${netPlate >= 0 ? 'green' : 'red'}">${fmt(netPlate)}</div></div>
+      </div>
+
+      ${utilization[0].value + utilization[1].value > 0 ? `
+      <div class="section-title">Utilisation</div>
+      <p style="font-size:12px;margin-bottom:4px;">${utilization[0].value} jours loués / ${utilization[1].value} jours libres (${Math.round(utilization[0].value / (utilization[0].value + utilization[1].value) * 100)}% d'occupation)</p>
+      ` : ""}
+
+      ${expensePie.length > 0 ? `
+      <div class="section-title">Dépenses par catégorie</div>
+      <table>
+        <thead><tr><th>Catégorie</th><th class="right">Montant</th></tr></thead>
+        <tbody>${expensePie.map((e) => `<tr><td>${e.name}</td><td class="right">${e.value.toLocaleString("fr-FR")} MAD</td></tr>`).join("")}</tbody>
+      </table>
+      ` : ""}
+
+      ${plateLoans.length > 0 ? `
+      <div class="section-title">Crédits</div>
+      <table>
+        <thead><tr><th>Banque</th><th class="right">Montant</th><th class="right">Mensualité</th><th class="right">Restant</th></tr></thead>
+        <tbody>${plateLoans.map((l) => `<tr><td>${l.bank_name}</td><td class="right">${Number(l.loan_amount).toLocaleString("fr-FR")} MAD</td><td class="right">${Number(l.monthly_payment).toLocaleString("fr-FR")} MAD</td><td class="right">${Number(l.remaining_amount).toLocaleString("fr-FR")} MAD</td></tr>`).join("")}</tbody>
+      </table>
+      ` : ""}
+
+      <div class="section-title">Réservations (${reservationBreakdown.length})</div>
+      <table>
+        <thead><tr><th>ID</th><th>Du</th><th>Au</th><th class="right">Jours</th><th class="right">Montant</th></tr></thead>
+        <tbody>
+          ${reservationBreakdown.length > 0 ? reservationBreakdown.map((r) => `<tr><td style="font-family:monospace;font-weight:600">${r.id}</td><td>${r.startDate}</td><td>${r.endDate}</td><td class="right">${r.days}</td><td class="right">${Number(r.amount).toLocaleString("fr-FR")} MAD</td></tr>`).join("") : `<tr><td colspan="5" style="text-align:center;color:#999;padding:16px">Aucune réservation</td></tr>`}
+          ${reservationBreakdown.length > 0 ? `<tr style="font-weight:700;border-top:2px solid #333"><td colspan="3">Total</td><td class="right">${reservationBreakdown.reduce((s, r) => s + r.days, 0)}</td><td class="right">${reservationBreakdown.reduce((s, r) => s + r.amount, 0).toLocaleString("fr-FR")} MAD</td></tr>` : ""}
+        </tbody>
+      </table>
+
+      ${monthlyEarnings.length > 0 ? `
+      <div class="section-title">Revenus mensuels</div>
+      <table>
+        <thead><tr><th>Mois</th><th class="right">Revenus</th></tr></thead>
+        <tbody>${monthlyEarnings.map((m) => `<tr><td>${m.month}</td><td class="right">${m.revenue.toLocaleString("fr-FR")} MAD</td></tr>`).join("")}</tbody>
+      </table>
+      ` : ""}
+
+      <div class="accent-line"></div>
+      <div class="footer">
+        <p>Centre Lux Car • centreluxcar.com</p>
+        <p>Rapport généré le ${fmtDate(format(new Date(), "yyyy-MM-dd"))}</p>
+      </div>
+    </body></html>`);
+    w.document.close();
+    setTimeout(() => w.print(), 400);
+  };
 
   // ---- Summary Table ----
   const summaryRows = useMemo(() => {
@@ -349,12 +465,25 @@ const AdminFinances = () => {
 
           {/* Section 3 — Per-Car Report */}
           <TabsContent value="report" className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-              <Label>Véhicule :</Label>
-              <Select value={selectedPlateId} onValueChange={setSelectedPlateId}>
-                <SelectTrigger className="w-64"><SelectValue placeholder="Sélectionner un véhicule" /></SelectTrigger>
-                <SelectContent>{plates?.map((p) => <SelectItem key={p.id} value={p.id}>{p.plate_number} — {p.brand} {p.model}</SelectItem>)}</SelectContent>
-              </Select>
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                <Label className="shrink-0">Véhicule :</Label>
+                <Select value={selectedPlateId} onValueChange={setSelectedPlateId}>
+                  <SelectTrigger className="w-full sm:w-64"><SelectValue placeholder="Sélectionner un véhicule" /></SelectTrigger>
+                  <SelectContent>{plates?.map((p) => <SelectItem key={p.id} value={p.id}>{p.plate_number} — {p.brand} {p.model}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                <Label className="shrink-0">Période :</Label>
+                <DatePickerField value={reportStartDate} onChange={setReportStartDate} placeholder="Date début" className="w-full sm:w-44" />
+                <span className="text-muted-foreground hidden sm:block">→</span>
+                <DatePickerField value={reportEndDate} onChange={setReportEndDate} placeholder="Date fin" className="w-full sm:w-44" />
+                {selectedPlateId && (
+                  <Button size="sm" variant="outline" onClick={handleDownloadReport} className="gap-1">
+                    <Download className="h-4 w-4" /> Télécharger le rapport
+                  </Button>
+                )}
+              </div>
             </div>
 
             {selectedPlateId && (
@@ -387,7 +516,7 @@ const AdminFinances = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {/* Monthly Earnings Bar */}
                   <Card>
-                    <CardHeader><CardTitle className="text-sm">Revenus mensuels (12 mois)</CardTitle></CardHeader>
+                    <CardHeader><CardTitle className="text-sm">Revenus mensuels</CardTitle></CardHeader>
                     <CardContent>
                       <ChartContainer config={{ revenue: { label: "Revenus", color: "hsl(var(--primary))" } }} className="h-[250px]">
                         <BarChart data={monthlyEarnings}>
@@ -402,7 +531,7 @@ const AdminFinances = () => {
 
                   {/* Utilization Donut */}
                   <Card>
-                    <CardHeader><CardTitle className="text-sm">Utilisation (mois en cours)</CardTitle></CardHeader>
+                    <CardHeader><CardTitle className="text-sm">Utilisation (période)</CardTitle></CardHeader>
                     <CardContent>
                       <ChartContainer config={{ rented: { label: "Loués", color: "hsl(var(--primary))" }, idle: { label: "Libres", color: "hsl(var(--muted))" } }} className="h-[250px]">
                         <PieChart>
@@ -456,6 +585,47 @@ const AdminFinances = () => {
                     </CardContent>
                   </Card>
                 </div>
+
+                {/* Reservation Breakdown Table */}
+                <Card>
+                  <CardHeader><CardTitle className="text-sm">Détail des réservations ({reservationBreakdown.length})</CardTitle></CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>ID</TableHead>
+                            <TableHead>Date début</TableHead>
+                            <TableHead>Date fin</TableHead>
+                            <TableHead className="text-right">Jours</TableHead>
+                            <TableHead className="text-right">Montant</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {reservationBreakdown.map((r) => (
+                            <TableRow key={r.id}>
+                              <TableCell className="font-mono font-semibold">{r.id}</TableCell>
+                              <TableCell>{r.startDate}</TableCell>
+                              <TableCell>{r.endDate}</TableCell>
+                              <TableCell className="text-right">{r.days}</TableCell>
+                              <TableCell className="text-right">{Number(r.amount).toLocaleString("fr-FR")} MAD</TableCell>
+                            </TableRow>
+                          ))}
+                          {reservationBreakdown.length === 0 && (
+                            <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Aucune réservation dans cette période</TableCell></TableRow>
+                          )}
+                          {reservationBreakdown.length > 0 && (
+                            <TableRow className="border-t-2 font-bold">
+                              <TableCell colSpan={3}>Total</TableCell>
+                              <TableCell className="text-right">{reservationBreakdown.reduce((s, r) => s + r.days, 0)}</TableCell>
+                              <TableCell className="text-right">{reservationBreakdown.reduce((s, r) => s + r.amount, 0).toLocaleString("fr-FR")} MAD</TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
               </>
             )}
             {!selectedPlateId && (
