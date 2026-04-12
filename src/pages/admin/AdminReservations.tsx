@@ -687,10 +687,18 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
               { label: "Email", field: "email", value: r.customer_email },
               { label: "Téléphone", field: "phone", value: r.customer_phone },
               { label: "Permis", field: "license", value: r.customer_license },
+              { label: "Délivrance permis", field: "none_ld", value: r.customer_license_delivery_date ? new Date(r.customer_license_delivery_date).toLocaleDateString("fr-FR") : "—" },
+              { label: "Nationalité", field: "none_nat", value: r.customer_nationality || "—" },
+              ...(r.customer_nationality === "Marocaine" || (!r.customer_nationality && r.customer_cin)
+                ? [
+                    { label: "CIN", field: "none_cin", value: r.customer_cin || "—" },
+                    { label: "Expiration CIN", field: "none_cinexp", value: r.customer_cin_expiry_date ? new Date(r.customer_cin_expiry_date).toLocaleDateString("fr-FR") : "—" },
+                  ]
+                : [{ label: "Passeport", field: "none_pass", value: r.customer_passport || "—" }]),
             ].map(({ label, field, value }) => (
               <div key={field}>
                 <p className="text-muted-foreground">{label}</p>
-                {clientEdit?.field === field ? (
+                {clientEdit?.field === field && !field.startsWith("none_") ? (
                   <div className="flex items-center gap-1 mt-1">
                     <Input
                       className="h-7 text-sm"
@@ -704,7 +712,9 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
                 ) : (
                   <div className="flex items-center gap-1">
                     <p className={field === "email" ? "break-all" : ""}>{value}</p>
-                    <button onClick={() => onStartClientEdit(field, value)} className="text-muted-foreground hover:text-primary"><Pencil size={13} /></button>
+                    {!field.startsWith("none_") && (
+                      <button onClick={() => onStartClientEdit(field, value)} className="text-muted-foreground hover:text-primary"><Pencil size={13} /></button>
+                    )}
                   </div>
                 )}
               </div>
