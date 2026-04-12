@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Car, Shield, Clock, MapPin, ChevronRight, ChevronLeft, Star, Users, Fuel, Settings2, DoorOpen, Briefcase, Snowflake } from "lucide-react";
+import { getCategoryInfo } from "@/lib/vehicle-categories";
 import { useDeviceType, getScaleForDevice, getScaleForColorOnDevice } from "@/hooks/useDeviceScale";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";

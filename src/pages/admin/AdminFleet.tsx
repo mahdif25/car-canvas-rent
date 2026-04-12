@@ -12,6 +12,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { STRUCTURED_FEATURES } from "@/lib/vehicle-features";
+import { getCategoryInfo } from "@/lib/vehicle-categories";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import type { Database } from "@/integrations/supabase/types";
 import type { VehicleColor } from "@/hooks/useVehicleColors";

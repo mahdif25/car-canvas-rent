@@ -4,6 +4,7 @@ import { useVehicles, usePricingTiers, getDailyRateFromTiers, getStartingPriceFr
 import { useLocations } from "@/hooks/useLocations";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { X, RotateCcw, Send } from "lucide-react";
+import { getCategoryInfo } from "@/lib/vehicle-categories";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 type Vehicle = { id: string; name: string; brand: string; category: string; image_url: string | null; is_available: boolean };

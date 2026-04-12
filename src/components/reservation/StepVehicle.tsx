@@ -2,6 +2,7 @@ import { ReservationFormData } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Users, Fuel, Settings2, Shield } from "lucide-react";
 import { getActiveFeatures } from "@/lib/vehicle-features";
+import { getCategoryInfo } from "@/lib/vehicle-categories";
 import { Vehicle, PricingTier, getDailyRateFromTiers } from "@/hooks/useVehicles";
 import { useDeviceType, getScaleForDevice, getScaleForColorOnDevice } from "@/hooks/useDeviceScale";
 import { useAllVehicleColors, getDefaultColor, VehicleColor } from "@/hooks/useVehicleColors";

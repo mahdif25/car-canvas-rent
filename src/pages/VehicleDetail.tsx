@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Users, Fuel, Settings2, DoorOpen, Briefcase, Shield, Check, Star } from "lucide-react";
 import { getActiveFeatures } from "@/lib/vehicle-features";
+import { getCategoryInfo } from "@/lib/vehicle-categories";
 import Layout from "@/components/layout/Layout";
 import { useVehicleBySlug, usePricingTiers, useVehicleImages } from "@/hooks/useVehicles";
 import { Button } from "@/components/ui/button";
