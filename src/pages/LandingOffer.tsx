@@ -256,7 +256,7 @@ const LandingOffer = () => {
                 <p className="text-lg font-semibold">Merci ! Redirection en cours...</p>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="first_name">Prénom *</Label>
                   <Input
