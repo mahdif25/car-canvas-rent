@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Car, Calendar, DollarSign, Wrench, TrendingUp } from "lucide-react";
+import { Car, Calendar, DollarSign, Wrench, TrendingUp, Pencil } from "lucide-react";
 import { differenceInDays, parseISO } from "date-fns";
 
 interface Reservation {
@@ -42,9 +42,10 @@ interface Props {
   expenses: FleetExpense[];
   isSelected: boolean;
   onClick: () => void;
+  onEdit: () => void;
 }
 
-const FleetPlateCard = ({ plate, vehicleImage, reservations, expenses, isSelected, onClick }: Props) => {
+const FleetPlateCard = ({ plate, vehicleImage, reservations, expenses, isSelected, onClick, onEdit }: Props) => {
   const plateReservations = reservations.filter((r) => r.assigned_plate_id === plate.id);
   const currentRes = plateReservations.find(
     (r) => r.status === "active" || r.status === "confirmed"
@@ -90,7 +91,16 @@ const FleetPlateCard = ({ plate, vehicleImage, reservations, expenses, isSelecte
         {/* Plate & Model */}
         <div className="flex items-center justify-between mb-2">
           <span className="font-mono font-bold text-sm bg-muted px-2 py-1 rounded">{plate.plate_number}</span>
-          {!plate.is_active && <Badge variant="destructive" className="text-[10px]">Inactif</Badge>}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={(e) => { e.stopPropagation(); onEdit(); }}
+              className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+              title="Modifier"
+            >
+              <Pencil size={14} />
+            </button>
+            {!plate.is_active && <Badge variant="destructive" className="text-[10px]">Inactif</Badge>}
+          </div>
         </div>
         <p className="text-sm text-muted-foreground mb-3">{plate.brand} {plate.model}</p>
 
