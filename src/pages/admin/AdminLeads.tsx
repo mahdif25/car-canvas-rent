@@ -34,6 +34,7 @@ interface LeadRow {
   reservation_completed: boolean | null;
   reservation_id: string | null;
   capi_allowed: boolean;
+  source: string;
   created_at: string | null;
   updated_at: string | null;
 }
@@ -57,6 +58,7 @@ interface GroupedLead {
 const AdminLeads = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [sourceFilter, setSourceFilter] = useState("all");
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
   const { data: leads = [], isLoading } = useQuery({
