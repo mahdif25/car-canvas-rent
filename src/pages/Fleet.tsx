@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
-import { Link } from "react-router-dom";
-import { Users, Fuel, Settings2, Heart, Star, Shield } from "lucide-react";
-import { getActiveFeatures } from "@/lib/vehicle-features";
+import { Link, useNavigate } from "react-router-dom";
+import { Users, Fuel, Settings2, DoorOpen, Briefcase, Snowflake, Shield } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import { useVehicles, usePricingTiers, getStartingPriceFromTiers } from "@/hooks/useVehicles";
 import { Skeleton } from "@/components/ui/skeleton";
