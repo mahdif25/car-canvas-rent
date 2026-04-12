@@ -15,6 +15,7 @@ const VehicleDetail = () => {
   const { data: extraImages = [] } = useVehicleImages(vehicle?.id);
   const [activeIndex, setActiveIndex] = useState(0);
 
+
   const allImages = useMemo(() => {
     const imgs: string[] = [];
     if (vehicle?.image_url) imgs.push(vehicle.image_url);
