@@ -20,6 +20,7 @@ import AdminLeads from "./pages/admin/AdminLeads";
 import AdminMarketing from "./pages/admin/AdminMarketing";
 import AdminBroadcast from "./pages/admin/AdminBroadcast";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminFinances from "./pages/admin/AdminFinances";
 import NotFound from "./pages/NotFound";
 import ConditionsGenerales from "./pages/ConditionsGenerales";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -61,6 +62,7 @@ const App = () => (
             <Route path="/admin/broadcast" element={<AdminBroadcast />} />
             <Route path="/admin/analytics" element={<AdminAnalytics />} />
             <Route path="/admin/leads" element={<AdminLeads />} />
+            <Route path="/admin/finances" element={<AdminFinances />} />
             <Route path="/admin/settings" element={<AdminSettings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

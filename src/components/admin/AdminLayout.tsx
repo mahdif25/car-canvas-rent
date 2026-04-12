@@ -3,7 +3,7 @@ import { Link, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
-import { Car, Settings, CalendarDays, LayoutDashboard, LogOut, MapPin, Menu, MoreHorizontal, BarChart3, Users, Tag, Puzzle, Mail, CarFront } from "lucide-react";
+import { Car, Settings, CalendarDays, LayoutDashboard, LogOut, MapPin, Menu, MoreHorizontal, BarChart3, Users, Tag, Puzzle, Mail, CarFront, Banknote } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import logo from "@/assets/logo.png";
 
@@ -22,6 +22,7 @@ const navItems = [
   { label: "Broadcast", path: "/admin/broadcast", icon: Mail },
   { label: "Analytics", path: "/admin/analytics", icon: BarChart3 },
   { label: "Leads", path: "/admin/leads", icon: Users },
+  { label: "Finances", path: "/admin/finances", icon: Banknote },
 ];
 
 const bottomNavItems = [

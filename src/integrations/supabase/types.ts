@@ -457,6 +457,51 @@ export type Database = {
           },
         ]
       }
+      fleet_loans: {
+        Row: {
+          bank_name: string
+          created_at: string
+          id: string
+          interest_rate: number
+          is_active: boolean
+          loan_amount: number
+          loan_duration_months: number
+          monthly_payment: number
+          notes: string | null
+          plate_id: string
+          remaining_amount: number
+          start_date: string
+        }
+        Insert: {
+          bank_name: string
+          created_at?: string
+          id?: string
+          interest_rate?: number
+          is_active?: boolean
+          loan_amount: number
+          loan_duration_months: number
+          monthly_payment: number
+          notes?: string | null
+          plate_id: string
+          remaining_amount: number
+          start_date: string
+        }
+        Update: {
+          bank_name?: string
+          created_at?: string
+          id?: string
+          interest_rate?: number
+          is_active?: boolean
+          loan_amount?: number
+          loan_duration_months?: number
+          monthly_payment?: number
+          notes?: string | null
+          plate_id?: string
+          remaining_amount?: number
+          start_date?: string
+        }
+        Relationships: []
+      }
       fleet_plates: {
         Row: {
           brand: string
