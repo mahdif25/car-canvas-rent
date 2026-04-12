@@ -13,7 +13,7 @@ import { useVehicles, usePricingTiers, getDailyRateFromTiers } from "@/hooks/use
 import { useLocations, useAllLocations, getDeliveryFee } from "@/hooks/useLocations";
 import { Printer, Save, Pencil, Check, X, Plus, AlertTriangle, Search, Download } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useAvailablePlates } from "@/hooks/useFleetPlates";
+import { useAvailablePlates, useFleetPlates } from "@/hooks/useFleetPlates";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import type { Database } from "@/integrations/supabase/types";
 import ManualReservationDialog from "@/components/admin/ManualReservationDialog";
@@ -115,6 +115,7 @@ const AdminReservations = () => {
   const { data: pricingTiers = [] } = usePricingTiers();
   const { data: locations = [] } = useLocations();
   const { data: allLocations = [] } = useAllLocations();
+  const { data: allPlates = [] } = useFleetPlates();
   const { data: allAddons = [] } = useQuery({
     queryKey: ["all-addons"],
     queryFn: async () => {
@@ -377,13 +378,15 @@ const AdminReservations = () => {
     const rows = filteredReservations.map((r: any) => {
       const days = Math.max(1, Math.ceil((new Date(r.return_date).getTime() - new Date(r.pickup_date).getTime()) / 86400000));
       const vehicle = vehicles.find((v: any) => v.id === r.vehicle_id);
-      const plate = r.assigned_plate_id ? "Assigné" : "—";
+      const plateRecord = allPlates.find((p: any) => p.id === r.assigned_plate_id);
+      const immatriculation = plateRecord ? plateRecord.plate_number : "—";
       const cinPassport = r.customer_cin || r.customer_passport || "—";
       const licenseDate = r.customer_license_delivery_date ? new Date(r.customer_license_delivery_date).toLocaleDateString("fr-FR") : "—";
       const cautionOui = r.deposit_status === "collected" || r.deposit_status === "returned" ? "Oui" : "Non";
       return `<tr>
         <td>${r.id.slice(0, 8).toUpperCase()}</td>
         <td>${vehicle?.name || "—"}</td>
+        <td>${immatriculation}</td>
         <td>${r.customer_first_name} ${r.customer_last_name}</td>
         <td>${r.customer_phone}</td>
         <td>${cinPassport}</td>
@@ -422,7 +425,7 @@ const AdminReservations = () => {
       <p class="meta">${periodLabel} • ${filteredReservations.length} réservation(s)</p>
       <table>
         <thead><tr>
-          <th>ID</th><th>Véhicule</th><th>Nom</th><th>Tél</th><th>CIN/Passeport</th>
+          <th>ID</th><th>Véhicule</th><th>Immatriculation</th><th>Nom</th><th>Tél</th><th>CIN/Passeport</th>
           <th>Lieu départ</th><th>Lieu retour</th><th>Permis</th><th>Délivrance permis</th>
           <th>Jours</th><th>Montant</th><th>Caution</th><th>Statut</th>
         </tr></thead>
