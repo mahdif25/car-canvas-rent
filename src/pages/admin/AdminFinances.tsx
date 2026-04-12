@@ -435,6 +435,7 @@ const AdminFinances = () => {
 
   const fmt = (n: number) => n.toLocaleString("fr-MA", { style: "currency", currency: "MAD", minimumFractionDigits: 0 });
 
+  return (
     <AdminLayout>
       <div className="space-y-6">
         <h1 className="text-2xl font-bold">Finances</h1>
