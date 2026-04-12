@@ -1,34 +1,39 @@
 
 
-# Insurance Expense, Credit Editing, Homepage Card Navigation
+# Broadcast History Dashboard + Fix Email Sending Bug
 
-## 4 Changes
+## Root Cause: Broadcasts Not Sending
 
-### 1. Add "Assurance" to expense categories (`src/hooks/useFleetExpenses.ts`)
-Add `{ value: "insurance", label: "Assurance" }` to `EXPENSE_CATEGORIES` array.
+The logs show `send-transactional-email` crashes with: **"Can only set one of `children` or `props.dangerouslySetInnerHTML`"**. This happens because the `promotional-email.tsx` template uses react-email's `<Section>` component with `dangerouslySetInnerHTML` — but `Section` internally renders its own children wrapper, which conflicts with `dangerouslySetInnerHTML`. The fix is to use plain `<div>` elements instead of `<Section>` for the `dangerouslySetInnerHTML` blocks.
 
-### 2. Edit credits — change plate (immatriculation) and all fields (`src/pages/admin/AdminFinances.tsx`)
-- Import `useUpdateLoan` from `useFleetLoans`
-- Add `editingLoan` state and an edit dialog (reuse same form fields as the add dialog)
-- Pre-fill form with existing loan data when editing
-- Add an edit (Pencil) button next to the delete button in both mobile cards and desktop table rows
-- On save, call `updateLoan.mutate()` with the updated fields including `plate_id`
+## Changes
 
-### 3. Homepage vehicle cards — click card → vehicle detail, click "Réserver" → reservation (`src/pages/Index.tsx`)
-Currently the entire card is wrapped in a `<Link to="/reservation?vehicle=...">`. Change to:
-- Wrap the card in `<Link to={`/fleet/${v.slug || v.id}`}>` so clicking anywhere goes to the vehicle detail page
-- Change the "Réserver" button to use `onClick` with `e.preventDefault()` + `e.stopPropagation()` and navigate to `/reservation?vehicle=${v.id}&color=${selectedColorId}`
-- This way: card click → detail page, "Réserver" click → reservation page
+### 1. Fix promotional email template (`promotional-email.tsx`)
+Replace `<Section dangerouslySetInnerHTML=...>` (lines 74, 78, 90) with `<div dangerouslySetInnerHTML=...>`. This resolves the React rendering conflict that causes the 500 error in `send-transactional-email`, which in turn causes `send-broadcast` to mark all recipients as failed.
 
-### 4. Responsive
-- Edit dialog uses same responsive grid as the add dialog (works on all devices)
-- Edit button visible on both mobile cards and desktop table
-- Homepage card behavior works on all devices (tap card → detail, tap Réserver → reservation)
+Redeploy `send-transactional-email` after the fix.
+
+### 2. Broadcast History Dashboard (`AdminBroadcast.tsx`)
+Add a view toggle at the top: **"Nouveau"** (current creation wizard) and **"Historique"** (new history view).
+
+**History list view:**
+- Fetch from `email_broadcasts` ordered by `created_at DESC`
+- Display as cards (mobile) / table (desktop) with: Subject, Date, Status badge, Recipients count, Sent/Failed counts
+- Click a broadcast to expand to detail view
+
+**Broadcast detail view:**
+- Summary stat cards: Total recipients, Sent, Failed, Pending
+- Recipient table from `broadcast_recipients`: Name, Email, Status (color-coded badges — green=sent, red=failed, yellow=pending)
+- Back button to return to history list
+
+### 3. Responsive
+- Mobile: card layout for broadcast list and recipients
+- Desktop: table layout
+- Detail view uses responsive stat cards grid
 
 ## Files Modified
-- `src/hooks/useFleetExpenses.ts` — add insurance category
-- `src/pages/admin/AdminFinances.tsx` — credit edit functionality
-- `src/pages/Index.tsx` — card navigation split
+- `supabase/functions/_shared/transactional-email-templates/promotional-email.tsx` — fix dangerouslySetInnerHTML conflict
+- `src/pages/admin/AdminBroadcast.tsx` — add history and detail views
 
 ## No database changes needed
 
