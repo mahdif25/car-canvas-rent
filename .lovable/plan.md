@@ -1,23 +1,28 @@
 
 
-# Fix CAPI Flag on Landing Page Leads
+# Fix Duplicate Leads on Landing Page Blur Capture
 
 ## Problem
-The `/offre` landing page inserts leads directly into the database without setting `capi_allowed`, so it defaults to `true`. This shows a misleading "CAPI ✓" badge even though no Facebook CAPI event is actually sent. The page also doesn't use the analytics hook's `captureLeadField` which respects the admin's blur/submit mode setting.
+Every time a user tabs between fields on `/offre`, `handleBlur` inserts a brand-new lead row with a unique `visitor_id` (`landing_blur_${Date.now()}`). Tabbing through 3 fields = 3 duplicate leads. The screenshot shows exactly this: 4 identical "Mahdi / 0708844552 / Étape 0" entries.
 
-## Changes
+## Root Cause
+Unlike `useAnalytics.captureLeadField` which stores a `leadIdRef` and updates the same row, `handleBlur` always calls `.insert()` with a fresh ID.
+
+## Solution
+Track the blur-captured lead ID in a `useRef`, and use **upsert/update** on subsequent blurs instead of inserting new rows.
 
 ### `src/pages/LandingOffer.tsx`
-1. On `handleBlur` (progressive capture): explicitly set `capi_allowed: false` in the insert
-2. On `handleSubmit` (form submission): set `capi_allowed: true` and fire `trackFacebookEvent("Lead", ...)` to actually report the lead to Facebook CAPI
-3. Import and use `useAnalytics` hook for Facebook event tracking
-4. Store Facebook user data in sessionStorage (email, phone, name) before firing CAPI so the edge function can hash and send it
+1. Add a `leadIdRef = useRef<string | null>(null)` to track the blur-captured lead
+2. Generate a stable `visitor_id` once (e.g. from `localStorage` or a single `useRef`)
+3. In `handleBlur`:
+   - If `leadIdRef.current` exists → **update** that row
+   - If not → **insert** a new row, store the returned `id` in `leadIdRef`
+4. In `handleSubmit`:
+   - If `leadIdRef.current` exists → **update** the existing blur row (set `capi_allowed: true`, `last_reservation_step: 1`) instead of inserting a duplicate
+   - If not → insert as before
 
-This ensures:
-- Blur-captured leads show CAPI ✗ (not reported)
-- Submitted leads show CAPI ✓ and are actually reported to Facebook as a "Lead" event
-- Consistent with the reservation flow behavior
+This ensures one lead per visitor session on the landing page, matching the reservation flow behavior.
 
-### Files Modified
+## Files Modified
 - `src/pages/LandingOffer.tsx`
 
