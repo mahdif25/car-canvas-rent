@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Car } from "lucide-react";
+import { Plus, Car, Pencil } from "lucide-react";
 import { useVehicles } from "@/hooks/useVehicles";
 import { useFleetExpenses } from "@/hooks/useFleetExpenses";
 import FleetPlateCard from "@/components/admin/fleet/FleetPlateCard";
@@ -231,6 +231,13 @@ const AdminFleetPlates = () => {
                 <SheetTitle className="flex items-center gap-2">
                   <span className="font-mono bg-muted px-2 py-1 rounded text-base">{selectedPlate.plate_number}</span>
                   <span className="text-muted-foreground font-normal text-sm">{selectedPlate.brand} {selectedPlate.model}</span>
+                  <button
+                    onClick={() => { setSelectedPlateId(null); editPlate(selectedPlate); }}
+                    className="ml-auto p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                    title="Modifier"
+                  >
+                    <Pencil size={16} />
+                  </button>
                 </SheetTitle>
               </SheetHeader>
               <FleetPlateDetail
