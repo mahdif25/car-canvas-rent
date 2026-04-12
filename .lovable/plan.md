@@ -1,50 +1,29 @@
 
 
-# Per-Car Report Period Selector & Download + Reservations Search & Date Filter
+# Agency Summary — Period Selector & All-Reservations Report Download
 
-## Part 1 — AdminFinances: Period Selection & Downloadable Report
+## What Changes
 
-### Period Selector
-- Add `reportStartDate` and `reportEndDate` state (default: 12 months ago → today)
-- Place two `DatePickerField` inputs next to the vehicle selector in the "Rapport par véhicule" tab
-- All charts, KPIs, and reservation data in the per-car report filter by this date range instead of hardcoded "last 12 months" / "current month"
+In the "Résumé agence" tab of AdminFinances, add:
 
-### Reservation Breakdown Table
-- Below the 4 charts, add a table listing all reservations for the selected plate within the period:
-  - Reservation ID (first 8 chars uppercase), start date, end date, number of days, amount paid
-  - No customer personal details (no name, email, phone, license)
+1. **Period selector** — two DatePickerField inputs (start/end date) at the top of the tab, defaulting to last 12 months → today
+2. **Filter all summary data by period** — the summary table rows (expenses, revenue, net) will be scoped to the selected period instead of showing all-time totals
+3. **Download button** — "Télécharger le rapport" button that opens a printable window containing:
+   - Agency name, selected period
+   - Summary table (all plates with loan monthly, expenses, revenue, net for the period)
+   - Agency totals row
+   - Full list of all reservations across all vehicles within the period, each showing: reservation ID (8-char), plate number, pickup date, return date, days, amount paid (no customer personal details)
 
-### Download Report as PDF
-- Add a "Télécharger le rapport" button
-- Uses `window.print()` on a styled printable view (same approach as the receipt printer) containing:
-  - Vehicle info (plate, brand, model)
-  - Period selected
-  - KPI summary (loan monthly, expenses, revenue, net)
-  - All 4 charts rendered as static content
-  - Reservation breakdown table
-- The print view opens in a new window with `@media print` styles
+## Technical Details
 
-## Part 2 — AdminReservations: Search, Reservation ID & Date Filter
+### File: `src/pages/admin/AdminFinances.tsx`
 
-### Reservation ID Display
-- Show the reservation ID (first 8 chars, uppercase) in each reservation row — both desktop and mobile layouts
-- Positioned prominently near the customer name
+- Add `summaryStartDate` / `summaryEndDate` state (default: 12 months ago → today)
+- Place two `DatePickerField` + a `Download` button in a flex row above the summary table
+- Filter `summaryRows` computation: scope `pExpenses` and `pReservations` by the selected period
+- Build a `allReservationsInPeriod` list from `reservations` filtered by period, joined with plate info
+- `handleDownloadAgencyReport()`: opens `window.open()` with a styled HTML page containing the summary table + all reservations table, then calls `print()`
 
-### Search Bar
-- Add a search `Input` with placeholder "Rechercher par ID, nom, email, permis, passeport..."
-- Filter reservations client-side by matching against: `id` (short), `customer_first_name`, `customer_last_name`, `customer_email`, `customer_phone`, `customer_license`
-- Place it in the header bar next to the status filter
-
-### Date Range Filter
-- Add two `DatePickerField` inputs for filtering reservations by pickup date range
-- Filter applied client-side alongside status and search filters
-- On mobile: filters stack vertically; on desktop: inline row
-
-## Files to Modify
-- **`src/pages/admin/AdminFinances.tsx`**: add period selector, reservation breakdown table, download button
-- **`src/pages/admin/AdminReservations.tsx`**: add search input, reservation ID display, date range filter
-
-## Responsive
-- Finances period selectors: stacked on mobile, inline on desktop
-- Reservations search + filters: stacked on mobile, inline row on desktop
+### Responsive
+- Period selectors + download button: stacked on mobile, inline row on desktop
 
