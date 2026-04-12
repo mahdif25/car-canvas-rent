@@ -10,12 +10,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { DatePickerField } from "@/components/ui/date-picker-field";
-import { useFleetLoans, useAddLoan, useDeleteLoan, type FleetLoan } from "@/hooks/useFleetLoans";
+import { useFleetLoans, useAddLoan, useDeleteLoan, useUpdateLoan, type FleetLoan } from "@/hooks/useFleetLoans";
 import { useFleetPlates } from "@/hooks/useFleetPlates";
 import { useFleetExpenses, categoryLabel, EXPENSE_CATEGORIES } from "@/hooks/useFleetExpenses";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Trash2, TrendingUp, TrendingDown, Banknote, Calculator, Download } from "lucide-react";
+import { Plus, Trash2, TrendingUp, TrendingDown, Banknote, Calculator, Download, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { format, subMonths, startOfMonth, endOfMonth, differenceInDays, parseISO, eachMonthOfInterval } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -31,6 +31,58 @@ const AdminFinances = () => {
   const { data: expenses = [] } = useFleetExpenses();
   const addLoan = useAddLoan();
   const deleteLoan = useDeleteLoan();
+  const updateLoan = useUpdateLoan();
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    id: "",
+    plate_id: "",
+    bank_name: "",
+    loan_amount: "",
+    monthly_payment: "",
+    loan_duration_months: "",
+    start_date: "",
+    interest_rate: "0",
+    remaining_amount: "",
+    notes: "",
+  });
+
+  const openEditDialog = (loan: FleetLoan) => {
+    setEditForm({
+      id: loan.id,
+      plate_id: loan.plate_id,
+      bank_name: loan.bank_name,
+      loan_amount: String(loan.loan_amount),
+      monthly_payment: String(loan.monthly_payment),
+      loan_duration_months: String(loan.loan_duration_months),
+      start_date: loan.start_date,
+      interest_rate: String(loan.interest_rate),
+      remaining_amount: String(loan.remaining_amount),
+      notes: loan.notes || "",
+    });
+    setEditOpen(true);
+  };
+
+  const handleEdit = async () => {
+    if (!editForm.plate_id || !editForm.bank_name || !editForm.loan_amount || !editForm.monthly_payment || !editForm.loan_duration_months || !editForm.start_date) {
+      toast.error("Veuillez remplir tous les champs obligatoires");
+      return;
+    }
+    await updateLoan.mutateAsync({
+      id: editForm.id,
+      plate_id: editForm.plate_id,
+      bank_name: editForm.bank_name,
+      loan_amount: Number(editForm.loan_amount),
+      monthly_payment: Number(editForm.monthly_payment),
+      loan_duration_months: Number(editForm.loan_duration_months),
+      start_date: editForm.start_date,
+      interest_rate: Number(editForm.interest_rate),
+      remaining_amount: Number(editForm.remaining_amount || editForm.loan_amount),
+      notes: editForm.notes || null,
+    });
+    toast.success("Crédit mis à jour");
+    setEditOpen(false);
+  };
 
   const [addOpen, setAddOpen] = useState(false);
   const [selectedPlateId, setSelectedPlateId] = useState<string>("");

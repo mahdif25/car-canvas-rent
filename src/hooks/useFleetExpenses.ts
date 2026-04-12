@@ -16,6 +16,7 @@ export const EXPENSE_CATEGORIES = [
   { value: "oil_change", label: "Vidange" },
   { value: "repair", label: "Réparation" },
   { value: "part_replacement", label: "Pièce" },
+  { value: "insurance", label: "Assurance" },
   { value: "other", label: "Autre" },
 ] as const;
 
