@@ -462,6 +462,9 @@ export type Database = {
           brand: string
           created_at: string
           id: string
+          image_flipped: boolean
+          image_offset_y: number
+          image_scale: number
           image_url: string | null
           is_active: boolean
           model: string
@@ -473,6 +476,9 @@ export type Database = {
           brand: string
           created_at?: string
           id?: string
+          image_flipped?: boolean
+          image_offset_y?: number
+          image_scale?: number
           image_url?: string | null
           is_active?: boolean
           model: string
@@ -484,6 +490,9 @@ export type Database = {
           brand?: string
           created_at?: string
           id?: string
+          image_flipped?: boolean
+          image_offset_y?: number
+          image_scale?: number
           image_url?: string | null
           is_active?: boolean
           model?: string
