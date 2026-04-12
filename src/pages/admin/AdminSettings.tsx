@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { Palette, BarChart3, Mail, MessageCircle, Star, Plus, Pencil, Trash2, FileText, Smartphone, Tablet, Monitor, Upload } from "lucide-react";
+import EmailHistoryDashboard from "@/components/admin/EmailHistoryDashboard";
 import logo from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 
