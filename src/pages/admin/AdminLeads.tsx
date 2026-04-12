@@ -46,6 +46,7 @@ interface GroupedLead {
   latestFirstName: string | null;
   latestLastName: string | null;
   latestLicense: string | null;
+  latestSource: string;
   maxStep: number;
   completed: boolean;
   entryCount: number;
@@ -109,6 +110,7 @@ const AdminLeads = () => {
         latestFirstName: latest.first_name,
         latestLastName: latest.last_name,
         latestLicense: latest.license_number,
+        latestSource: latest.source || "website",
         maxStep,
         completed,
         entryCount: entries.length,
