@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Users, Fuel, Settings2, DoorOpen, Briefcase, Shield, Check, Star } from "lucide-react";
 import { getActiveFeatures } from "@/lib/vehicle-features";
+import { getCategoryInfo } from "@/lib/vehicle-categories";
 import Layout from "@/components/layout/Layout";
 import { useVehicleBySlug, usePricingTiers, useVehicleImages } from "@/hooks/useVehicles";
 import { Button } from "@/components/ui/button";
@@ -119,8 +120,8 @@ const VehicleDetail = () => {
             <div className="space-y-6">
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <span className="bg-primary/10 text-primary text-xs font-medium px-3 py-1 rounded-full">
-                    {vehicle.category}
+                  <span className="flex items-center gap-1 bg-primary/10 text-primary text-xs font-medium px-3 py-1 rounded-full">
+                    {(() => { const cat = getCategoryInfo(vehicle.category); const CatIcon = cat.icon; return <><CatIcon size={12} />{cat.label}</>; })()}
                   </span>
                   <div className="flex items-center gap-1">
                     <Star size={14} className="text-primary fill-primary" />

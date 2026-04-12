@@ -4,6 +4,7 @@ import { useVehicles, usePricingTiers, getDailyRateFromTiers, getStartingPriceFr
 import { useLocations } from "@/hooks/useLocations";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { X, RotateCcw, Send } from "lucide-react";
+import { getCategoryInfo } from "@/lib/vehicle-categories";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 type Vehicle = { id: string; name: string; brand: string; category: string; image_url: string | null; is_available: boolean };
@@ -180,7 +181,9 @@ const WhatsAppPopup = () => {
                         )}
                         <div>
                           <p className="text-sm font-medium text-gray-900">{v.name}</p>
-                          <p className="text-xs text-gray-500">{v.category}</p>
+                          <p className="flex items-center gap-1 text-xs text-gray-500">
+                            {(() => { const cat = getCategoryInfo(v.category); const CatIcon = cat.icon; return <><CatIcon size={11} />{cat.label}</>; })()}
+                          </p>
                           {minRate > 0 && (
                             <p className="text-xs text-[#25D366] font-semibold">
                               {minRate === maxRate ? `${minRate} MAD/jour` : `${minRate} - ${maxRate} MAD/jour`}

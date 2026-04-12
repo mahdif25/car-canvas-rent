@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Car, Shield, Clock, MapPin, ChevronRight, ChevronLeft, Star, Users, Fuel, Settings2, DoorOpen, Briefcase, Snowflake } from "lucide-react";
+import { getCategoryInfo } from "@/lib/vehicle-categories";
 import { useDeviceType, getScaleForDevice, getScaleForColorOnDevice } from "@/hooks/useDeviceScale";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
@@ -297,7 +298,9 @@ const Index = () => {
                       className="group bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
                     >
                       <div className="p-4 pb-0 space-y-1">
-                        <span className="text-xs font-semibold text-primary uppercase tracking-wider">{v.category}</span>
+                        <span className="flex items-center gap-1 text-xs font-semibold text-primary uppercase tracking-wider">
+                          {(() => { const cat = getCategoryInfo(v.category); const CatIcon = cat.icon; return <><CatIcon size={12} />{cat.label}</>; })()}
+                        </span>
                         <h3 className="font-bold text-base">{v.name}</h3>
                         <p className="text-xs text-muted-foreground">ou véhicule similaire...</p>
                       </div>
