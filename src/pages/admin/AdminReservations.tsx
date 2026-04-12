@@ -11,7 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import { useMemo, useState } from "react";
 import { useVehicles, usePricingTiers, getDailyRateFromTiers } from "@/hooks/useVehicles";
 import { useLocations, useAllLocations, getDeliveryFee } from "@/hooks/useLocations";
-import { Printer, Save, Pencil, Check, X, Plus, AlertTriangle } from "lucide-react";
+import { Printer, Save, Pencil, Check, X, Plus, AlertTriangle, Search } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAvailablePlates } from "@/hooks/useFleetPlates";
 import { DatePickerField } from "@/components/ui/date-picker-field";
@@ -59,6 +59,10 @@ const AdminReservations = () => {
   const [editState, setEditState] = useState<Record<string, EditState>>({});
   const [clientEdits, setClientEdits] = useState<Record<string, { field: string; value: string } | null>>({});
   const [manualOpen, setManualOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+
   const { data: reservations, isLoading } = useQuery({
     queryKey: ["admin-reservations", statusFilter],
     queryFn: async () => {
@@ -71,6 +75,39 @@ const AdminReservations = () => {
       return data ?? [];
     },
   });
+
+  // Client-side filtering for search and date range
+  const filteredReservations = useMemo(() => {
+    if (!reservations) return [];
+    let filtered = reservations;
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      filtered = filtered.filter((r: any) => {
+        const shortId = r.id.slice(0, 8).toLowerCase();
+        return (
+          shortId.includes(q) ||
+          r.id.toLowerCase().includes(q) ||
+          r.customer_first_name?.toLowerCase().includes(q) ||
+          r.customer_last_name?.toLowerCase().includes(q) ||
+          r.customer_email?.toLowerCase().includes(q) ||
+          r.customer_phone?.toLowerCase().includes(q) ||
+          r.customer_license?.toLowerCase().includes(q)
+        );
+      });
+    }
+
+    // Date range filter
+    if (dateFrom) {
+      filtered = filtered.filter((r: any) => r.pickup_date >= dateFrom);
+    }
+    if (dateTo) {
+      filtered = filtered.filter((r: any) => r.pickup_date <= dateTo);
+    }
+
+    return filtered;
+  }, [reservations, searchQuery, dateFrom, dateTo]);
 
   const { data: vehicles = [] } = useVehicles();
   const { data: pricingTiers = [] } = usePricingTiers();
@@ -176,7 +213,6 @@ const AdminReservations = () => {
       }).eq("id", id);
       if (error) throw error;
 
-      // Sync addons: delete all then insert new
       const { error: delErr } = await supabase.from("reservation_addons").delete().eq("reservation_id", id);
       if (delErr) throw delErr;
 
@@ -192,7 +228,6 @@ const AdminReservations = () => {
       qc.invalidateQueries({ queryKey: ["reservation-addons-all"] });
       toast({ title: "Réservation mise à jour" });
 
-      // Send update email to customer
       const r = reservations?.find((res: any) => res.id === variables.id);
       if (r) {
         const ed = variables.edit;
@@ -336,24 +371,37 @@ const AdminReservations = () => {
 
   return (
     <AdminLayout>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
         <h1 className="text-2xl font-bold">Réservations</h1>
-        <div className="flex flex-wrap items-center gap-3">
-          <Button size="sm" onClick={() => setManualOpen(true)} className="gap-1">
-            <Plus size={14} /> Nouvelle réservation
-          </Button>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Filtrer par statut" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tous les statuts</SelectItem>
-              {(Object.keys(statusLabels) as ReservationStatus[]).map((s) => (
-                <SelectItem key={s} value={s}>{statusLabels[s]}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <Button size="sm" onClick={() => setManualOpen(true)} className="gap-1">
+          <Plus size={14} /> Nouvelle réservation
+        </Button>
+      </div>
+
+      {/* Filters row */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Rechercher par ID, nom, email, permis..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
         </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full sm:w-48">
+            <SelectValue placeholder="Filtrer par statut" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous les statuts</SelectItem>
+            {(Object.keys(statusLabels) as ReservationStatus[]).map((s) => (
+              <SelectItem key={s} value={s}>{statusLabels[s]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <DatePickerField value={dateFrom} onChange={setDateFrom} placeholder="Date début" className="w-full sm:w-40" />
+        <DatePickerField value={dateTo} onChange={setDateTo} placeholder="Date fin" className="w-full sm:w-40" />
       </div>
 
       <ManualReservationDialog
@@ -374,9 +422,9 @@ const AdminReservations = () => {
         <CardContent className="pt-6">
           {isLoading ? (
             <p className="text-center py-8 text-muted-foreground">Chargement...</p>
-          ) : reservations && reservations.length > 0 ? (
+          ) : filteredReservations && filteredReservations.length > 0 ? (
             <div className="space-y-3">
-              {reservations.map((r) => {
+              {filteredReservations.map((r) => {
                 const addDriver = additionalDrivers.find((ad: any) => ad.reservation_id === r.id);
                 return (
                 <ReservationRow
@@ -404,7 +452,6 @@ const AdminReservations = () => {
                     if (field === "email") updateObj.customer_email = value;
                     if (field === "phone") updateObj.customer_phone = value;
                     if (field === "license") updateObj.customer_license = value;
-                    // Handle additional driver fields
                     if (field.startsWith("add_")) {
                       const addDriverRecord = additionalDrivers.find((ad: any) => ad.reservation_id === id);
                       if (addDriverRecord) {
@@ -490,6 +537,8 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
   const { data: availablePlates = [] } = useAvailablePlates(edit.vehicle_id, edit.pickup_date, edit.return_date, r.id);
   const qc = useQueryClient();
 
+  const shortId = r.id.slice(0, 8).toUpperCase();
+
   const assignPlate = async (plateId: string | null) => {
     const { error } = await supabase.from("reservations").update({ assigned_plate_id: plateId }).eq("id", r.id);
     if (error) {
@@ -502,7 +551,6 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
   };
 
   const assignedPlate = availablePlates.find((p) => p.id === r.assigned_plate_id);
-  // Also check if the current plate is not in available list (already assigned to this res)
   const allPlatesForDropdown = r.assigned_plate_id && !availablePlates.find((p) => p.id === r.assigned_plate_id)
     ? availablePlates
     : availablePlates;
@@ -522,6 +570,7 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
         onClick={onToggle}
       >
         <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
+          <span className="font-mono text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{shortId}</span>
           <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[r.status as ReservationStatus]}`}>
             {statusLabels[r.status as ReservationStatus]}
           </span>
@@ -543,7 +592,10 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
         onClick={onToggle}
       >
         <div className="flex items-center justify-between mb-1">
-          <span className="font-medium text-sm">{r.customer_first_name} {r.customer_last_name}</span>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[10px] text-muted-foreground bg-muted px-1 py-0.5 rounded">{shortId}</span>
+            <span className="font-medium text-sm">{r.customer_first_name} {r.customer_last_name}</span>
+          </div>
           <div className="flex items-center gap-1">
             {r.is_manual && <Badge variant="outline" className="text-[10px] px-1.5 py-0">Manuel</Badge>}
             {r.payment_method === "cash" && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Cash</Badge>}
@@ -786,7 +838,6 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
                 <Save size={14} /> Sauvegarder
               </Button>
               <Button size="sm" variant="outline" onClick={() => {
-                // Attach plate number to r for receipt printing
                 r._assignedPlateNumber = availablePlates.find((p: any) => p.id === r.assigned_plate_id)?.plate_number || "";
                 onPrint(calc);
               }} className="gap-1 flex-1 sm:flex-none">
