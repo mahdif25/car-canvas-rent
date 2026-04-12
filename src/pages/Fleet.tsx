@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
-import { Link } from "react-router-dom";
-import { Users, Fuel, Settings2, Heart, Star, Shield } from "lucide-react";
-import { getActiveFeatures } from "@/lib/vehicle-features";
+import { Link, useNavigate } from "react-router-dom";
+import { Users, Fuel, Settings2, DoorOpen, Briefcase, Snowflake, Shield } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import { useVehicles, usePricingTiers, getStartingPriceFromTiers } from "@/hooks/useVehicles";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,6 +9,7 @@ import { useAllVehicleColors, getDefaultColor, VehicleColor } from "@/hooks/useV
 import VehicleColorPicker from "@/components/VehicleColorPicker";
 
 const Fleet = () => {
+  const navigate = useNavigate();
   const [category, setCategory] = useState<string>("all");
   const [transmission, setTransmission] = useState<string>("all");
   const [selectedColors, setSelectedColors] = useState<Record<string, VehicleColor>>({});
@@ -123,34 +123,28 @@ const Fleet = () => {
                 return (
                   <Link
                     key={v.id}
-                    to={`/reservation?vehicle=${v.id}${selectedColorId ? `&color=${selectedColorId}` : ''}`}
-                    className="group bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300"
+                    to={`/fleet/${v.slug || v.id}`}
+                    className="group bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
                   >
-                    <div className="aspect-video overflow-hidden relative bg-secondary">
+                    <div className="p-4 pb-0 space-y-1">
+                      <span className="text-xs font-semibold text-primary uppercase tracking-wider">{v.category}</span>
+                      <h3 className="font-bold text-base">{v.name}</h3>
+                      <p className="text-xs text-muted-foreground">ou véhicule similaire...</p>
+                    </div>
+
+                    <div className="relative mx-4 mt-3 rounded-xl overflow-hidden h-36 bg-secondary">
+                      <div className="absolute inset-0 bg-primary translate-x-full group-hover:translate-x-0 transition-transform duration-500 ease-out" />
                       <img
                         src={displayImage}
                         alt={v.name}
-                        className="w-full h-full object-contain transition-transform duration-300"
+                        className="relative z-10 w-full h-full object-contain transition-transform duration-300"
                         style={{
                           transform: `${imageFlipped ? 'scaleX(-1)' : ''} scale(${imageScale})`.trim() || 'none'
                         }}
                       />
-                      <div className="absolute top-3 right-3 w-9 h-9 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center">
-                        <Heart size={18} className="text-muted-foreground" />
-                      </div>
-                      <div className="absolute top-3 left-3 flex items-center gap-1 bg-background/80 backdrop-blur-sm px-2 py-1 rounded-full">
-                        <Star size={14} className="text-primary fill-primary" />
-                        <span className="text-xs font-semibold">4.8</span>
-                      </div>
                     </div>
-                    <div className="p-5 space-y-3">
-                      <div className="flex justify-between items-start">
-                        <h3 className="font-semibold text-lg">{v.name}</h3>
-                        <span className="bg-primary/10 text-primary text-xs font-medium px-3 py-1 rounded-full">
-                          {v.category}
-                        </span>
-                      </div>
 
+                    <div className="p-4 space-y-3">
                       {vehicleColors.length > 0 && (
                         <VehicleColorPicker
                           colors={vehicleColors}
@@ -159,27 +153,31 @@ const Fleet = () => {
                         />
                       )}
 
-                      <div className="flex gap-4 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1"><Settings2 size={14} />{v.transmission}</span>
-                        <span className="flex items-center gap-1"><Fuel size={14} />{v.fuel}</span>
-                        <span className="flex items-center gap-1"><Users size={14} />{v.seats}</span>
+                      <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1.5"><Settings2 size={12} className="text-primary" />{v.transmission}</span>
+                        <span className="flex items-center gap-1.5"><Fuel size={12} className="text-primary" />{v.fuel}</span>
+                        <span className="flex items-center gap-1.5"><Users size={12} className="text-primary" />{v.seats} places</span>
+                        <span className="flex items-center gap-1.5"><DoorOpen size={12} className="text-primary" />{v.doors} portes</span>
+                        <span className="flex items-center gap-1.5"><Briefcase size={12} className="text-primary" />{v.luggage} valises</span>
+                        {v.has_climatisation && (
+                          <span className="flex items-center gap-1.5"><Snowflake size={12} className="text-primary" />Clim.</span>
+                        )}
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        {getActiveFeatures(v).map((f) => (
-                          <span key={f.key} className="flex items-center gap-1 text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-full">
-                            <f.icon size={12} className="text-primary" />{f.label}
-                          </span>
-                        ))}
-                        <span className="flex items-center gap-1 text-xs text-primary bg-primary/5 px-2 py-1 rounded-full">
-                          <Shield size={12} />Tous risques
-                        </span>
-                      </div>
+
                       <div className="flex justify-between items-center pt-3 border-t border-border">
                         <div>
-                          <span className="text-2xl font-bold text-primary">{startingPrice}</span>
+                          <span className="text-xl font-bold text-primary">{startingPrice}</span>
                           <span className="text-sm text-muted-foreground"> MAD/jour</span>
                         </div>
-                        <span className="bg-primary text-primary-foreground px-4 py-2 text-sm font-semibold rounded-xl group-hover:bg-accent transition-colors">
+                        <span
+                          role="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            navigate(`/reservation?vehicle=${v.id}${selectedColorId ? `&color=${selectedColorId}` : ''}`);
+                          }}
+                          className="border border-primary text-primary px-3 py-1.5 text-sm font-semibold rounded-xl group-hover:bg-primary group-hover:text-primary-foreground transition-colors cursor-pointer"
+                        >
                           Réserver
                         </span>
                       </div>
