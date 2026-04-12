@@ -94,7 +94,9 @@ const StepVehicle = ({ formData, updateForm, rentalDays, onNext, onBack, vehicle
                 <div>
                   <div className="flex justify-between items-start">
                     <h3 className="font-semibold text-lg">{v.name}</h3>
-                    <span className="bg-primary/10 text-primary text-xs font-medium px-2 py-1 rounded-full">{v.category}</span>
+                    <span className="flex items-center gap-1 bg-primary/10 text-primary text-xs font-medium px-2 py-1 rounded-full">
+                      {(() => { const cat = getCategoryInfo(v.category); const CatIcon = cat.icon; return <><CatIcon size={12} />{cat.label}</>; })()}
+                    </span>
                   </div>
 
                   {vehicleColors.length > 0 && (

@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Users, Fuel, Settings2, DoorOpen, Briefcase, Snowflake, Shield } from "lucide-react";
+import { getCategoryInfo } from "@/lib/vehicle-categories";
 import Layout from "@/components/layout/Layout";
 import { useVehicles, usePricingTiers, getStartingPriceFromTiers } from "@/hooks/useVehicles";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -62,19 +63,24 @@ const Fleet = () => {
               >
                 Toutes catégories
               </button>
-              {categories.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setCategory(c)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                    category === c
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-secondary text-foreground hover:bg-secondary/80"
-                  }`}
-                >
-                  {c}
-                </button>
-              ))}
+              {categories.map((c) => {
+                const cat = getCategoryInfo(c);
+                const CatIcon = cat.icon;
+                return (
+                  <button
+                    key={c}
+                    onClick={() => setCategory(c)}
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                      category === c
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-secondary text-foreground hover:bg-secondary/80"
+                    }`}
+                  >
+                    <CatIcon size={14} />
+                    {cat.label}
+                  </button>
+                );
+              })}
             </div>
             <div className="flex flex-wrap gap-2">
               {[
@@ -127,7 +133,9 @@ const Fleet = () => {
                     className="group bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
                   >
                     <div className="p-4 pb-0 space-y-1">
-                      <span className="text-xs font-semibold text-primary uppercase tracking-wider">{v.category}</span>
+                      <span className="flex items-center gap-1 text-xs font-semibold text-primary uppercase tracking-wider">
+                        {(() => { const cat = getCategoryInfo(v.category); const CatIcon = cat.icon; return <><CatIcon size={12} />{cat.label}</>; })()}
+                      </span>
                       <h3 className="font-bold text-base">{v.name}</h3>
                       <p className="text-xs text-muted-foreground">ou véhicule similaire...</p>
                     </div>

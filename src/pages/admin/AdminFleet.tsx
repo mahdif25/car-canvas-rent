@@ -755,7 +755,11 @@ const AdminFleet = () => {
                             {v.name}
                           </div>
                         </td>
-                        <td className="py-2 px-3">{v.category}</td>
+                        <td className="py-2 px-3">
+                          <span className="flex items-center gap-1">
+                            {(() => { const cat = getCategoryInfo(v.category); const CatIcon = cat.icon; return <><CatIcon size={14} />{cat.label}</>; })()}
+                          </span>
+                        </td>
                         <td className="py-2 px-3">{v.transmission}</td>
                         <td className="py-2 px-3 text-right">{Number(v.security_deposit).toLocaleString()} MAD</td>
                         <td className="py-2 px-3 text-center">
@@ -784,7 +788,9 @@ const AdminFleet = () => {
                       {v.image_url && <img src={v.image_url} alt="" className="w-14 h-10 object-contain rounded shrink-0" />}
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm truncate">{v.name}</p>
-                        <p className="text-xs text-muted-foreground">{v.category} • {v.transmission}</p>
+                        <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                          {(() => { const cat = getCategoryInfo(v.category); const CatIcon = cat.icon; return <><CatIcon size={11} />{cat.label}</>; })()} • {v.transmission}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center justify-between">
