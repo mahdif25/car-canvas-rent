@@ -425,7 +425,7 @@ const AdminReservations = () => {
       <p class="meta">${periodLabel} • ${filteredReservations.length} réservation(s)</p>
       <table>
         <thead><tr>
-          <th>ID</th><th>Véhicule</th><th>Nom</th><th>Tél</th><th>CIN/Passeport</th>
+          <th>ID</th><th>Véhicule</th><th>Immatriculation</th><th>Nom</th><th>Tél</th><th>CIN/Passeport</th>
           <th>Lieu départ</th><th>Lieu retour</th><th>Permis</th><th>Délivrance permis</th>
           <th>Jours</th><th>Montant</th><th>Caution</th><th>Statut</th>
         </tr></thead>
