@@ -40,6 +40,10 @@ const AdminFinances = () => {
   const [reportStartDate, setReportStartDate] = useState(() => format(subMonths(new Date(), 12), "yyyy-MM-dd"));
   const [reportEndDate, setReportEndDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
 
+  // Summary period state
+  const [summaryStartDate, setSummaryStartDate] = useState(() => format(subMonths(new Date(), 12), "yyyy-MM-dd"));
+  const [summaryEndDate, setSummaryEndDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
+
   // Fetch all reservations for revenue calculation
   const { data: reservations = [] } = useQuery({
     queryKey: ["all-reservations-finances"],
