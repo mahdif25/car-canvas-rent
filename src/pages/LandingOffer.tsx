@@ -15,7 +15,7 @@ const LandingOffer = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { data: settings } = useSiteSettings();
-
+  const { trackFacebookEvent } = useAnalytics();
   // Capture UTM params
   const utmParams = useMemo(() => ({
     utm_source: searchParams.get("utm_source") || "",
