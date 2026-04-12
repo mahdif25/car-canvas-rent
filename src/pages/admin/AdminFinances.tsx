@@ -40,6 +40,10 @@ const AdminFinances = () => {
   const [reportStartDate, setReportStartDate] = useState(() => format(subMonths(new Date(), 12), "yyyy-MM-dd"));
   const [reportEndDate, setReportEndDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
 
+  // Summary period state
+  const [summaryStartDate, setSummaryStartDate] = useState(() => format(subMonths(new Date(), 12), "yyyy-MM-dd"));
+  const [summaryEndDate, setSummaryEndDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
+
   // Fetch all reservations for revenue calculation
   const { data: reservations = [] } = useQuery({
     queryKey: ["all-reservations-finances"],
@@ -308,13 +312,25 @@ const AdminFinances = () => {
     setTimeout(() => w.print(), 400);
   };
 
-  // ---- Summary Table ----
+  // ---- Summary Table (filtered by summary period) ----
+  const summaryStart = parseISO(summaryStartDate);
+  const summaryEnd = parseISO(summaryEndDate);
+  const summaryMonths = Math.max(1, Math.round(differenceInDays(summaryEnd, summaryStart) / 30));
+
   const summaryRows = useMemo(() => {
     if (!plates) return [];
     return plates.map((p) => {
       const pLoans = loans.filter((l) => l.plate_id === p.id && l.is_active);
-      const pExpenses = expenses.filter((e) => e.plate_id === p.id);
-      const pReservations = reservations.filter((r) => r.assigned_plate_id === p.id);
+      const pExpenses = expenses.filter((e) => {
+        if (e.plate_id !== p.id) return false;
+        const d = parseISO(e.expense_date);
+        return d >= summaryStart && d <= summaryEnd;
+      });
+      const pReservations = reservations.filter((r) => {
+        if (r.assigned_plate_id !== p.id) return false;
+        const pickup = parseISO(r.pickup_date);
+        return pickup >= summaryStart && pickup <= summaryEnd;
+      });
       const loanMonthly = pLoans.reduce((s, l) => s + l.monthly_payment, 0);
       const totalExp = pExpenses.reduce((s, e) => s + e.amount, 0);
       const totalRev = pReservations.reduce((s, r) => s + r.total_price, 0);
@@ -325,10 +341,10 @@ const AdminFinances = () => {
         loanMonthly,
         expenses: totalExp,
         revenue: totalRev,
-        net: totalRev - totalExp - loanMonthly * 12,
+        net: totalRev - totalExp - loanMonthly * summaryMonths,
       };
     });
-  }, [plates, loans, expenses, reservations]);
+  }, [plates, loans, expenses, reservations, summaryStart, summaryEnd, summaryMonths]);
 
   const summaryTotals = useMemo(() => ({
     loanMonthly: summaryRows.reduce((s, r) => s + r.loanMonthly, 0),
@@ -337,9 +353,88 @@ const AdminFinances = () => {
     net: summaryRows.reduce((s, r) => s + r.net, 0),
   }), [summaryRows]);
 
+  // All reservations in summary period (for agency report download)
+  const allReservationsInPeriod = useMemo(() => {
+    return reservations
+      .filter((r) => {
+        const pickup = parseISO(r.pickup_date);
+        return pickup >= summaryStart && pickup <= summaryEnd;
+      })
+      .map((r) => {
+        const plate = plates?.find((p) => p.id === r.assigned_plate_id);
+        const days = Math.max(1, differenceInDays(parseISO(r.return_date), parseISO(r.pickup_date)));
+        return {
+          id: r.id.slice(0, 8).toUpperCase(),
+          plate: plate ? plate.plate_number : "—",
+          startDate: r.pickup_date,
+          endDate: r.return_date,
+          days,
+          amount: r.total_price,
+        };
+      })
+      .sort((a, b) => a.startDate.localeCompare(b.startDate));
+  }, [reservations, plates, summaryStart, summaryEnd]);
+
+  // ---- Download Agency Report ----
+  const handleDownloadAgencyReport = () => {
+    const fmtDate = (d: string) => new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+    const w = window.open("", "_blank", "width=900,height=800");
+    if (!w) return;
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
+      <title>Rapport Agence</title>
+      <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; color: #1A1A1A; padding: 30px; max-width: 850px; margin: auto; font-size: 13px; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h1 { font-size: 18px; font-weight: 700; }
+        .header .sub { font-size: 12px; color: #666; margin-top: 4px; }
+        .accent-line { height: 3px; background: linear-gradient(90deg, #00C853, #00C853 40%, #e0e0e0 40%); border-radius: 2px; margin: 16px 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+        th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #888; padding: 6px 8px; border-bottom: 2px solid #eee; }
+        td { padding: 6px 8px; border-bottom: 1px solid #f0f0f0; font-size: 12px; }
+        td.right, th.right { text-align: right; }
+        .section-title { font-size: 13px; font-weight: 600; margin-top: 24px; margin-bottom: 8px; color: #00C853; text-transform: uppercase; letter-spacing: 1px; }
+        .totals td { font-weight: 700; border-top: 2px solid #333; }
+        .footer { text-align: center; margin-top: 24px; font-size: 11px; color: #999; }
+        @media print { body { padding: 15px; } }
+      </style></head><body>
+      <div class="header">
+        <h1>Centre Lux Car — Rapport Agence</h1>
+        <p class="sub">Période : ${fmtDate(summaryStartDate)} — ${fmtDate(summaryEndDate)}</p>
+      </div>
+      <div class="accent-line"></div>
+
+      <div class="section-title">Résumé par véhicule</div>
+      <table>
+        <thead><tr><th>Immat.</th><th>Véhicule</th><th class="right">Crédit/mois</th><th class="right">Dépenses</th><th class="right">Revenus</th><th class="right">Bénéfice net</th></tr></thead>
+        <tbody>
+          ${summaryRows.map((r) => `<tr><td>${r.plate}</td><td>${r.brand}</td><td class="right">${Number(r.loanMonthly).toLocaleString("fr-FR")} MAD</td><td class="right">${Number(r.expenses).toLocaleString("fr-FR")} MAD</td><td class="right">${Number(r.revenue).toLocaleString("fr-FR")} MAD</td><td class="right" style="color:${r.net >= 0 ? '#16a34a' : '#dc2626'};font-weight:600">${Number(r.net).toLocaleString("fr-FR")} MAD</td></tr>`).join("")}
+          <tr class="totals"><td colspan="2">Total</td><td class="right">${Number(summaryTotals.loanMonthly).toLocaleString("fr-FR")} MAD</td><td class="right">${Number(summaryTotals.expenses).toLocaleString("fr-FR")} MAD</td><td class="right">${Number(summaryTotals.revenue).toLocaleString("fr-FR")} MAD</td><td class="right" style="color:${summaryTotals.net >= 0 ? '#16a34a' : '#dc2626'};font-weight:700">${Number(summaryTotals.net).toLocaleString("fr-FR")} MAD</td></tr>
+        </tbody>
+      </table>
+
+      <div class="section-title">Toutes les réservations (${allReservationsInPeriod.length})</div>
+      <table>
+        <thead><tr><th>ID</th><th>Immat.</th><th>Du</th><th>Au</th><th class="right">Jours</th><th class="right">Montant</th></tr></thead>
+        <tbody>
+          ${allReservationsInPeriod.length > 0 ? allReservationsInPeriod.map((r) => `<tr><td style="font-family:monospace;font-weight:600">${r.id}</td><td>${r.plate}</td><td>${r.startDate}</td><td>${r.endDate}</td><td class="right">${r.days}</td><td class="right">${Number(r.amount).toLocaleString("fr-FR")} MAD</td></tr>`).join("") : `<tr><td colspan="6" style="text-align:center;color:#999;padding:16px">Aucune réservation</td></tr>`}
+          ${allReservationsInPeriod.length > 0 ? `<tr class="totals"><td colspan="4">Total</td><td class="right">${allReservationsInPeriod.reduce((s, r) => s + r.days, 0)}</td><td class="right">${allReservationsInPeriod.reduce((s, r) => s + r.amount, 0).toLocaleString("fr-FR")} MAD</td></tr>` : ""}
+        </tbody>
+      </table>
+
+      <div class="accent-line"></div>
+      <div class="footer">
+        <p>Centre Lux Car • centreluxcar.com</p>
+        <p>Rapport généré le ${fmtDate(format(new Date(), "yyyy-MM-dd"))}</p>
+      </div>
+    </body></html>`);
+    w.document.close();
+    setTimeout(() => w.print(), 400);
+  };
+
   const fmt = (n: number) => n.toLocaleString("fr-MA", { style: "currency", currency: "MAD", minimumFractionDigits: 0 });
 
-  return (
     <AdminLayout>
       <div className="space-y-6">
         <h1 className="text-2xl font-bold">Finances</h1>
@@ -635,14 +730,24 @@ const AdminFinances = () => {
 
           {/* Section 4 — Summary Table */}
           <TabsContent value="summary" className="space-y-4">
-            <h2 className="text-lg font-semibold">Résumé par véhicule</h2>
+            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center flex-wrap">
+              <Label className="shrink-0 font-semibold text-lg">Résumé par véhicule</Label>
+              <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center ml-auto">
+                <DatePickerField value={summaryStartDate} onChange={setSummaryStartDate} placeholder="Date début" className="w-full sm:w-44" />
+                <span className="text-muted-foreground hidden sm:block">→</span>
+                <DatePickerField value={summaryEndDate} onChange={setSummaryEndDate} placeholder="Date fin" className="w-full sm:w-44" />
+                <Button size="sm" variant="outline" onClick={handleDownloadAgencyReport} className="gap-1">
+                  <Download className="h-4 w-4" /> Télécharger le rapport
+                </Button>
+              </div>
+            </div>
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Immatriculation</TableHead>
-                    <TableHead>Véhicule</TableHead>
-                    <TableHead className="text-right">Crédit/mois</TableHead>
+                     <TableHead>Immatriculation</TableHead>
+                     <TableHead>Véhicule</TableHead>
+                     <TableHead className="text-right">Crédit/mois</TableHead>
                     <TableHead className="text-right">Dépenses total</TableHead>
                     <TableHead className="text-right">Revenus total</TableHead>
                     <TableHead className="text-right">Bénéfice net</TableHead>
