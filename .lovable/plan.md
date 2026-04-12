@@ -1,57 +1,26 @@
 
 
-# Replace Vehicle Category Text with Icons
+# Add Plate Number Editing from Parc Auto
 
-## Overview
-Create a shared category icon mapping utility and replace all text-only category labels with icon + label combos across the Fleet page, Homepage, VehicleDetail, StepVehicle, WhatsAppPopup, and AdminFleet.
-
-## Icon Mapping
-Using Lucide icons that visually represent each category:
-
-| Category | Icon | Rationale |
-|----------|------|-----------|
-| SUV | `Truck` | Rugged/tall vehicle silhouette |
-| Sedan | `Car` | Classic car shape |
-| Compact | `CircleDot` | Small/compact feel |
-| Luxury | `Crown` | Premium/luxury |
-| Minivan | `Bus` | Multi-passenger vehicle |
+## Problem
+The `editPlate` function exists in `AdminFleetPlates.tsx` but is never wired to any UI button. Users cannot edit a plate's immatriculation from the cards or detail panel.
 
 ## Changes
 
-### 1. New file: `src/lib/vehicle-categories.ts`
-Shared utility mapping category strings to Lucide icons and labels. Exports:
-- `CATEGORY_ICON_MAP` — maps category name → `{ icon: LucideIcon, label: string }`
-- `CategoryIcon` component — renders icon + optional label, accepts size prop
+### 1. Add "Edit" button to `FleetPlateDetail.tsx`
+- Accept a new `onEdit` callback prop
+- Add an "Edit" (pencil icon) button near the plate number header that calls `onEdit`
 
-### 2. Update `src/pages/Fleet.tsx`
-- Filter chips: replace text-only buttons with icon + text chips
-- Card category badge: replace `{v.category}` text with `CategoryIcon`
+### 2. Add "Edit" button to `FleetPlateCard.tsx`
+- Accept a new `onEdit` callback prop
+- Add a small edit icon button on the card (with `e.stopPropagation()` to prevent opening the detail sheet)
 
-### 3. Update `src/pages/Index.tsx`
-- Card category badge (line ~300): replace `{v.category}` with `CategoryIcon`
-
-### 4. Update `src/pages/VehicleDetail.tsx`
-- Category badge (line ~122): replace text with `CategoryIcon`
-
-### 5. Update `src/components/reservation/StepVehicle.tsx`
-- Category badge (line ~97): replace text with `CategoryIcon`
-
-### 6. Update `src/components/WhatsAppPopup.tsx`
-- Category text (line ~183): replace with `CategoryIcon`
-
-### 7. Update `src/pages/admin/AdminFleet.tsx`
-- Vehicle table category column (line ~758): replace text with `CategoryIcon`
-- Mobile vehicle list (line ~787): replace text with icon
-
-## Responsive
-Icons render at consistent small sizes (12–14px) matching existing text sizes. No layout breakage on mobile/tablet.
+### 3. Wire callbacks in `AdminFleetPlates.tsx`
+- Pass `onEdit={() => editPlate(plate)}` to both `FleetPlateCard` and `FleetPlateDetail`
+- When editing from the detail panel, close the sheet first, then open the form
 
 ## Files Modified
-- `src/lib/vehicle-categories.ts` (new)
-- `src/pages/Fleet.tsx`
-- `src/pages/Index.tsx`
-- `src/pages/VehicleDetail.tsx`
-- `src/components/reservation/StepVehicle.tsx`
-- `src/components/WhatsAppPopup.tsx`
-- `src/pages/admin/AdminFleet.tsx`
+- `src/components/admin/fleet/FleetPlateCard.tsx` — add onEdit prop + button
+- `src/components/admin/fleet/FleetPlateDetail.tsx` — add onEdit prop + button
+- `src/pages/admin/AdminFleetPlates.tsx` — pass onEdit to both components
 
