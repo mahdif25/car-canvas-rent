@@ -881,6 +881,9 @@ export type Database = {
           conditions_generales_html: string
           facebook_capi_token: string | null
           facebook_pixel_id: string | null
+          fb_leadads_app_secret: string
+          fb_leadads_page_access_token: string
+          fb_leadads_verify_token: string
           footer_address: string
           footer_copyright: string
           footer_description: string
@@ -929,6 +932,9 @@ export type Database = {
           conditions_generales_html?: string
           facebook_capi_token?: string | null
           facebook_pixel_id?: string | null
+          fb_leadads_app_secret?: string
+          fb_leadads_page_access_token?: string
+          fb_leadads_verify_token?: string
           footer_address?: string
           footer_copyright?: string
           footer_description?: string
@@ -977,6 +983,9 @@ export type Database = {
           conditions_generales_html?: string
           facebook_capi_token?: string | null
           facebook_pixel_id?: string | null
+          fb_leadads_app_secret?: string
+          fb_leadads_page_access_token?: string
+          fb_leadads_verify_token?: string
           footer_address?: string
           footer_copyright?: string
           footer_description?: string
