@@ -1,26 +1,23 @@
 
 
-# Add Autofill Detection to Landing Page `/offre`
+# Fix CAPI Flag on Landing Page Leads
 
 ## Problem
-The landing page form at `/offre` does not detect browser-autofilled values. If a user's browser pre-fills name, phone, or email, the React state stays empty — meaning progressive lead capture on blur won't fire, and submitting could fail validation.
-
-## Solution
-Port the same autofill detection pattern used in `StepDriverInfo.tsx` and `WhatsAppPopup.tsx` to `LandingOffer.tsx`.
+The `/offre` landing page inserts leads directly into the database without setting `capi_allowed`, so it defaults to `true`. This shows a misleading "CAPI ✓" badge even though no Facebook CAPI event is actually sent. The page also doesn't use the analytics hook's `captureLeadField` which respects the admin's blur/submit mode setting.
 
 ## Changes
 
 ### `src/pages/LandingOffer.tsx`
-1. Add `useRef` for the form element
-2. Add `name` and `autoComplete` attributes to the three inputs:
-   - `first_name` → `name="fname"` / `autoComplete="given-name"`
-   - `phone` → `name="tel"` / `autoComplete="tel"`
-   - `email` → `name="email"` / `autoComplete="email"`
-3. Add a `useEffect` with polling (same pattern as StepDriverInfo): check input values every 200ms for up to 3 seconds, sync any autofilled values into `form` state
-4. Add `onAnimationStart` handler on each input to catch Chrome's autofill animation event as a secondary detection method
+1. On `handleBlur` (progressive capture): explicitly set `capi_allowed: false` in the insert
+2. On `handleSubmit` (form submission): set `capi_allowed: true` and fire `trackFacebookEvent("Lead", ...)` to actually report the lead to Facebook CAPI
+3. Import and use `useAnalytics` hook for Facebook event tracking
+4. Store Facebook user data in sessionStorage (email, phone, name) before firing CAPI so the edge function can hash and send it
 
-This ensures autofilled values are captured for progressive lead saving (the `handleBlur` logic) and form submission.
+This ensures:
+- Blur-captured leads show CAPI ✗ (not reported)
+- Submitted leads show CAPI ✓ and are actually reported to Facebook as a "Lead" event
+- Consistent with the reservation flow behavior
 
-## Files Modified
-- `src/pages/LandingOffer.tsx` — add ref, autoComplete attributes, polling useEffect, animation handler
+### Files Modified
+- `src/pages/LandingOffer.tsx`
 
