@@ -9,6 +9,7 @@ import { useAllVehicleColors, getDefaultColor, VehicleColor } from "@/hooks/useV
 import VehicleColorPicker from "@/components/VehicleColorPicker";
 
 const Fleet = () => {
+  const navigate = useNavigate();
   const [category, setCategory] = useState<string>("all");
   const [transmission, setTransmission] = useState<string>("all");
   const [selectedColors, setSelectedColors] = useState<Record<string, VehicleColor>>({});
