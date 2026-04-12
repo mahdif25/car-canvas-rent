@@ -172,7 +172,12 @@ const AdminMarketing = () => {
                           <CollapsibleTrigger asChild>
                             <TableRow className="cursor-pointer">
                               <TableCell>{expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</TableCell>
-                              <TableCell className="font-mono font-bold">{coupon.code}</TableCell>
+                              <TableCell className="font-mono font-bold">
+                                <span className="flex items-center gap-1.5">
+                                  {coupon.code}
+                                  <button onClick={(e) => { e.stopPropagation(); copyCode(coupon.code); }} className="text-muted-foreground hover:text-foreground"><Copy size={14} /></button>
+                                </span>
+                              </TableCell>
                               <TableCell>{Number(coupon.discount_amount).toLocaleString()} MAD</TableCell>
                               <TableCell>
                                 <div className="flex flex-wrap gap-1">
@@ -243,7 +248,10 @@ const AdminMarketing = () => {
                       onClick={() => setExpandedCoupon(expanded ? null : coupon.id)}
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <span className="font-mono font-bold text-base">{coupon.code}</span>
+                        <span className="font-mono font-bold text-base flex items-center gap-1.5">
+                          {coupon.code}
+                          <button onClick={(e) => { e.stopPropagation(); copyCode(coupon.code); }} className="text-muted-foreground hover:text-foreground"><Copy size={14} /></button>
+                        </span>
                         {isExpired(coupon) ? (
                           <Badge variant="secondary">Expiré</Badge>
                         ) : coupon.is_active ? (
