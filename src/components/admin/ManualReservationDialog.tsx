@@ -211,6 +211,52 @@ export default function ManualReservationDialog({ open, onOpenChange, vehicles, 
         } as any);
       }
 
+      // Send confirmation + welcome emails if real email provided
+      if (form.email && !form.email.endsWith("@noemail.local") && reservation) {
+        const vehicle = vehicles.find((v: any) => v.id === form.vehicleId);
+        const dateFmt = (d: string) => new Date(d).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+        const addonsDetails = form.selectedAddons.map((aid) => {
+          const addon = allAddons.find((a: any) => a.id === aid);
+          return addon ? { name: `${addon.name} (${calc.days}j)`, total: Number(addon.price_per_day) * calc.days } : null;
+        }).filter(Boolean) as { name: string; total: number }[];
+
+        const confirmationData = {
+          customerName: form.firstName,
+          confirmationId: reservation.id.slice(0, 8).toUpperCase(),
+          vehicleName: vehicle?.name || "",
+          pickupDate: dateFmt(form.pickupDate),
+          returnDate: dateFmt(form.returnDate),
+          pickupLocation: form.pickupLocation,
+          returnLocation: form.returnLocation || form.pickupLocation,
+          rentalDays: calc.days,
+          dailyRate: calc.dailyRate,
+          vehicleTotal: calc.vehicleTotal,
+          addonsDetails,
+          deliveryFee: calc.deliveryFee,
+          discountAmount: calc.discountAmount,
+          depositAmount: calc.depositAmount,
+          totalPrice: calc.totalPrice,
+        };
+
+        supabase.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "reservation-confirmation",
+            recipientEmail: form.email,
+            idempotencyKey: `manual-confirm-${reservation.id}`,
+            templateData: confirmationData,
+          },
+        }).catch(console.error);
+
+        supabase.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "welcome-email",
+            recipientEmail: form.email,
+            idempotencyKey: `manual-welcome-${reservation.id}`,
+            templateData: { customerName: form.firstName },
+          },
+        }).catch(console.error);
+      }
+
       toast({ title: "Réservation créée", description: `Réservation manuelle confirmée pour ${form.firstName} ${form.lastName}.` });
       resetForm();
       onOpenChange(false);
