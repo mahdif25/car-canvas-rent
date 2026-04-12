@@ -581,6 +581,7 @@ export type Database = {
           reservation_completed: boolean | null
           reservation_id: string | null
           session_id: string | null
+          source: string
           updated_at: string | null
           visitor_id: string | null
         }
@@ -597,6 +598,7 @@ export type Database = {
           reservation_completed?: boolean | null
           reservation_id?: string | null
           session_id?: string | null
+          source?: string
           updated_at?: string | null
           visitor_id?: string | null
         }
@@ -613,6 +615,7 @@ export type Database = {
           reservation_completed?: boolean | null
           reservation_id?: string | null
           session_id?: string | null
+          source?: string
           updated_at?: string | null
           visitor_id?: string | null
         }
