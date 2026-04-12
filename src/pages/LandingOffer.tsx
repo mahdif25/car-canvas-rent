@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { useAnalytics } from "@/hooks/useAnalytics";
 import { Car, Shield, Star, Phone, ChevronRight, CheckCircle2 } from "lucide-react";
 import logo from "@/assets/logo.png";
 
