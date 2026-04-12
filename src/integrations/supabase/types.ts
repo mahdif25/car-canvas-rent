@@ -419,6 +419,44 @@ export type Database = {
         }
         Relationships: []
       }
+      fleet_expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          description: string | null
+          expense_date: string
+          id: string
+          plate_id: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string
+          description?: string | null
+          expense_date?: string
+          id?: string
+          plate_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          description?: string | null
+          expense_date?: string
+          id?: string
+          plate_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fleet_expenses_plate_id_fkey"
+            columns: ["plate_id"]
+            isOneToOne: false
+            referencedRelation: "fleet_plates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fleet_plates: {
         Row: {
           brand: string
