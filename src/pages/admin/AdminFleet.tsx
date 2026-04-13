@@ -190,12 +190,22 @@ const AdminFleet = () => {
         }
       }
 
-      // Save color variants
+      // Save color variants with targeted upsert
       if (vehicleId) {
-        await supabase.from("vehicle_colors").delete().eq("vehicle_id", vehicleId);
+        const currentIds = colorVariants.filter((c) => c.id).map((c) => c.id!);
+        const removedIds = originalColorIds.filter((id) => !currentIds.includes(id));
+        
+        // Delete removed colors
+        if (removedIds.length > 0) {
+          const { error: delErr } = await supabase.from("vehicle_colors").delete().in("id", removedIds);
+          if (delErr) throw delErr;
+        }
+        
+        // Update existing and insert new
         const validColors = colorVariants.filter((c) => c.color_name && c.image_url);
-        if (validColors.length > 0) {
-          const colorInserts = validColors.map((c, i) => ({
+        for (let i = 0; i < validColors.length; i++) {
+          const c = validColors[i];
+          const colorData = {
             vehicle_id: vehicleId!,
             color_name: c.color_name!,
             color_hex: c.color_hex || "#000000",
@@ -218,9 +228,15 @@ const AdminFleet = () => {
             image_scale_sidebar: Number(c.image_scale_sidebar ?? 1),
             image_scale_sidebar_mobile: Number(c.image_scale_sidebar_mobile ?? 1),
             image_scale_sidebar_tablet: Number(c.image_scale_sidebar_tablet ?? 1),
-          }));
-          const { error: colorErr } = await supabase.from("vehicle_colors").insert(colorInserts);
-          if (colorErr) throw colorErr;
+          };
+          
+          if (c.id) {
+            const { error } = await supabase.from("vehicle_colors").update(colorData).eq("id", c.id);
+            if (error) throw error;
+          } else {
+            const { error } = await supabase.from("vehicle_colors").insert(colorData);
+            if (error) throw error;
+          }
         }
       }
     },
