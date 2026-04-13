@@ -226,7 +226,7 @@ const AdminFleet = () => {
       qc.invalidateQueries({ queryKey: ["admin-pricing-tiers"] });
       qc.invalidateQueries({ queryKey: ["vehicle_colors"] });
       toast({ title: editingId ? "Véhicule modifié" : "Véhicule ajouté" });
-      resetForm();
+      if (!editingId) resetForm();
     },
     onError: (e: Error) => toast({ title: "Erreur", description: e.message, variant: "destructive" }),
   });
@@ -776,7 +776,7 @@ const AdminFleet = () => {
               <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !form.name || !form.brand || !form.model} className="bg-primary text-primary-foreground hover:bg-accent rounded-pill w-full sm:w-auto">
                 {saveMutation.isPending ? "Enregistrement..." : editingId ? "Modifier" : "Ajouter"}
               </Button>
-              <Button variant="outline" onClick={resetForm} className="rounded-pill w-full sm:w-auto">Annuler</Button>
+              <Button variant="outline" onClick={resetForm} className="rounded-pill w-full sm:w-auto">{editingId ? "Retour" : "Annuler"}</Button>
             </div>
           </CardContent>
         </Card>
