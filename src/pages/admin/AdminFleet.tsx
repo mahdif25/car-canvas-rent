@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, X, Upload, Image, Loader2, FlipHorizontal, Monitor, Tablet, Smartphone, Palette } from "lucide-react";
+import ColorVariantEditor from "@/components/admin/fleet/ColorVariantEditor";
+import type { ColorVariantState } from "@/components/admin/fleet/ColorVariantEditor";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
@@ -126,7 +128,6 @@ const AdminFleet = () => {
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [previewDevice, setPreviewDevice] = useState<Record<string, "desktop" | "tablet" | "mobile">>({});
   const [form, setForm] = useState<Partial<VehicleInsert> & { slug?: string }>({
     name: "", brand: "", model: "", year: new Date().getFullYear(),
     category: "Sedan", transmission: "Manuelle", fuel: "Diesel",
@@ -137,7 +138,9 @@ const AdminFleet = () => {
   const [tiers, setTiers] = useState(defaultTiers);
   const [featureInput, setFeatureInput] = useState("");
   const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
-  const [colorVariants, setColorVariants] = useState<Array<Partial<VehicleColor> & { _new?: boolean }>>([]);
+  const [colorVariants, setColorVariants] = useState<ColorVariantState[]>([]);
+  const [originalColorIds, setOriginalColorIds] = useState<string[]>([]);
+  const [previewDevice, setPreviewDevice] = useState<Record<string, "desktop" | "tablet" | "mobile">>({});
 
   const { data: vehicles, isLoading } = useQuery({
     queryKey: ["admin-vehicles"],
@@ -187,12 +190,22 @@ const AdminFleet = () => {
         }
       }
 
-      // Save color variants
+      // Save color variants with targeted upsert
       if (vehicleId) {
-        await supabase.from("vehicle_colors").delete().eq("vehicle_id", vehicleId);
+        const currentIds = colorVariants.filter((c) => c.id).map((c) => c.id!);
+        const removedIds = originalColorIds.filter((id) => !currentIds.includes(id));
+        
+        // Delete removed colors
+        if (removedIds.length > 0) {
+          const { error: delErr } = await supabase.from("vehicle_colors").delete().in("id", removedIds);
+          if (delErr) throw delErr;
+        }
+        
+        // Update existing and insert new
         const validColors = colorVariants.filter((c) => c.color_name && c.image_url);
-        if (validColors.length > 0) {
-          const colorInserts = validColors.map((c, i) => ({
+        for (let i = 0; i < validColors.length; i++) {
+          const c = validColors[i];
+          const colorData = {
             vehicle_id: vehicleId!,
             color_name: c.color_name!,
             color_hex: c.color_hex || "#000000",
@@ -215,9 +228,15 @@ const AdminFleet = () => {
             image_scale_sidebar: Number(c.image_scale_sidebar ?? 1),
             image_scale_sidebar_mobile: Number(c.image_scale_sidebar_mobile ?? 1),
             image_scale_sidebar_tablet: Number(c.image_scale_sidebar_tablet ?? 1),
-          }));
-          const { error: colorErr } = await supabase.from("vehicle_colors").insert(colorInserts);
-          if (colorErr) throw colorErr;
+          };
+          
+          if (c.id) {
+            const { error } = await supabase.from("vehicle_colors").update(colorData).eq("id", c.id);
+            if (error) throw error;
+          } else {
+            const { error } = await supabase.from("vehicle_colors").insert(colorData);
+            if (error) throw error;
+          }
         }
       }
     },
@@ -229,13 +248,14 @@ const AdminFleet = () => {
       if (!editingId) {
         resetForm();
       } else {
-        // Re-fetch colors to sync local state with DB
         const { data: freshColors } = await supabase
           .from("vehicle_colors")
           .select("*")
           .eq("vehicle_id", editingId)
           .order("sort_order");
-        setColorVariants((freshColors ?? []) as VehicleColor[]);
+        const colors = (freshColors ?? []) as VehicleColor[];
+        setColorVariants(colors);
+        setOriginalColorIds(colors.map((c) => c.id));
       }
     },
     onError: (e: Error) => toast({ title: "Erreur", description: e.message, variant: "destructive" }),
@@ -268,6 +288,7 @@ const AdminFleet = () => {
     setFeatureInput("");
     setGalleryUrls([]);
     setColorVariants([]);
+    setOriginalColorIds([]);
   };
 
   const editVehicle = async (v: Vehicle) => {
@@ -278,7 +299,9 @@ const AdminFleet = () => {
     const { data: imgs } = await supabase.from("vehicle_images").select("*").eq("vehicle_id", v.id).order("sort_order");
     setGalleryUrls((imgs ?? []).map((img: any) => img.image_url));
     const { data: colors } = await supabase.from("vehicle_colors").select("*").eq("vehicle_id", v.id).order("sort_order");
-    setColorVariants((colors ?? []) as VehicleColor[]);
+    const loadedColors = (colors ?? []) as VehicleColor[];
+    setColorVariants(loadedColors);
+    setOriginalColorIds(loadedColors.map((c) => c.id));
     setShowForm(true);
   };
 
@@ -531,196 +554,7 @@ const AdminFleet = () => {
               </div>
             </div>
 
-            {/* Color Variants */}
-            <div className="space-y-3 p-4 border rounded-xl bg-muted/30">
-              <div className="flex items-center justify-between">
-                <h4 className="text-sm font-medium flex items-center gap-2"><Palette size={16} className="text-primary" /> Couleurs disponibles</h4>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setColorVariants([...colorVariants, { color_name: "", color_hex: "#000000", image_url: "", is_default: colorVariants.length === 0, _new: true, image_flipped: false, image_scale_home: 1, image_scale_home_mobile: 1, image_scale_home_tablet: 1, image_scale_fleet: 1, image_scale_fleet_mobile: 1, image_scale_fleet_tablet: 1, image_scale_detail: 1, image_scale_detail_mobile: 1, image_scale_detail_tablet: 1, image_scale_reservation: 1, image_scale_reservation_mobile: 1, image_scale_reservation_tablet: 1, image_scale_sidebar: 1, image_scale_sidebar_mobile: 1, image_scale_sidebar_tablet: 1 }])}
-                  className="gap-1"
-                >
-                  <Plus size={14} /> Ajouter une couleur
-                </Button>
-              </div>
-              {colorVariants.length === 0 && (
-                <p className="text-xs text-muted-foreground">Aucune couleur ajoutée. L'image principale sera utilisée.</p>
-              )}
-              <div className="space-y-4">
-                {colorVariants.map((color, idx) => (
-                  <div key={idx} className="p-3 border rounded-lg bg-background space-y-3">
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <div className="flex-1 space-y-2">
-                        <div className="flex gap-2">
-                          <Input
-                            value={color.color_name || ""}
-                            onChange={(e) => {
-                              const updated = [...colorVariants];
-                              updated[idx] = { ...updated[idx], color_name: e.target.value };
-                              setColorVariants(updated);
-                            }}
-                            placeholder="Nom (ex: Rouge)"
-                            className="flex-1"
-                          />
-                          <input
-                            type="color"
-                            value={color.color_hex || "#000000"}
-                            onChange={(e) => {
-                              const updated = [...colorVariants];
-                              updated[idx] = { ...updated[idx], color_hex: e.target.value };
-                              setColorVariants(updated);
-                            }}
-                            className="w-10 h-10 rounded cursor-pointer border border-border"
-                          />
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <label className="flex items-center gap-2 text-xs">
-                            <Switch
-                              checked={color.is_default ?? false}
-                              onCheckedChange={(checked) => {
-                                const updated = colorVariants.map((c, i) => ({
-                                  ...c,
-                                  is_default: i === idx ? checked : checked ? false : c.is_default,
-                                }));
-                                setColorVariants(updated);
-                              }}
-                            />
-                            Par défaut
-                          </label>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="ghost"
-                            className="text-destructive h-7"
-                            onClick={() => setColorVariants(colorVariants.filter((_, i) => i !== idx))}
-                          >
-                            <Trash2 size={14} />
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="w-full sm:w-40 shrink-0">
-                        <ImageUploadField
-                          value={color.image_url || ""}
-                          onChange={(url) => {
-                            const updated = [...colorVariants];
-                            updated[idx] = { ...updated[idx], image_url: url };
-                            setColorVariants(updated);
-                          }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Per-color image adjustments */}
-                    {color.image_url && (
-                      <Collapsible>
-                        <CollapsibleTrigger className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
-                          <FlipHorizontal size={12} /> Ajustements image pour cette couleur
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="mt-3 space-y-4 p-3 border rounded-lg bg-muted/20">
-                          <div className="flex items-center justify-between">
-                            <label className="text-xs">Inverser l'image (miroir)</label>
-                            <Switch
-                              checked={color.image_flipped ?? false}
-                              onCheckedChange={(checked) => {
-                                const updated = [...colorVariants];
-                                updated[idx] = { ...updated[idx], image_flipped: checked };
-                                setColorVariants(updated);
-                              }}
-                            />
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                            {([
-                              { base: "image_scale_home", label: "Accueil", w: 240, h: 135, objFit: "object-contain", bg: "bg-secondary" },
-                              { base: "image_scale_fleet", label: "Flotte", w: 240, h: 135, objFit: "object-contain", bg: "bg-secondary" },
-                              { base: "image_scale_detail", label: "Détail", w: 280, h: 158, objFit: "object-cover", bg: "bg-background" },
-                              { base: "image_scale_reservation", label: "Réservation", w: 210, h: 120, objFit: "object-contain", bg: "bg-secondary" },
-                              { base: "image_scale_sidebar", label: "Sidebar", w: 160, h: 100, objFit: "object-contain", bg: "bg-secondary" },
-                            ] as const).map((placement) => {
-                              const devices = [
-                                { suffix: "", label: "Desktop", icon: Monitor, widthFactor: 1 },
-                                { suffix: "_tablet", label: "Tablet", icon: Tablet, widthFactor: 0.75 },
-                                { suffix: "_mobile", label: "Mobile", icon: Smartphone, widthFactor: 0.5 },
-                              ];
-                              const colorDeviceKey = `color_${idx}_${placement.base}`;
-                              const activeDevice = previewDevice[colorDeviceKey] || "desktop";
-                              const activeDeviceInfo = devices.find((d) => (d.suffix === "" ? "desktop" : d.suffix.slice(1)) === activeDevice)!;
-                              const previewScaleKey = `${placement.base}${activeDeviceInfo.suffix}` as string;
-                              const previewScale = Number((color as any)[previewScaleKey] ?? 1);
-                              const previewW = Math.round(placement.w * activeDeviceInfo.widthFactor);
-                              return (
-                                <div key={placement.base} className="space-y-1.5">
-                                  <label className="text-xs font-medium">{placement.label}</label>
-                                  {devices.map((device) => {
-                                    const key = `${placement.base}${device.suffix}` as string;
-                                    const scaleVal = Number((color as any)[key] ?? 1);
-                                    const DeviceIcon = device.icon;
-                                    const deviceId = device.suffix === "" ? "desktop" : device.suffix.slice(1);
-                                    const isActive = activeDevice === deviceId;
-                                    return (
-                                      <div key={key} className={`space-y-0.5 rounded-md px-1 py-0.5 transition-colors ${isActive ? "bg-primary/10 ring-1 ring-primary/30" : ""}`}>
-                                        <div className="flex items-center justify-between">
-                                          <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                                            <DeviceIcon size={10} />{device.label}
-                                          </span>
-                                          <span className="text-[10px] text-muted-foreground">{scaleVal.toFixed(2)}x</span>
-                                        </div>
-                                        <Slider
-                                          min={0.5} max={2} step={0.05}
-                                          value={[scaleVal]}
-                                          onValueChange={([val]) => {
-                                            const updated = [...colorVariants];
-                                            updated[idx] = { ...updated[idx], [key]: val };
-                                            setColorVariants(updated);
-                                          }}
-                                        />
-                                      </div>
-                                    );
-                                  })}
-                                  {/* Device preview tabs */}
-                                  <div className="flex gap-1 mt-1">
-                                    {devices.map((device) => {
-                                      const deviceId = device.suffix === "" ? "desktop" : device.suffix.slice(1);
-                                      const DeviceIcon = device.icon;
-                                      const isActive = activeDevice === deviceId;
-                                      return (
-                                        <button
-                                          key={deviceId}
-                                          type="button"
-                                          onClick={() => setPreviewDevice((prev) => ({ ...prev, [colorDeviceKey]: deviceId as any }))}
-                                          className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] transition-colors ${isActive ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
-                                        >
-                                          <DeviceIcon size={10} />
-                                        </button>
-                                      );
-                                    })}
-                                  </div>
-                                  <div
-                                    className={`rounded-lg overflow-hidden border ${placement.bg} flex items-center justify-center mx-auto transition-all`}
-                                    style={{ width: previewW, height: placement.h, maxWidth: "100%" }}
-                                  >
-                                    <img
-                                      src={color.image_url}
-                                      alt={placement.label}
-                                      className={`w-full h-full ${placement.objFit}`}
-                                      style={{
-                                        transform: `${color.image_flipped ? 'scaleX(-1)' : ''} scale(${previewScale})`.trim() || 'none'
-                                      }}
-                                    />
-                                  </div>
-                                  <p className="text-[10px] text-center text-muted-foreground">Aperçu {activeDeviceInfo.label}</p>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </CollapsibleContent>
-                      </Collapsible>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
+            <ColorVariantEditor colorVariants={colorVariants} onChange={setColorVariants} />
 
             {/* Structured Features */}
             <div className="space-y-2">
