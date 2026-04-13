@@ -1,45 +1,33 @@
 
 
-# Keep Edit Form Open After Save
+# Sticky Save/Return Buttons in Fleet Editor
 
 ## Problem
-When clicking "Modifier" to save changes while editing a vehicle, `resetForm()` is called in the mutation's `onSuccess`, which closes the form and returns to the fleet table. You want saving to keep the form open so you can continue adjusting, and only leave when you click "Annuler" (back).
+When editing a vehicle, the Save and Return buttons are at the bottom of a long form. You have to scroll all the way down to save or go back, which is inconvenient when making quick adjustments.
 
-## Changes
+## Solution
+Make the action buttons sticky at the bottom of the viewport while the edit form is open, on both desktop and mobile.
 
 ### `src/pages/admin/AdminFleet.tsx`
 
-1. **Split save behavior for edit vs. create**:
-   - In `saveMutation.onSuccess`: if `editingId` is set (editing), show a success toast but do **not** call `resetForm()` — keep the form open with updated data
-   - If creating a new vehicle (no `editingId`), call `resetForm()` as before
+1. **Move the button container outside the Card/CardContent** and make it a fixed/sticky bar at the bottom of the screen:
+   - Use `fixed bottom-0 left-0 right-0 z-40` positioning with a background, border-top, padding, and shadow
+   - On desktop, offset `left` by the sidebar width (`left-64`) so it doesn't overlap the nav
+   - On mobile, account for the bottom nav bar height (`bottom-[68px]`)
 
-2. **Rename "Annuler" to "Retour" when editing** to clarify it's the back button to the fleet table
+2. **Add bottom padding to the form content** so the last form elements aren't hidden behind the sticky bar (~`pb-20` on the edit card)
 
-3. **After a successful edit save**, re-sync the form state from the freshly fetched data (via query invalidation) so the form reflects any server-side changes — or simply keep existing form state since it already has the latest values
+3. **Remove the current inline button `div`** (lines 775-780) and replace with the sticky footer bar
 
-### Logic change (line ~228-229):
-```typescript
-// Before:
-onSuccess: () => {
-  qc.invalidateQueries({ queryKey: ["vehicles"] });
-  toast({ title: editingId ? "Véhicule modifié" : "Véhicule ajouté" });
-  resetForm();
-}
-
-// After:
-onSuccess: () => {
-  qc.invalidateQueries({ queryKey: ["vehicles"] });
-  toast({ title: editingId ? "Véhicule modifié" : "Véhicule ajouté" });
-  if (!editingId) resetForm(); // Only close form for new vehicles
-}
-```
-
-### Button label (line ~779):
-```typescript
-// Change "Annuler" to "Retour" when editing
-<Button variant="outline" onClick={resetForm}>
-  {editingId ? "Retour" : "Annuler"}
-</Button>
+### Resulting layout
+```text
+┌──────────────────────────────┐
+│  Edit form content scrolls   │
+│  ...                         │
+│  ...                         │
+├──────────────────────────────┤
+│  [Modifier]  [Retour]        │  ← sticky bottom bar
+└──────────────────────────────┘
 ```
 
 ## Files Modified
