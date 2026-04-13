@@ -703,9 +703,6 @@ const AdminFleet = () => {
                               );
                             })}
                           </div>
-                              );
-                            })}
-                          </div>
                         </CollapsibleContent>
                       </Collapsible>
                     )}
