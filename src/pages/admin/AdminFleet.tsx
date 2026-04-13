@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, X, Upload, Image, Loader2, FlipHorizontal, Monitor, Tablet, Smartphone, Palette } from "lucide-react";
+import ColorVariantEditor from "@/components/admin/fleet/ColorVariantEditor";
+import type { ColorVariantState } from "@/components/admin/fleet/ColorVariantEditor";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
