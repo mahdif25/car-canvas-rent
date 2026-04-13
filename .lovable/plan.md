@@ -1,56 +1,47 @@
 
 
-# Device-Specific Preview Switcher for Admin Fleet Image Editor
+# Keep Edit Form Open After Save
 
-## Overview
-Replace the current single-preview approach with an interactive device switcher per placement. Each placement card will show a tabbed preview (Desktop / Tablet / Mobile) that updates in real-time as you adjust the corresponding device's scale slider — showing exactly how the image will render on that device on the live site.
-
-## Current State
-- Each placement (Accueil, Flotte, Détail, etc.) shows 3 sliders (Desktop, Tablet, Mobile) but only **one preview using the desktop scale**
-- No way to visually verify tablet/mobile rendering
+## Problem
+When clicking "Modifier" to save changes while editing a vehicle, `resetForm()` is called in the mutation's `onSuccess`, which closes the form and returns to the fleet table. You want saving to keep the form open so you can continue adjusting, and only leave when you click "Annuler" (back).
 
 ## Changes
 
 ### `src/pages/admin/AdminFleet.tsx`
 
-1. **Add a per-placement device tab state** — track which device preview is active for each placement using a local state object (e.g. `previewDevice: Record<string, "desktop"|"tablet"|"mobile">`)
+1. **Split save behavior for edit vs. create**:
+   - In `saveMutation.onSuccess`: if `editingId` is set (editing), show a success toast but do **not** call `resetForm()` — keep the form open with updated data
+   - If creating a new vehicle (no `editingId`), call `resetForm()` as before
 
-2. **Replace the single static preview with a tabbed preview panel** per placement:
-   - Three tab buttons (Desktop / Tablet / Mobile) with device icons, styled as compact toggle tabs
-   - Switching tabs changes the preview to use that device's scale value and shows a container sized to approximate that device's real dimensions:
-     - **Desktop**: current preview sizes (e.g. 320×180 for fleet)
-     - **Tablet**: ~75% of desktop width
-     - **Mobile**: ~50% of desktop width
-   - The active device's slider is visually highlighted
+2. **Rename "Annuler" to "Retour" when editing** to clarify it's the back button to the fleet table
 
-3. **Preview renders with the selected device's scale** — instead of always using `form[placement.base]`, use the key matching the selected device tab (`placement.base`, `placement.base + "_tablet"`, or `placement.base + "_mobile"`)
+3. **After a successful edit save**, re-sync the form state from the freshly fetched data (via query invalidation) so the form reflects any server-side changes — or simply keep existing form state since it already has the latest values
 
-4. **Show device dimensions label** — small text under the preview indicating which device is being previewed (e.g. "Aperçu Mobile")
+### Logic change (line ~228-229):
+```typescript
+// Before:
+onSuccess: () => {
+  qc.invalidateQueries({ queryKey: ["vehicles"] });
+  toast({ title: editingId ? "Véhicule modifié" : "Véhicule ajouté" });
+  resetForm();
+}
 
-5. **Apply to color variant previews too** — the same device-switcher pattern applies to color variant scale controls if they exist in the form
+// After:
+onSuccess: () => {
+  qc.invalidateQueries({ queryKey: ["vehicles"] });
+  toast({ title: editingId ? "Véhicule modifié" : "Véhicule ajouté" });
+  if (!editingId) resetForm(); // Only close form for new vehicles
+}
+```
 
-## Visual Layout (per placement card)
-
-```text
-┌─────────────────────────────────┐
-│ Flotte                          │
-│                                 │
-│ [🖥 Desktop] [📱 Tablet] [📱 Mobile] │
-│                                 │
-│  Desktop slider ──────── 1.20x  │
-│  Tablet slider  ──────── 0.95x  │
-│  Mobile slider  ──────── 1.10x  │
-│                                 │
-│ ┌─────────────────────────┐     │
-│ │                         │     │
-│ │   [car image preview]   │     │
-│ │   scaled at 1.10x       │     │
-│ │   (Mobile selected)     │     │
-│ └─────────────────────────┘     │
-│  Aperçu Mobile                  │
-└─────────────────────────────────┘
+### Button label (line ~779):
+```typescript
+// Change "Annuler" to "Retour" when editing
+<Button variant="outline" onClick={resetForm}>
+  {editingId ? "Retour" : "Annuler"}
+</Button>
 ```
 
 ## Files Modified
-- `src/pages/admin/AdminFleet.tsx` — add device tab state, tabbed preview per placement with device-specific scale and container sizing
+- `src/pages/admin/AdminFleet.tsx`
 
