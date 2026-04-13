@@ -326,6 +326,33 @@ const Reservation = () => {
         },
       }).catch(console.error);
 
+      // Send admin notification (website reservations only)
+      if (siteSettings?.notification_email && siteSettings?.send_reservation_emails) {
+        supabase.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "admin-new-reservation",
+            recipientEmail: siteSettings.notification_email,
+            idempotencyKey: `admin-notif-${reservation.id}`,
+            templateData: {
+              confirmationId: confId,
+              customerName: `${formData.first_name} ${formData.last_name}`,
+              customerEmail: formData.email,
+              customerPhone: formData.phone,
+              vehicleName: selectedVehicle?.name || "",
+              pickupDate: fmtDate(formData.pickup_date),
+              returnDate: fmtDate(formData.return_date),
+              pickupLocation: formData.pickup_location,
+              returnLocation: formData.return_location || formData.pickup_location,
+              rentalDays,
+              totalPrice: finalTotal,
+              depositAmount,
+              deliveryFee,
+              discountAmount: formData.discount_amount,
+            },
+          },
+        }).catch(console.error);
+      }
+
       nextStep();
 
     } catch (err: any) {
