@@ -778,7 +778,7 @@ const AdminFleet = () => {
 
         {/* Sticky bottom action bar */}
         <div className="fixed bottom-0 md:bottom-0 left-0 md:left-64 right-0 z-40 bg-background border-t border-border shadow-[0_-4px_12px_rgba(0,0,0,0.1)] px-4 py-3 mb-[68px] md:mb-0">
-          <div className="flex gap-3 justify-end max-w-screen-xl mx-auto">
+          <div className="flex gap-3 justify-start max-w-screen-xl mx-auto">
             <Button variant="outline" onClick={resetForm} className="rounded-pill">
               {editingId ? "Retour" : "Annuler"}
             </Button>
