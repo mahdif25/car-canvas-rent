@@ -310,8 +310,9 @@ const AdminFleet = () => {
         )}
       </div>
 
-      {showForm && (
-        <Card className="mb-6">
+{showForm && (
+        <>
+        <Card className="mb-6 pb-24 md:pb-20">
           <CardHeader>
             <CardTitle>{editingId ? "Modifier le véhicule" : "Nouveau véhicule"}</CardTitle>
           </CardHeader>
