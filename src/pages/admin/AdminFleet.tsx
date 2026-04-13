@@ -787,6 +787,7 @@ const AdminFleet = () => {
             </Button>
           </div>
         </div>
+        </>
       )}
 
       {/* Vehicles List */}
