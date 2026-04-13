@@ -288,6 +288,7 @@ const AdminFleet = () => {
     setFeatureInput("");
     setGalleryUrls([]);
     setColorVariants([]);
+    setOriginalColorIds([]);
   };
 
   const editVehicle = async (v: Vehicle) => {
@@ -298,7 +299,9 @@ const AdminFleet = () => {
     const { data: imgs } = await supabase.from("vehicle_images").select("*").eq("vehicle_id", v.id).order("sort_order");
     setGalleryUrls((imgs ?? []).map((img: any) => img.image_url));
     const { data: colors } = await supabase.from("vehicle_colors").select("*").eq("vehicle_id", v.id).order("sort_order");
-    setColorVariants((colors ?? []) as VehicleColor[]);
+    const loadedColors = (colors ?? []) as VehicleColor[];
+    setColorVariants(loadedColors);
+    setOriginalColorIds(loadedColors.map((c) => c.id));
     setShowForm(true);
   };
 
