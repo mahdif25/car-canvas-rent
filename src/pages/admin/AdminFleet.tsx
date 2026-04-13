@@ -772,14 +772,20 @@ const AdminFleet = () => {
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !form.name || !form.brand || !form.model} className="bg-primary text-primary-foreground hover:bg-accent rounded-pill w-full sm:w-auto">
-                {saveMutation.isPending ? "Enregistrement..." : editingId ? "Modifier" : "Ajouter"}
-              </Button>
-              <Button variant="outline" onClick={resetForm} className="rounded-pill w-full sm:w-auto">{editingId ? "Retour" : "Annuler"}</Button>
-            </div>
           </CardContent>
         </Card>
+
+        {/* Sticky bottom action bar */}
+        <div className="fixed bottom-0 md:bottom-0 left-0 md:left-64 right-0 z-40 bg-background border-t border-border shadow-[0_-4px_12px_rgba(0,0,0,0.1)] px-4 py-3 mb-[68px] md:mb-0">
+          <div className="flex gap-3 justify-end max-w-screen-xl mx-auto">
+            <Button variant="outline" onClick={resetForm} className="rounded-pill">
+              {editingId ? "Retour" : "Annuler"}
+            </Button>
+            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !form.name || !form.brand || !form.model} className="bg-primary text-primary-foreground hover:bg-accent rounded-pill">
+              {saveMutation.isPending ? "Enregistrement..." : editingId ? "Modifier" : "Ajouter"}
+            </Button>
+          </div>
+        </div>
       )}
 
       {/* Vehicles List */}
