@@ -248,13 +248,14 @@ const AdminFleet = () => {
       if (!editingId) {
         resetForm();
       } else {
-        // Re-fetch colors to sync local state with DB
         const { data: freshColors } = await supabase
           .from("vehicle_colors")
           .select("*")
           .eq("vehicle_id", editingId)
           .order("sort_order");
-        setColorVariants((freshColors ?? []) as VehicleColor[]);
+        const colors = (freshColors ?? []) as VehicleColor[];
+        setColorVariants(colors);
+        setOriginalColorIds(colors.map((c) => c.id));
       }
     },
     onError: (e: Error) => toast({ title: "Erreur", description: e.message, variant: "destructive" }),
