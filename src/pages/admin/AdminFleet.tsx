@@ -126,6 +126,7 @@ const AdminFleet = () => {
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [previewDevice, setPreviewDevice] = useState<Record<string, "desktop" | "tablet" | "mobile">>({});
   const [form, setForm] = useState<Partial<VehicleInsert> & { slug?: string }>({
     name: "", brand: "", model: "", year: new Date().getFullYear(),
     category: "Sedan", transmission: "Manuelle", fuel: "Diesel",
@@ -422,10 +423,15 @@ const AdminFleet = () => {
                     { base: "image_scale_sidebar", label: "Barre latérale", w: 200, h: 130, objFit: "object-contain", bg: "bg-secondary" },
                   ] as const).map((placement) => {
                     const devices = [
-                      { suffix: "", label: "Desktop", icon: Monitor },
-                      { suffix: "_tablet", label: "Tablet", icon: Tablet },
-                      { suffix: "_mobile", label: "Mobile", icon: Smartphone },
+                      { suffix: "", label: "Desktop", icon: Monitor, widthFactor: 1 },
+                      { suffix: "_tablet", label: "Tablet", icon: Tablet, widthFactor: 0.75 },
+                      { suffix: "_mobile", label: "Mobile", icon: Smartphone, widthFactor: 0.5 },
                     ];
+                    const activeDevice = previewDevice[placement.base] || "desktop";
+                    const activeDeviceInfo = devices.find((d) => (d.suffix === "" ? "desktop" : d.suffix.slice(1)) === activeDevice)!;
+                    const previewScaleKey = `${placement.base}${activeDeviceInfo.suffix}` as string;
+                    const previewScale = Number((form as any)[previewScaleKey] ?? 1);
+                    const previewW = Math.round(placement.w * activeDeviceInfo.widthFactor);
                     return (
                       <div key={placement.base} className="space-y-2">
                         <label className="text-sm font-medium">{placement.label}</label>
@@ -433,8 +439,10 @@ const AdminFleet = () => {
                           const key = `${placement.base}${device.suffix}` as string;
                           const scaleVal = Number((form as any)[key] ?? 1);
                           const DeviceIcon = device.icon;
+                          const deviceId = device.suffix === "" ? "desktop" : device.suffix.slice(1);
+                          const isActive = activeDevice === deviceId;
                           return (
-                            <div key={key} className="space-y-1">
+                            <div key={key} className={`space-y-1 rounded-md px-1.5 py-1 transition-colors ${isActive ? "bg-primary/10 ring-1 ring-primary/30" : ""}`}>
                               <div className="flex items-center justify-between">
                                 <span className="flex items-center gap-1 text-xs text-muted-foreground">
                                   <DeviceIcon size={12} />{device.label}
@@ -449,19 +457,39 @@ const AdminFleet = () => {
                             </div>
                           );
                         })}
+                        {/* Device preview tabs */}
+                        <div className="flex gap-1 mt-1">
+                          {devices.map((device) => {
+                            const deviceId = device.suffix === "" ? "desktop" : device.suffix.slice(1);
+                            const DeviceIcon = device.icon;
+                            const isActive = activeDevice === deviceId;
+                            return (
+                              <button
+                                key={deviceId}
+                                type="button"
+                                onClick={() => setPreviewDevice((prev) => ({ ...prev, [placement.base]: deviceId as any }))}
+                                className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${isActive ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+                              >
+                                <DeviceIcon size={12} />
+                                <span className="hidden sm:inline">{device.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
                         <div
-                          className={`rounded-lg overflow-hidden border ${placement.bg} flex items-center justify-center`}
-                          style={{ width: placement.w, height: placement.h, maxWidth: "100%" }}
+                          className={`rounded-lg overflow-hidden border ${placement.bg} flex items-center justify-center mx-auto transition-all`}
+                          style={{ width: previewW, height: placement.h, maxWidth: "100%" }}
                         >
                           <img
                             src={form.image_url}
                             alt={placement.label}
                             className={`w-full h-full ${placement.objFit}`}
                             style={{
-                              transform: `${(form as any).image_flipped ? 'scaleX(-1)' : ''} scale(${Number((form as any)[placement.base] ?? 1)})`.trim() || 'none'
+                              transform: `${(form as any).image_flipped ? 'scaleX(-1)' : ''} scale(${previewScale})`.trim() || 'none'
                             }}
                           />
                         </div>
+                        <p className="text-[10px] text-center text-muted-foreground">Aperçu {activeDeviceInfo.label} — {previewScale.toFixed(2)}x</p>
                       </div>
                     );
                   })}
@@ -600,10 +628,16 @@ const AdminFleet = () => {
                               { base: "image_scale_sidebar", label: "Sidebar", w: 160, h: 100, objFit: "object-contain", bg: "bg-secondary" },
                             ] as const).map((placement) => {
                               const devices = [
-                                { suffix: "", label: "Desktop", icon: Monitor },
-                                { suffix: "_tablet", label: "Tablet", icon: Tablet },
-                                { suffix: "_mobile", label: "Mobile", icon: Smartphone },
+                                { suffix: "", label: "Desktop", icon: Monitor, widthFactor: 1 },
+                                { suffix: "_tablet", label: "Tablet", icon: Tablet, widthFactor: 0.75 },
+                                { suffix: "_mobile", label: "Mobile", icon: Smartphone, widthFactor: 0.5 },
                               ];
+                              const colorDeviceKey = `color_${idx}_${placement.base}`;
+                              const activeDevice = previewDevice[colorDeviceKey] || "desktop";
+                              const activeDeviceInfo = devices.find((d) => (d.suffix === "" ? "desktop" : d.suffix.slice(1)) === activeDevice)!;
+                              const previewScaleKey = `${placement.base}${activeDeviceInfo.suffix}` as string;
+                              const previewScale = Number((color as any)[previewScaleKey] ?? 1);
+                              const previewW = Math.round(placement.w * activeDeviceInfo.widthFactor);
                               return (
                                 <div key={placement.base} className="space-y-1.5">
                                   <label className="text-xs font-medium">{placement.label}</label>
@@ -611,8 +645,10 @@ const AdminFleet = () => {
                                     const key = `${placement.base}${device.suffix}` as string;
                                     const scaleVal = Number((color as any)[key] ?? 1);
                                     const DeviceIcon = device.icon;
+                                    const deviceId = device.suffix === "" ? "desktop" : device.suffix.slice(1);
+                                    const isActive = activeDevice === deviceId;
                                     return (
-                                      <div key={key} className="space-y-0.5">
+                                      <div key={key} className={`space-y-0.5 rounded-md px-1 py-0.5 transition-colors ${isActive ? "bg-primary/10 ring-1 ring-primary/30" : ""}`}>
                                         <div className="flex items-center justify-between">
                                           <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
                                             <DeviceIcon size={10} />{device.label}
@@ -631,19 +667,38 @@ const AdminFleet = () => {
                                       </div>
                                     );
                                   })}
+                                  {/* Device preview tabs */}
+                                  <div className="flex gap-1 mt-1">
+                                    {devices.map((device) => {
+                                      const deviceId = device.suffix === "" ? "desktop" : device.suffix.slice(1);
+                                      const DeviceIcon = device.icon;
+                                      const isActive = activeDevice === deviceId;
+                                      return (
+                                        <button
+                                          key={deviceId}
+                                          type="button"
+                                          onClick={() => setPreviewDevice((prev) => ({ ...prev, [colorDeviceKey]: deviceId as any }))}
+                                          className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] transition-colors ${isActive ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+                                        >
+                                          <DeviceIcon size={10} />
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
                                   <div
-                                    className={`rounded-lg overflow-hidden border ${placement.bg} flex items-center justify-center`}
-                                    style={{ width: placement.w, height: placement.h, maxWidth: "100%" }}
+                                    className={`rounded-lg overflow-hidden border ${placement.bg} flex items-center justify-center mx-auto transition-all`}
+                                    style={{ width: previewW, height: placement.h, maxWidth: "100%" }}
                                   >
                                     <img
                                       src={color.image_url}
                                       alt={placement.label}
                                       className={`w-full h-full ${placement.objFit}`}
                                       style={{
-                                        transform: `${color.image_flipped ? 'scaleX(-1)' : ''} scale(${Number((color as any)[placement.base] ?? 1)})`.trim() || 'none'
+                                        transform: `${color.image_flipped ? 'scaleX(-1)' : ''} scale(${previewScale})`.trim() || 'none'
                                       }}
                                     />
                                   </div>
+                                  <p className="text-[10px] text-center text-muted-foreground">Aperçu {activeDeviceInfo.label}</p>
                                 </div>
                               );
                             })}
