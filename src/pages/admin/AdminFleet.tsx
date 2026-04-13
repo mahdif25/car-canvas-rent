@@ -126,6 +126,7 @@ const AdminFleet = () => {
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [previewDevice, setPreviewDevice] = useState<Record<string, "desktop" | "tablet" | "mobile">>({});
   const [form, setForm] = useState<Partial<VehicleInsert> & { slug?: string }>({
     name: "", brand: "", model: "", year: new Date().getFullYear(),
     category: "Sedan", transmission: "Manuelle", fuel: "Diesel",
