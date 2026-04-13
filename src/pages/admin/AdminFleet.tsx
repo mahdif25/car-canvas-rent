@@ -128,7 +128,6 @@ const AdminFleet = () => {
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [previewDevice, setPreviewDevice] = useState<Record<string, "desktop" | "tablet" | "mobile">>({});
   const [form, setForm] = useState<Partial<VehicleInsert> & { slug?: string }>({
     name: "", brand: "", model: "", year: new Date().getFullYear(),
     category: "Sedan", transmission: "Manuelle", fuel: "Diesel",
@@ -139,7 +138,8 @@ const AdminFleet = () => {
   const [tiers, setTiers] = useState(defaultTiers);
   const [featureInput, setFeatureInput] = useState("");
   const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
-  const [colorVariants, setColorVariants] = useState<Array<Partial<VehicleColor> & { _new?: boolean }>>([]);
+  const [colorVariants, setColorVariants] = useState<ColorVariantState[]>([]);
+  const [originalColorIds, setOriginalColorIds] = useState<string[]>([]);
 
   const { data: vehicles, isLoading } = useQuery({
     queryKey: ["admin-vehicles"],
