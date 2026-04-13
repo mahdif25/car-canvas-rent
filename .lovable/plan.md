@@ -1,60 +1,75 @@
 
 
-# Fix Admin Reservation Notifications + Color Variant Duplication
+# Reconstruct Color Variants Editor
 
-## Issue 1: Admin not receiving reservation notifications
+## Problem
+The current color variant editor has two issues:
+1. **Duplication bug**: The "delete all + re-insert" save pattern silently fails on delete (RLS or timing), causing rows to accumulate with every save
+2. **Poor UX**: All 5 placements x 3 devices = 15 sliders crammed into a collapsible per color, making it hard to use especially on mobile
 
-There is no "admin notification" email template or trigger. When a website reservation is made, emails are only sent to the customer (confirmation + welcome). No email is sent to the admin's `notification_email` address.
+## New Design
 
-For manual reservations, the admin already knows about them (they created them), so no notification should be sent.
+### Architecture: Extract to a dedicated component
+Extract the color variant editor into `src/components/admin/fleet/ColorVariantEditor.tsx`. This keeps `AdminFleet.tsx` manageable and isolates the color editing logic.
 
-### Changes
+### UI Layout per Color Variant
+Each color variant card will have:
+- **Top row**: Color name input, hex picker, default toggle, delete button, image upload
+- **Bottom section** (always visible when image exists): A two-panel layout
+  - **Left panel**: Device selector tabs (Desktop / Tablet / Mobile) + Placement selector tabs (Accueil / Flotte / Détail / Réservation / Sidebar) + Zoom slider for the active combination
+  - **Right panel**: Live preview showing the image at the selected placement dimensions, scaled for the selected device
 
-1. **Create a new transactional email template** `admin-new-reservation` in `supabase/functions/_shared/transactional-email-templates/` that renders reservation details (customer name, vehicle, dates, total, confirmation ID).
+This means the admin selects ONE placement + ONE device at a time, adjusts the zoom, and sees the preview immediately. No more 15 sliders visible at once.
 
-2. **Register it in `registry.ts`** — no fixed `to` field (recipient will be passed dynamically).
+### Fix the Duplication Bug
+Replace the "delete all then insert all" pattern with an **upsert** approach:
+1. For existing colors (those with a valid `id` from the DB), use `UPDATE`
+2. For new colors (no `id`), use `INSERT`
+3. For removed colors (IDs that were in the original set but no longer in the local state), use `DELETE` with specific IDs
+4. Track the original color IDs when entering edit mode to know which ones were removed
 
-3. **In `src/pages/Reservation.tsx`** (website reservations only), after sending customer emails, fetch `notification_email` from `site_settings` and send the `admin-new-reservation` template to that address if it is set and `send_reservation_emails` is true.
+### Save Flow
+```text
+editVehicle() → load colors from DB → store original IDs
+user edits/adds/removes colors
+save():
+  1. Compute removed IDs = original IDs - current IDs
+  2. DELETE only removed IDs
+  3. UPSERT remaining (insert new, update existing)
+  4. Re-fetch fresh colors into local state
+```
 
-4. **Do NOT add admin notification in `ManualReservationDialog.tsx`** — manual reservations should not trigger admin emails.
+## Files Modified
+- `src/components/admin/fleet/ColorVariantEditor.tsx` — **new** component with the redesigned per-color editor (placement/device selector, single slider, live preview)
+- `src/pages/admin/AdminFleet.tsx` — replace inline color variant code (lines 534-723) with `<ColorVariantEditor />`, change save logic from delete-all/insert-all to targeted upsert, track original color IDs
 
----
+## Technical Details
 
-## Issue 2: Color variants duplicating on mobile when editing zoom
-
-The save mutation (lines 190-221) correctly deletes all colors then re-inserts them. But since we made the form stay open after save, the `colorVariants` local state is stale — it still holds entries without proper IDs. The `onSuccess` invalidates the `vehicle_colors` query cache, but the component uses local `colorVariants` state, not a query. So the local state is never refreshed after save.
-
-On mobile, each edit+save keeps the old state while the DB gets new rows. This accumulation leads to apparent "duplicates."
-
-### Changes
-
-In `src/pages/admin/AdminFleet.tsx`, after a successful save when editing, re-fetch the color variants from the database and update local state:
-
+### ColorVariantEditor Props
 ```typescript
-onSuccess: async () => {
-  qc.invalidateQueries({ queryKey: ["admin-vehicles"] });
-  qc.invalidateQueries({ queryKey: ["admin-pricing-tiers"] });
-  qc.invalidateQueries({ queryKey: ["vehicle_colors"] });
-  toast({ title: editingId ? "Véhicule modifié" : "Véhicule ajouté" });
-  if (!editingId) {
-    resetForm();
-  } else {
-    // Re-fetch colors to sync local state with DB
-    const { data: freshColors } = await supabase
-      .from("vehicle_colors")
-      .select("*")
-      .eq("vehicle_id", editingId)
-      .order("sort_order");
-    setColorVariants((freshColors ?? []) as VehicleColor[]);
-  }
+interface Props {
+  colorVariants: ColorVariantState[];
+  onChange: (variants: ColorVariantState[]) => void;
 }
 ```
 
----
+### Save mutation change (AdminFleet.tsx)
+```typescript
+// Instead of:
+await supabase.from("vehicle_colors").delete().eq("vehicle_id", vehicleId);
+await supabase.from("vehicle_colors").insert(colorInserts);
 
-## Files Modified
-- `supabase/functions/_shared/transactional-email-templates/admin-new-reservation.tsx` (new)
-- `supabase/functions/_shared/transactional-email-templates/registry.ts`
-- `src/pages/Reservation.tsx` — add admin notification email call
-- `src/pages/admin/AdminFleet.tsx` — refresh colorVariants state after save
+// Do:
+const removedIds = originalColorIds.filter(id => !currentIds.includes(id));
+if (removedIds.length > 0) {
+  await supabase.from("vehicle_colors").delete().in("id", removedIds);
+}
+for (const color of validColors) {
+  if (color.id) {
+    await supabase.from("vehicle_colors").update({...}).eq("id", color.id);
+  } else {
+    await supabase.from("vehicle_colors").insert({...});
+  }
+}
+```
 
