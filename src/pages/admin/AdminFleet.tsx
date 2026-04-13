@@ -140,6 +140,7 @@ const AdminFleet = () => {
   const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
   const [colorVariants, setColorVariants] = useState<ColorVariantState[]>([]);
   const [originalColorIds, setOriginalColorIds] = useState<string[]>([]);
+  const [previewDevice, setPreviewDevice] = useState<Record<string, "desktop" | "tablet" | "mobile">>({});
 
   const { data: vehicles, isLoading } = useQuery({
     queryKey: ["admin-vehicles"],
