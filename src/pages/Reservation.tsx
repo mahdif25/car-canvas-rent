@@ -89,6 +89,19 @@ function getInitialState(searchParams: URLSearchParams) {
     } catch { /* ignore */ }
   }
 
+  // Pre-fill from landing page data (e.g. /offre → /reservation)
+  const landingData = sessionStorage.getItem("landing_lead_data");
+  if (landingData) {
+    try {
+      const ld = JSON.parse(landingData);
+      if (ld.first_name && !formData.first_name) formData.first_name = ld.first_name;
+      if (ld.phone && !formData.phone) formData.phone = ld.phone;
+      if (ld.email && !formData.email) formData.email = ld.email;
+      // Clear after consuming so it doesn't override future edits
+      sessionStorage.removeItem("landing_lead_data");
+    } catch { /* ignore */ }
+  }
+
   // URL params override stored values when present
   if (hasUrlParams) {
     if (urlLocation) formData.pickup_location = urlLocation;
