@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import FacebookLeadAdsSetup from "@/components/admin/FacebookLeadAdsSetup";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { useSiteSettings, useUpdateSiteSettings, SiteSettings } from "@/hooks/useSiteSettings";
 import { useReviews, useCreateReview, useUpdateReview, useDeleteReview, Review } from "@/hooks/useReviews";
@@ -515,92 +516,7 @@ const AdminSettings = () => {
             </div>
 
             {/* Facebook Lead Ads Webhook */}
-            <div className="bg-card rounded-xl p-4 md:p-6 space-y-5 border border-border">
-              <h2 className="font-semibold text-lg">Facebook Lead Ads Webhook</h2>
-              <p className="text-sm text-muted-foreground">
-                Collez cette URL dans Facebook Business Manager → Votre App → Webhooks → Abonnez-vous aux événements <strong>leadgen</strong>.
-              </p>
-              <div className="space-y-2">
-                <Label>URL du Webhook</Label>
-                <div className="flex gap-2">
-                  <Input
-                    readOnly
-                    value={`https://mtcxliurdruvrzjtxful.supabase.co/functions/v1/facebook-leadads-webhook`}
-                    className="font-mono text-xs"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      navigator.clipboard.writeText("https://mtcxliurdruvrzjtxful.supabase.co/functions/v1/facebook-leadads-webhook");
-                      toast.success("URL copiée !");
-                    }}
-                  >
-                    Copier
-                  </Button>
-                </div>
-              </div>
-
-              {/* Credentials */}
-              <div className="space-y-2">
-                <Label>Facebook App Secret</Label>
-                <Input
-                  type="password"
-                  value={form.fb_leadads_app_secret ?? ""}
-                  onChange={e => setForm(f => ({ ...f, fb_leadads_app_secret: e.target.value }))}
-                  placeholder="••••••••"
-                />
-                <p className="text-xs text-muted-foreground">Facebook Developer Console → App Settings → Basic → App Secret</p>
-              </div>
-              <div className="space-y-2">
-                <Label>Verify Token</Label>
-                <Input
-                  type="password"
-                  value={form.fb_leadads_verify_token ?? ""}
-                  onChange={e => setForm(f => ({ ...f, fb_leadads_verify_token: e.target.value }))}
-                  placeholder="••••••••"
-                />
-                <p className="text-xs text-muted-foreground">Un token aléatoire de votre choix, à coller aussi dans Facebook Webhooks</p>
-              </div>
-              <div className="space-y-2">
-                <Label>Page Access Token</Label>
-                <Input
-                  type="password"
-                  value={form.fb_leadads_page_access_token ?? ""}
-                  onChange={e => setForm(f => ({ ...f, fb_leadads_page_access_token: e.target.value }))}
-                  placeholder="••••••••"
-                />
-                <p className="text-xs text-muted-foreground">Facebook Business Manager → votre Page → Settings → Page Access Token</p>
-              </div>
-
-              <div className="bg-secondary rounded-lg p-4 space-y-2 text-sm">
-                <p className="font-medium">Instructions de configuration :</p>
-                <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
-                  <li>Allez dans Facebook Business Manager → votre App → Webhooks</li>
-                  <li>Ajoutez un webhook pour l'objet "Page"</li>
-                  <li>Collez l'URL ci-dessus et votre token de vérification</li>
-                  <li>Abonnez-vous au champ "leadgen"</li>
-                  <li>Les leads apparaîtront automatiquement dans l'onglet Leads</li>
-                </ol>
-              </div>
-              <div className="bg-secondary rounded-lg p-4 space-y-2 text-sm">
-                <p className="font-medium">Landing Page Facebook :</p>
-                <div className="flex gap-2 items-center">
-                  <Input readOnly value="https://centreluxcar.com/offre" className="font-mono text-xs" />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      navigator.clipboard.writeText("https://centreluxcar.com/offre");
-                      toast.success("URL copiée !");
-                    }}
-                  >
-                    Copier
-                  </Button>
-                </div>
-                <p className="text-muted-foreground">Utilisez cette URL comme destination pour vos publicités Facebook de type "Trafic".</p>
-              </div>
-            </div>
+            <FacebookLeadAdsSetup form={form} setForm={setForm} save={save} isSaving={updateMutation.isPending} />
           </TabsContent>
 
           {/* Emails */}
