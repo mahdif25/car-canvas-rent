@@ -163,7 +163,31 @@ const Reservation = () => {
     return Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)));
   }, [formData.pickup_date, formData.return_date]);
 
-  const nextStep = () => setCurrentStep((s) => Math.min(s + 1, 5));
+  const handleNextStep = (from: number) => {
+    // Capture lead data at each step transition
+    if (from === 1) {
+      const fields: Record<string, string> = {};
+      if (formData.pickup_date) fields.pickup_date = formData.pickup_date;
+      if (formData.return_date) fields.return_date = formData.return_date;
+      if (formData.pickup_time) fields.pickup_time = formData.pickup_time;
+      if (formData.return_time) fields.return_time = formData.return_time;
+      if (formData.pickup_location) fields.pickup_location = formData.pickup_location;
+      if (formData.return_location) fields.return_location = formData.return_location;
+      if (Object.keys(fields).length > 0) {
+        analytics.captureLeadField(fields, 1);
+      }
+    } else if (from === 2) {
+      const fields: Record<string, string> = {};
+      if (formData.vehicle_id) fields.vehicle_id = formData.vehicle_id;
+      if (formData.selected_color_id) fields.selected_color_id = formData.selected_color_id;
+      if (Object.keys(fields).length > 0) {
+        analytics.captureLeadField(fields, 2);
+      }
+    }
+    setCurrentStep((s) => Math.min(s + 1, 5));
+  };
+
+  const nextStep = () => handleNextStep(currentStep);
   const prevStep = () => setCurrentStep((s) => Math.max(s - 1, 1));
 
   const handleChangeVehicle = () => setCurrentStep(2);

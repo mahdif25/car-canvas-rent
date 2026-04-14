@@ -120,6 +120,12 @@ const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadC
     if (formData.email) fields.email = formData.email;
     if (formData.phone) fields.phone = formData.phone;
     if (formData.license_number) fields.license_number = formData.license_number;
+    if (formData.nationality) fields.nationality = formData.nationality;
+    if (formData.dob) fields.dob = formData.dob;
+    if (formData.cin) fields.cin = formData.cin;
+    if (formData.passport) fields.passport = formData.passport;
+    if (formData.license_delivery_date) fields.license_delivery_date = formData.license_delivery_date;
+    if (formData.cin_expiry_date) fields.cin_expiry_date = formData.cin_expiry_date;
     return fields;
   };
 
