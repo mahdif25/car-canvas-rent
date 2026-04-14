@@ -339,8 +339,6 @@ const LandingOffer = () => {
                 </div>
               );
             })}
-              );
-            })}
           </div>
         </div>
       </section>
