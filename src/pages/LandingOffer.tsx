@@ -304,7 +304,11 @@ const LandingOffer = () => {
             {vehicles.slice(0, 6).map((v) => {
               const price = getStartingPrice(v.id);
               return (
-                <div key={v.id} className="bg-card rounded-xl border border-border overflow-hidden hover:shadow-lg transition-shadow">
+                <div
+                  key={v.id}
+                  className="bg-card rounded-xl border border-border overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group"
+                  onClick={() => handleVehicleClick(v.id)}
+                >
                   {v.image_url && (
                     <div className="h-40 bg-secondary flex items-center justify-center overflow-hidden">
                       <img src={v.image_url} alt={v.name} className="max-h-full max-w-full object-contain" />
@@ -324,8 +328,17 @@ const LandingOffer = () => {
                         À partir de {price} MAD<span className="text-sm font-normal text-muted-foreground">/jour</span>
                       </p>
                     )}
+                    <Button
+                      type="button"
+                      className="w-full mt-2 opacity-90 group-hover:opacity-100 transition-opacity"
+                      size="sm"
+                    >
+                      Réserver <ChevronRight size={16} />
+                    </Button>
                   </div>
                 </div>
+              );
+            })}
               );
             })}
           </div>
