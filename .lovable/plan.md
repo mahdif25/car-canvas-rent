@@ -1,62 +1,33 @@
 
 
-# Date Input Overhaul + Form Relaxation
+# Fix Autofill Detection on /offre Landing Page
+
+## Problem
+The autofill detection on the landing page has two issues:
+1. **Missing CSS keyframe**: The `onAutoFillStart` animation name referenced in `handleAutofillAnimation` is never defined in CSS, so the animation-based detection never triggers
+2. **Polling too short**: The DOM polling runs for only 3 seconds (15 attempts × 200ms). On mobile, browser autofill suggestions appear in the keyboard but don't populate DOM values until the user taps one — by then polling has stopped
+
+The screenshot shows the user on mobile with autofill suggestions visible in the keyboard bar, but the fields remain empty.
 
 ## Changes
 
-### 1. Remove CIN Expiration Date from reservation form
-Remove the "Date d'expiration CIN" field from both the main driver and additional driver sections in `StepDriverInfo.tsx`. Keep it in the manual reservation dialog (admin may still want it).
+### 1. Add CSS keyframes for autofill detection (`src/index.css`)
+Add the `onAutoFillStart` keyframe that Chrome/Safari trigger when autofill populates an input via `:-webkit-autofill`:
 
-### 2. Create a new `DateInputField` component
-A text input that accepts `dd/MM/yyyy` format with:
-- Auto-insertion of `/` separators as the user types (e.g. typing "15" then "0" becomes "15/0")
-- Placeholder guidance text: "JJ/MM/AAAA"
-- Validation: only accepts valid calendar dates, rejects invalid input on blur
-- Optional `showAge` prop: when true, displays the calculated age next to the field after a valid DOB is entered
-- Still stores value as `YYYY-MM-DD` internally (same interface as `DatePickerField`)
-- Calendar icon that opens the popover calendar as a secondary input method
-- Works on mobile, tablet, and desktop
-
-### 3. Replace all date fields with `DateInputField`
-**StepDates.tsx** — pickup date, return date
-**StepDriverInfo.tsx** — license delivery date, DOB (with `showAge`), additional driver license delivery date, additional driver DOB (with `showAge`)
-**ManualReservationDialog.tsx** — pickup date, return date, license delivery date, DOB (with `showAge`), CIN expiry date, additional driver dates
-**DatePickerField** — keep as-is (some places may still use it), but the new component will be the primary date input
-
-### 4. Relax admin manual reservation validation
-- Remove email from required fields validation in `handleSubmit`
-- Remove phone validation (allow any text, no regex)
-- Email field already optional — just ensure the placeholder email fallback still works when empty
-- Phone field: remove the `*` label, keep as free text
-
-## Files Modified
-- `src/components/ui/date-input-field.tsx` — **new** component with auto-formatting text input + optional calendar popover + age display
-- `src/components/reservation/StepDriverInfo.tsx` — remove CIN expiration fields (main + additional driver), replace `type="date"` inputs with `DateInputField`, add `showAge` on DOB fields
-- `src/components/reservation/StepDates.tsx` — replace `DatePickerField` with `DateInputField`
-- `src/components/admin/ManualReservationDialog.tsx` — replace all date inputs with `DateInputField`, relax phone/email validation, remove phone `*` requirement
-
-## Technical Detail: DateInputField
-
-```typescript
-interface DateInputFieldProps {
-  value: string; // YYYY-MM-DD
-  onChange: (val: string) => void;
-  placeholder?: string;
-  disabled?: boolean;
-  minDate?: Date;
-  maxDate?: Date;
-  showAge?: boolean; // displays "XX ans" after valid DOB
-  className?: string;
-}
+```css
+@keyframes onAutoFillStart { from {} to {} }
+input:-webkit-autofill { animation-name: onAutoFillStart; }
 ```
 
-Auto-format logic on `onChange`:
-- Strip non-digits, limit to 8 digits
-- Insert `/` after positions 2 and 4 → `dd/MM/yyyy`
-- On blur: parse `dd/MM/yyyy`, validate it's a real date, convert to `YYYY-MM-DD` and call `onChange`
-- If invalid, show a red error hint and clear the value
+### 2. Extend and improve polling in `src/pages/LandingOffer.tsx`
+- Increase polling duration to ~10 seconds (50 attempts × 200ms) so it catches delayed autofill
+- Add a `change` and `input` event listener on the form inputs to catch programmatic value changes from the browser autofill at any time (not just during the polling window)
+- These listeners will update the React state whenever the browser fills a value
 
-Age calculation (when `showAge=true`):
-- `differenceInYears(new Date(), parsedDate)` from date-fns
-- Displayed as a small badge: "23 ans"
+### 3. Keep the `onAnimationStart` handler as-is
+It will now actually work since the CSS keyframe will be defined.
+
+## Files Modified
+- `src/index.css` — add autofill animation keyframes
+- `src/pages/LandingOffer.tsx` — extend polling window, add persistent input/change event listeners for autofill capture
 
