@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,8 +30,26 @@ const LandingOffer = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const firstNameRef = useRef<HTMLInputElement>(null);
   const leadIdRef = useRef<string | null>(null);
   const stableVisitorId = useRef(`landing_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`);
+
+  // Auto-focus first name on mount to trigger browser autofill suggestions
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      firstNameRef.current?.focus({ preventScroll: true });
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Handle vehicle card click: select vehicle, scroll to form, focus input
+  const handleVehicleClick = useCallback((vehicleId: string) => {
+    setForm((prev) => ({ ...prev, vehicle_id: vehicleId }));
+    document.getElementById("form")?.scrollIntoView({ behavior: "smooth" });
+    setTimeout(() => {
+      firstNameRef.current?.focus();
+    }, 600);
+  }, []);
 
   // Autofill detection — poll DOM values for 10s after mount + persistent listeners
   useEffect(() => {
@@ -285,7 +304,11 @@ const LandingOffer = () => {
             {vehicles.slice(0, 6).map((v) => {
               const price = getStartingPrice(v.id);
               return (
-                <div key={v.id} className="bg-card rounded-xl border border-border overflow-hidden hover:shadow-lg transition-shadow">
+                <div
+                  key={v.id}
+                  className="bg-card rounded-xl border border-border overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group"
+                  onClick={() => handleVehicleClick(v.id)}
+                >
                   {v.image_url && (
                     <div className="h-40 bg-secondary flex items-center justify-center overflow-hidden">
                       <img src={v.image_url} alt={v.name} className="max-h-full max-w-full object-contain" />
@@ -305,6 +328,13 @@ const LandingOffer = () => {
                         À partir de {price} MAD<span className="text-sm font-normal text-muted-foreground">/jour</span>
                       </p>
                     )}
+                    <Button
+                      type="button"
+                      className="w-full mt-2 opacity-90 group-hover:opacity-100 transition-opacity"
+                      size="sm"
+                    >
+                      Réserver <ChevronRight size={16} />
+                    </Button>
                   </div>
                 </div>
               );
@@ -330,6 +360,7 @@ const LandingOffer = () => {
                 <div className="space-y-2">
                   <Label htmlFor="first_name">Prénom *</Label>
                   <Input
+                    ref={firstNameRef}
                     id="first_name"
                     name="fname"
                     autoComplete="given-name"
