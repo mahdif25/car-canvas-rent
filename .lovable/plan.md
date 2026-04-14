@@ -1,33 +1,25 @@
 
 
-# Fix Autofill Detection on /offre Landing Page
-
-## Problem
-The autofill detection on the landing page has two issues:
-1. **Missing CSS keyframe**: The `onAutoFillStart` animation name referenced in `handleAutofillAnimation` is never defined in CSS, so the animation-based detection never triggers
-2. **Polling too short**: The DOM polling runs for only 3 seconds (15 attempts × 200ms). On mobile, browser autofill suggestions appear in the keyboard but don't populate DOM values until the user taps one — by then polling has stopped
-
-The screenshot shows the user on mobile with autofill suggestions visible in the keyboard bar, but the fields remain empty.
+# Vehicle Card Click + Auto-Fill + Date Text Input for Manual Reservations
 
 ## Changes
 
-### 1. Add CSS keyframes for autofill detection (`src/index.css`)
-Add the `onAutoFillStart` keyframe that Chrome/Safari trigger when autofill populates an input via `:-webkit-autofill`:
+### 1. Make vehicle cards clickable on /offre (`src/pages/LandingOffer.tsx`)
+- Add `onClick` handler to each vehicle card: sets `form.vehicle_id`, smooth-scrolls to `#form`, and programmatically focuses the first name input to trigger browser autofill suggestions
+- Add a "Réserver" button on each card for clarity
+- On page mount, auto-focus the first name input after 500ms with `preventScroll: true` to prompt browser autofill without scrolling
 
-```css
-@keyframes onAutoFillStart { from {} to {} }
-input:-webkit-autofill { animation-name: onAutoFillStart; }
-```
+### 2. Use `requestSubmit` trick for instant autofill capture
+Browser autofill only populates values when the user interacts with an input. We cannot force the browser to fill fields without user action. However, by focusing the input and using `autocomplete` attributes correctly, the browser will show suggestions. The current setup already has correct `autoComplete` attributes.
 
-### 2. Extend and improve polling in `src/pages/LandingOffer.tsx`
-- Increase polling duration to ~10 seconds (50 attempts × 200ms) so it catches delayed autofill
-- Add a `change` and `input` event listener on the form inputs to catch programmatic value changes from the browser autofill at any time (not just during the polling window)
-- These listeners will update the React state whenever the browser fills a value
+The key improvement: when a vehicle card is clicked, scroll to form and focus the first empty field — the browser will immediately show its autofill dropdown. The user taps one suggestion and all fields fill at once (browser behavior). The existing polling + event listeners will capture the values.
 
-### 3. Keep the `onAnimationStart` handler as-is
-It will now actually work since the CSS keyframe will be defined.
+### 3. Replace pickup/return date inputs with `DateInputField` in Manual Reservations (`src/components/admin/ManualReservationDialog.tsx`)
+The pickup date and return date fields currently use `DateInputField` already based on previous changes. Let me verify and ensure they use the text-input format consistently.
+
+### 4. Verify StepDates already uses DateInputField
+Already confirmed — `StepDates.tsx` uses `DateInputField` for both pickup and return dates.
 
 ## Files Modified
-- `src/index.css` — add autofill animation keyframes
-- `src/pages/LandingOffer.tsx` — extend polling window, add persistent input/change event listeners for autofill capture
+- `src/pages/LandingOffer.tsx` — add vehicle card click handler (scroll to form + select vehicle + focus input), add auto-focus on mount, add "Réserver" button to cards
 
