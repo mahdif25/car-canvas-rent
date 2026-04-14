@@ -32,10 +32,10 @@ const LandingOffer = () => {
   const leadIdRef = useRef<string | null>(null);
   const stableVisitorId = useRef(`landing_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`);
 
-  // Autofill detection — poll DOM values for 3s after mount
+  // Autofill detection — poll DOM values for 10s after mount + persistent listeners
   useEffect(() => {
     let attempts = 0;
-    const maxAttempts = 15;
+    const maxAttempts = 50;
     const interval = setInterval(() => {
       attempts++;
       if (!formRef.current || attempts > maxAttempts) {
@@ -47,14 +47,41 @@ const LandingOffer = () => {
       inputs.forEach((input) => {
         if (input.name && input.value) values[input.name] = input.value;
       });
+      if (values.fname || values.tel || values.email) {
+        setForm((prev) => ({
+          ...prev,
+          first_name: values.fname || prev.first_name,
+          phone: values.tel || prev.phone,
+          email: values.email || prev.email,
+        }));
+      }
+    }, 200);
+
+    // Persistent listeners for browser autofill that fires after polling ends
+    const handleAutofillChange = (e: Event) => {
+      const input = e.target as HTMLInputElement;
+      if (!input.name || !input.value) return;
       setForm((prev) => ({
         ...prev,
-        first_name: values.fname || prev.first_name,
-        phone: values.tel || prev.phone,
-        email: values.email || prev.email,
+        ...(input.name === "fname" && { first_name: input.value }),
+        ...(input.name === "tel" && { phone: input.value }),
+        ...(input.name === "email" && { email: input.value }),
       }));
-    }, 200);
-    return () => clearInterval(interval);
+    };
+
+    const form = formRef.current;
+    if (form) {
+      form.addEventListener("input", handleAutofillChange);
+      form.addEventListener("change", handleAutofillChange);
+    }
+
+    return () => {
+      clearInterval(interval);
+      if (form) {
+        form.removeEventListener("input", handleAutofillChange);
+        form.removeEventListener("change", handleAutofillChange);
+      }
+    };
   }, []);
 
   const handleAutofillAnimation = useCallback((e: React.AnimationEvent<HTMLInputElement>) => {
