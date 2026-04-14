@@ -570,53 +570,101 @@ export type Database = {
       leads: {
         Row: {
           capi_allowed: boolean
+          cin: string | null
+          cin_expiry_date: string | null
           created_at: string | null
+          dob: string | null
           email: string | null
           first_name: string | null
           id: string
           last_name: string | null
           last_reservation_step: number | null
+          license_delivery_date: string | null
           license_number: string | null
+          nationality: string | null
+          passport: string | null
           phone: string | null
+          pickup_date: string | null
+          pickup_location: string | null
+          pickup_time: string | null
+          promo_code: string | null
           reservation_completed: boolean | null
           reservation_id: string | null
+          return_date: string | null
+          return_location: string | null
+          return_time: string | null
+          selected_addons: string[] | null
+          selected_color_id: string | null
           session_id: string | null
           source: string
           updated_at: string | null
+          vehicle_id: string | null
           visitor_id: string | null
         }
         Insert: {
           capi_allowed?: boolean
+          cin?: string | null
+          cin_expiry_date?: string | null
           created_at?: string | null
+          dob?: string | null
           email?: string | null
           first_name?: string | null
           id?: string
           last_name?: string | null
           last_reservation_step?: number | null
+          license_delivery_date?: string | null
           license_number?: string | null
+          nationality?: string | null
+          passport?: string | null
           phone?: string | null
+          pickup_date?: string | null
+          pickup_location?: string | null
+          pickup_time?: string | null
+          promo_code?: string | null
           reservation_completed?: boolean | null
           reservation_id?: string | null
+          return_date?: string | null
+          return_location?: string | null
+          return_time?: string | null
+          selected_addons?: string[] | null
+          selected_color_id?: string | null
           session_id?: string | null
           source?: string
           updated_at?: string | null
+          vehicle_id?: string | null
           visitor_id?: string | null
         }
         Update: {
           capi_allowed?: boolean
+          cin?: string | null
+          cin_expiry_date?: string | null
           created_at?: string | null
+          dob?: string | null
           email?: string | null
           first_name?: string | null
           id?: string
           last_name?: string | null
           last_reservation_step?: number | null
+          license_delivery_date?: string | null
           license_number?: string | null
+          nationality?: string | null
+          passport?: string | null
           phone?: string | null
+          pickup_date?: string | null
+          pickup_location?: string | null
+          pickup_time?: string | null
+          promo_code?: string | null
           reservation_completed?: boolean | null
           reservation_id?: string | null
+          return_date?: string | null
+          return_location?: string | null
+          return_time?: string | null
+          selected_addons?: string[] | null
+          selected_color_id?: string | null
           session_id?: string | null
           source?: string
           updated_at?: string | null
+          vehicle_id?: string | null
           visitor_id?: string | null
         }
         Relationships: []

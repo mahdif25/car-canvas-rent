@@ -5,7 +5,7 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, ChevronDown, ChevronUp, Globe, Facebook, Megaphone } from "lucide-react";
+import { Search, ChevronDown, ChevronUp, Globe, Facebook, Megaphone, Car } from "lucide-react";
 
 const stepLabels: Record<number, string> = {
   1: "Dates & Lieu",
@@ -37,6 +37,22 @@ interface LeadRow {
   source: string;
   created_at: string | null;
   updated_at: string | null;
+  vehicle_id: string | null;
+  pickup_date: string | null;
+  return_date: string | null;
+  pickup_time: string | null;
+  return_time: string | null;
+  pickup_location: string | null;
+  return_location: string | null;
+  nationality: string | null;
+  dob: string | null;
+  cin: string | null;
+  passport: string | null;
+  license_delivery_date: string | null;
+  cin_expiry_date: string | null;
+  selected_color_id: string | null;
+  selected_addons: string[] | null;
+  promo_code: string | null;
 }
 
 interface GroupedLead {
@@ -47,6 +63,7 @@ interface GroupedLead {
   latestLastName: string | null;
   latestLicense: string | null;
   latestSource: string;
+  latestVehicleId: string | null;
   maxStep: number;
   completed: boolean;
   entryCount: number;
@@ -81,6 +98,22 @@ const AdminLeads = () => {
     },
   });
 
+  const { data: vehicles = [] } = useQuery({
+    queryKey: ["admin-vehicles-for-leads"],
+    queryFn: async () => {
+      const { data } = await supabase.from("vehicles").select("id, name, brand, model");
+      return data ?? [];
+    },
+  });
+
+  const vehicleMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const v of vehicles) {
+      map.set(v.id, v.name || `${v.brand} ${v.model}`);
+    }
+    return map;
+  }, [vehicles]);
+
   const grouped: GroupedLead[] = useMemo(() => {
     const map = new Map<string, LeadRow[]>();
     for (const lead of leads) {
@@ -111,6 +144,7 @@ const AdminLeads = () => {
         latestLastName: latest.last_name,
         latestLicense: latest.license_number,
         latestSource: latest.source || "website",
+        latestVehicleId: latest.vehicle_id,
         maxStep,
         completed,
         entryCount: entries.length,
@@ -172,6 +206,13 @@ const AdminLeads = () => {
     );
   };
 
+  const fmtDate = (d: string | null) => {
+    if (!d) return null;
+    try {
+      return new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
+    } catch { return d; }
+  };
+
   return (
     <AdminLayout>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -209,10 +250,11 @@ const AdminLeads = () => {
           ) : filtered.length > 0 ? (
             <div className="space-y-2">
               {/* Desktop header */}
-              <div className="hidden md:grid grid-cols-8 gap-2 px-4 py-2 text-xs font-medium text-muted-foreground uppercase">
+              <div className="hidden md:grid grid-cols-9 gap-2 px-4 py-2 text-xs font-medium text-muted-foreground uppercase">
                 <span>Nom</span>
                 <span>Email</span>
                 <span>Téléphone</span>
+                <span>Véhicule</span>
                 <span>Source</span>
                 <span>Étape max</span>
                 <span>Entrées</span>
@@ -223,12 +265,20 @@ const AdminLeads = () => {
                 <div key={group.key} className="border rounded-lg">
                   {/* Desktop row */}
                   <div
-                    className="hidden md:grid grid-cols-8 gap-2 px-4 py-3 cursor-pointer hover:bg-secondary/50 items-center text-sm"
+                    className="hidden md:grid grid-cols-9 gap-2 px-4 py-3 cursor-pointer hover:bg-secondary/50 items-center text-sm"
                     onClick={() => setExpandedKey(expandedKey === group.key ? null : group.key)}
                   >
                     <span className="font-medium">{[group.latestFirstName, group.latestLastName].filter(Boolean).join(" ") || "—"}</span>
                     <span className="break-all text-muted-foreground">{group.latestEmail || "—"}</span>
                     <span className="text-muted-foreground">{group.latestPhone || "—"}</span>
+                    <span className="text-muted-foreground truncate">
+                      {group.latestVehicleId ? (
+                        <span className="inline-flex items-center gap-1">
+                          <Car size={12} className="text-primary shrink-0" />
+                          {vehicleMap.get(group.latestVehicleId) || "—"}
+                        </span>
+                      ) : "—"}
+                    </span>
                     <span>{sourceBadge(group.latestSource)}</span>
                     <span>{stepLabels[group.maxStep] || `Étape ${group.maxStep}`}</span>
                     <span>{group.entryCount}</span>
@@ -252,6 +302,12 @@ const AdminLeads = () => {
                       </div>
                     </div>
                     <p className="text-xs text-muted-foreground truncate">{group.latestEmail || "—"}</p>
+                    {group.latestVehicleId && (
+                      <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                        <Car size={10} className="text-primary" />
+                        {vehicleMap.get(group.latestVehicleId) || "—"}
+                      </p>
+                    )}
                     <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
                       {sourceBadge(group.latestSource)}
                       <span>{stepLabels[group.maxStep] || `Étape ${group.maxStep}`}</span>
@@ -263,9 +319,9 @@ const AdminLeads = () => {
                   {expandedKey === group.key && (
                     <div className="border-t p-4 bg-secondary/30 space-y-3 text-sm">
                       <p className="font-medium text-xs text-muted-foreground mb-2">Historique des captures ({group.entryCount} entrées)</p>
-                      <div className="space-y-2 max-h-64 overflow-auto">
+                      <div className="space-y-2 max-h-80 overflow-auto">
                         {group.entries.map((entry) => (
-                          <div key={entry.id} className="border rounded-md p-3 bg-background space-y-1">
+                          <div key={entry.id} className="border rounded-md p-3 bg-background space-y-2">
                             <div className="flex justify-between items-center">
                               <span className="text-xs text-muted-foreground">
                                 {entry.created_at ? new Date(entry.created_at).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" }) : "—"}
@@ -274,13 +330,54 @@ const AdminLeads = () => {
                                 {stepLabels[entry.last_reservation_step ?? 0] || `Étape ${entry.last_reservation_step}`}
                               </span>
                             </div>
+
+                            {/* Contact info */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-xs">
                               {entry.first_name && <div><span className="text-muted-foreground">Prénom:</span> {entry.first_name}</div>}
                               {entry.last_name && <div><span className="text-muted-foreground">Nom:</span> {entry.last_name}</div>}
                               {entry.email && <div className="break-all"><span className="text-muted-foreground">Email:</span> {entry.email}</div>}
                               {entry.phone && <div><span className="text-muted-foreground">Tél:</span> {entry.phone}</div>}
-                              {entry.license_number && <div><span className="text-muted-foreground">Permis:</span> {entry.license_number}</div>}
                             </div>
+
+                            {/* Vehicle & dates */}
+                            {(entry.vehicle_id || entry.pickup_date || entry.pickup_location) && (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-xs border-t border-border pt-2">
+                                {entry.vehicle_id && (
+                                  <div className="flex items-center gap-1">
+                                    <Car size={10} className="text-primary shrink-0" />
+                                    <span className="text-muted-foreground">Véhicule:</span> {vehicleMap.get(entry.vehicle_id) || entry.vehicle_id.slice(0, 8)}
+                                  </div>
+                                )}
+                                {entry.pickup_date && <div><span className="text-muted-foreground">Départ:</span> {fmtDate(entry.pickup_date)} {entry.pickup_time || ""}</div>}
+                                {entry.return_date && <div><span className="text-muted-foreground">Retour:</span> {fmtDate(entry.return_date)} {entry.return_time || ""}</div>}
+                                {entry.pickup_location && <div><span className="text-muted-foreground">Lieu départ:</span> {entry.pickup_location}</div>}
+                                {entry.return_location && <div><span className="text-muted-foreground">Lieu retour:</span> {entry.return_location}</div>}
+                              </div>
+                            )}
+
+                            {/* Driver details */}
+                            {(entry.nationality || entry.cin || entry.passport || entry.license_number || entry.dob) && (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-xs border-t border-border pt-2">
+                                {entry.nationality && <div><span className="text-muted-foreground">Nationalité:</span> {entry.nationality}</div>}
+                                {entry.dob && <div><span className="text-muted-foreground">Né(e):</span> {fmtDate(entry.dob)}</div>}
+                                {entry.cin && <div><span className="text-muted-foreground">CIN:</span> {entry.cin}</div>}
+                                {entry.passport && <div><span className="text-muted-foreground">Passeport:</span> {entry.passport}</div>}
+                                {entry.license_number && <div><span className="text-muted-foreground">Permis:</span> {entry.license_number}</div>}
+                                {entry.license_delivery_date && <div><span className="text-muted-foreground">Délivré:</span> {fmtDate(entry.license_delivery_date)}</div>}
+                                {entry.cin_expiry_date && <div><span className="text-muted-foreground">Exp. CIN:</span> {fmtDate(entry.cin_expiry_date)}</div>}
+                              </div>
+                            )}
+
+                            {/* Promo & addons */}
+                            {(entry.promo_code || (entry.selected_addons && entry.selected_addons.length > 0)) && (
+                              <div className="text-xs border-t border-border pt-2 flex gap-3 flex-wrap">
+                                {entry.promo_code && <span><span className="text-muted-foreground">Promo:</span> {entry.promo_code}</span>}
+                                {entry.selected_addons && entry.selected_addons.length > 0 && (
+                                  <span><span className="text-muted-foreground">Options:</span> {entry.selected_addons.length} sélectionnée(s)</span>
+                                )}
+                              </div>
+                            )}
+
                             <div className="flex gap-2 flex-wrap">
                               {entry.reservation_completed && (
                                 <span className="text-xs text-green-600 font-medium">✓ Réservation complétée</span>

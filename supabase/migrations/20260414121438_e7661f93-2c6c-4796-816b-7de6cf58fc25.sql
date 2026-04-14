@@ -1,0 +1,17 @@
+ALTER TABLE public.leads
+  ADD COLUMN IF NOT EXISTS vehicle_id uuid,
+  ADD COLUMN IF NOT EXISTS pickup_date text,
+  ADD COLUMN IF NOT EXISTS return_date text,
+  ADD COLUMN IF NOT EXISTS pickup_time text,
+  ADD COLUMN IF NOT EXISTS return_time text,
+  ADD COLUMN IF NOT EXISTS pickup_location text,
+  ADD COLUMN IF NOT EXISTS return_location text,
+  ADD COLUMN IF NOT EXISTS nationality text,
+  ADD COLUMN IF NOT EXISTS dob text,
+  ADD COLUMN IF NOT EXISTS cin text,
+  ADD COLUMN IF NOT EXISTS passport text,
+  ADD COLUMN IF NOT EXISTS license_delivery_date text,
+  ADD COLUMN IF NOT EXISTS cin_expiry_date text,
+  ADD COLUMN IF NOT EXISTS selected_color_id uuid,
+  ADD COLUMN IF NOT EXISTS selected_addons text[],
+  ADD COLUMN IF NOT EXISTS promo_code text;
