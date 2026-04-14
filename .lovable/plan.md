@@ -1,44 +1,50 @@
 
 
-# Capture All Reservation Fields in Leads
+# Fix Lead Capture Across All Pages
 
-## Problem
-Currently, leads only store: first_name, last_name, email, phone, license_number. Missing fields include: selected vehicle, dates, locations, nationality, DOB, CIN, passport, color, addons, and promo code. The admin Leads page cannot show which car a user was interested in.
+## Root Cause
+
+The `captureLeadField` function in `useAnalytics.ts` does `.insert().select("id").single()` after inserting a lead. However, the SELECT RLS policy on `leads` only allows `authenticated` users with the `admin` role. Anonymous visitors (who are all lead sources) get a silent null back from `.select("id")`, so `leadIdRef.current` is **never set**. Every subsequent call to `captureLeadField` creates a NEW lead instead of updating the existing one. This also explains why step transitions don't accumulate data on a single lead row.
+
+The same pattern exists on the `/offre` landing page — the `.select("id").single()` after insert also fails silently.
+
+Additionally:
+- The landing page does NOT include `vehicle_id` in the lead payload
+- When navigating from `/offre` to `/reservation`, the user's name/phone/email are not carried over to pre-fill the reservation form
+- The landing page and reservation page use separate `leadIdRef` instances, so they can never update the same lead
 
 ## Changes
 
-### 1. Add columns to `leads` table (database migration)
-Add new nullable columns to capture reservation context:
-- `vehicle_id` (uuid) — the selected vehicle
-- `pickup_date` (text), `return_date` (text), `pickup_time` (text), `return_time` (text)
-- `pickup_location` (text), `return_location` (text)
-- `nationality` (text), `dob` (text)
-- `cin` (text), `passport` (text)
-- `license_delivery_date` (text), `cin_expiry_date` (text)
-- `selected_color_id` (uuid)
-- `selected_addons` (text[]) — array of addon IDs
-- `promo_code` (text)
+### 1. Fix `captureLeadField` in `src/hooks/useAnalytics.ts`
+Generate the lead ID client-side using `crypto.randomUUID()` and pass it in the insert payload. This avoids needing `.select("id").single()` (which fails due to RLS). Store the generated ID in `leadIdRef` immediately.
 
-### 2. Capture lead data at every step transition
-Currently `captureLeadField` is only called at step 3. Update to also capture at:
-- **Step 1 → 2**: Pass pickup/return dates, times, locations
-- **Step 2 → 3**: Pass vehicle_id and selected_color_id
-- **Step 3 → 4 (summary)**: Already captured, but expand `collectAllFields()` to include nationality, dob, cin, passport, license dates, and addons
+```typescript
+// Before (broken):
+const { data } = await supabase.from("leads").insert({...}).select("id").single();
+if (data) leadIdRef.current = data.id;
 
-This means adding `captureLeadField` calls in `Reservation.tsx` at each step transition, passing the relevant form data fields.
+// After (fixed):
+const newId = crypto.randomUUID();
+await supabase.from("leads").insert({ id: newId, ... });
+leadIdRef.current = newId;
+```
 
-### 3. Expand `collectAllFields()` in StepDriverInfo
-Add nationality, dob, cin, passport, license_delivery_date, cin_expiry_date to the fields object.
+Also persist `leadIdRef` to sessionStorage so it survives page navigation (e.g. `/offre` → `/reservation`).
 
-### 4. Update AdminLeads page to show vehicle info
-- Join/lookup vehicle name from `vehicles` table
-- Show the selected vehicle column in the leads table
-- Show additional captured fields (dates, location, nationality, etc.) in the expanded detail view
+### 2. Fix landing page `/offre` — `src/pages/LandingOffer.tsx`
+- Include `vehicle_id` in both `leadPayload` and `blurPayload`
+- Use client-side ID generation (same pattern as above)
+- Store the lead ID in sessionStorage so the reservation page can continue updating the same lead
+- Store the user's contact details (`first_name`, `phone`, `email`) in sessionStorage under a dedicated key so the reservation form can pre-fill them
+
+### 3. Pre-fill reservation form from landing data — `src/pages/Reservation.tsx`
+In `getInitialState()`, check sessionStorage for landing page data and merge it into the initial form state (first_name, phone, email). This way, when a user comes from `/offre`, their info is already filled in.
+
+### 4. Fix landing page lead ID generation — `src/pages/LandingOffer.tsx`
+Use `crypto.randomUUID()` for insert instead of relying on `.select("id").single()`.
 
 ## Files Modified
-- Database migration — add new columns to `leads` table
-- `src/hooks/useAnalytics.ts` — no changes needed (already accepts any fields via `Record<string, string>`)
-- `src/pages/Reservation.tsx` — add `captureLeadField` calls at step 1→2 and step 2→3 transitions
-- `src/components/reservation/StepDriverInfo.tsx` — expand `collectAllFields()` to include all driver fields
-- `src/pages/admin/AdminLeads.tsx` — add vehicle column, show new fields in expanded view
+- `src/hooks/useAnalytics.ts` — client-side ID generation, sessionStorage persistence for leadId
+- `src/pages/LandingOffer.tsx` — include vehicle_id, client-side ID, store contact data in sessionStorage
+- `src/pages/Reservation.tsx` — pre-fill form from landing page sessionStorage data
 
