@@ -1,50 +1,62 @@
 
 
-# Fix Lead Capture Across All Pages
-
-## Root Cause
-
-The `captureLeadField` function in `useAnalytics.ts` does `.insert().select("id").single()` after inserting a lead. However, the SELECT RLS policy on `leads` only allows `authenticated` users with the `admin` role. Anonymous visitors (who are all lead sources) get a silent null back from `.select("id")`, so `leadIdRef.current` is **never set**. Every subsequent call to `captureLeadField` creates a NEW lead instead of updating the existing one. This also explains why step transitions don't accumulate data on a single lead row.
-
-The same pattern exists on the `/offre` landing page — the `.select("id").single()` after insert also fails silently.
-
-Additionally:
-- The landing page does NOT include `vehicle_id` in the lead payload
-- When navigating from `/offre` to `/reservation`, the user's name/phone/email are not carried over to pre-fill the reservation form
-- The landing page and reservation page use separate `leadIdRef` instances, so they can never update the same lead
+# Date Input Overhaul + Form Relaxation
 
 ## Changes
 
-### 1. Fix `captureLeadField` in `src/hooks/useAnalytics.ts`
-Generate the lead ID client-side using `crypto.randomUUID()` and pass it in the insert payload. This avoids needing `.select("id").single()` (which fails due to RLS). Store the generated ID in `leadIdRef` immediately.
+### 1. Remove CIN Expiration Date from reservation form
+Remove the "Date d'expiration CIN" field from both the main driver and additional driver sections in `StepDriverInfo.tsx`. Keep it in the manual reservation dialog (admin may still want it).
 
-```typescript
-// Before (broken):
-const { data } = await supabase.from("leads").insert({...}).select("id").single();
-if (data) leadIdRef.current = data.id;
+### 2. Create a new `DateInputField` component
+A text input that accepts `dd/MM/yyyy` format with:
+- Auto-insertion of `/` separators as the user types (e.g. typing "15" then "0" becomes "15/0")
+- Placeholder guidance text: "JJ/MM/AAAA"
+- Validation: only accepts valid calendar dates, rejects invalid input on blur
+- Optional `showAge` prop: when true, displays the calculated age next to the field after a valid DOB is entered
+- Still stores value as `YYYY-MM-DD` internally (same interface as `DatePickerField`)
+- Calendar icon that opens the popover calendar as a secondary input method
+- Works on mobile, tablet, and desktop
 
-// After (fixed):
-const newId = crypto.randomUUID();
-await supabase.from("leads").insert({ id: newId, ... });
-leadIdRef.current = newId;
-```
+### 3. Replace all date fields with `DateInputField`
+**StepDates.tsx** — pickup date, return date
+**StepDriverInfo.tsx** — license delivery date, DOB (with `showAge`), additional driver license delivery date, additional driver DOB (with `showAge`)
+**ManualReservationDialog.tsx** — pickup date, return date, license delivery date, DOB (with `showAge`), CIN expiry date, additional driver dates
+**DatePickerField** — keep as-is (some places may still use it), but the new component will be the primary date input
 
-Also persist `leadIdRef` to sessionStorage so it survives page navigation (e.g. `/offre` → `/reservation`).
-
-### 2. Fix landing page `/offre` — `src/pages/LandingOffer.tsx`
-- Include `vehicle_id` in both `leadPayload` and `blurPayload`
-- Use client-side ID generation (same pattern as above)
-- Store the lead ID in sessionStorage so the reservation page can continue updating the same lead
-- Store the user's contact details (`first_name`, `phone`, `email`) in sessionStorage under a dedicated key so the reservation form can pre-fill them
-
-### 3. Pre-fill reservation form from landing data — `src/pages/Reservation.tsx`
-In `getInitialState()`, check sessionStorage for landing page data and merge it into the initial form state (first_name, phone, email). This way, when a user comes from `/offre`, their info is already filled in.
-
-### 4. Fix landing page lead ID generation — `src/pages/LandingOffer.tsx`
-Use `crypto.randomUUID()` for insert instead of relying on `.select("id").single()`.
+### 4. Relax admin manual reservation validation
+- Remove email from required fields validation in `handleSubmit`
+- Remove phone validation (allow any text, no regex)
+- Email field already optional — just ensure the placeholder email fallback still works when empty
+- Phone field: remove the `*` label, keep as free text
 
 ## Files Modified
-- `src/hooks/useAnalytics.ts` — client-side ID generation, sessionStorage persistence for leadId
-- `src/pages/LandingOffer.tsx` — include vehicle_id, client-side ID, store contact data in sessionStorage
-- `src/pages/Reservation.tsx` — pre-fill form from landing page sessionStorage data
+- `src/components/ui/date-input-field.tsx` — **new** component with auto-formatting text input + optional calendar popover + age display
+- `src/components/reservation/StepDriverInfo.tsx` — remove CIN expiration fields (main + additional driver), replace `type="date"` inputs with `DateInputField`, add `showAge` on DOB fields
+- `src/components/reservation/StepDates.tsx` — replace `DatePickerField` with `DateInputField`
+- `src/components/admin/ManualReservationDialog.tsx` — replace all date inputs with `DateInputField`, relax phone/email validation, remove phone `*` requirement
+
+## Technical Detail: DateInputField
+
+```typescript
+interface DateInputFieldProps {
+  value: string; // YYYY-MM-DD
+  onChange: (val: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  minDate?: Date;
+  maxDate?: Date;
+  showAge?: boolean; // displays "XX ans" after valid DOB
+  className?: string;
+}
+```
+
+Auto-format logic on `onChange`:
+- Strip non-digits, limit to 8 digits
+- Insert `/` after positions 2 and 4 → `dd/MM/yyyy`
+- On blur: parse `dd/MM/yyyy`, validate it's a real date, convert to `YYYY-MM-DD` and call `onChange`
+- If invalid, show a red error hint and clear the value
+
+Age calculation (when `showAge=true`):
+- `differenceInYears(new Date(), parsedDate)` from date-fns
+- Displayed as a small badge: "23 ans"
 
