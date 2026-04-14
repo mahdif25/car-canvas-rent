@@ -30,8 +30,26 @@ const LandingOffer = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const firstNameRef = useRef<HTMLInputElement>(null);
   const leadIdRef = useRef<string | null>(null);
   const stableVisitorId = useRef(`landing_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`);
+
+  // Auto-focus first name on mount to trigger browser autofill suggestions
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      firstNameRef.current?.focus({ preventScroll: true });
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Handle vehicle card click: select vehicle, scroll to form, focus input
+  const handleVehicleClick = useCallback((vehicleId: string) => {
+    setForm((prev) => ({ ...prev, vehicle_id: vehicleId }));
+    document.getElementById("form")?.scrollIntoView({ behavior: "smooth" });
+    setTimeout(() => {
+      firstNameRef.current?.focus();
+    }, 600);
+  }, []);
 
   // Autofill detection — poll DOM values for 10s after mount + persistent listeners
   useEffect(() => {
