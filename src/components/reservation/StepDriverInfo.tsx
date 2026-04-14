@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { User, Mail, Phone, CreditCard, Globe, CalendarDays, UserPlus, FileText } from "lucide-react";
 import { Vehicle } from "@/hooks/useVehicles";
 import { Link } from "react-router-dom";
+import { DateInputField } from "@/components/ui/date-input-field";
 
 interface Props {
   formData: ReservationFormData;
@@ -125,7 +126,6 @@ const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadC
     if (formData.cin) fields.cin = formData.cin;
     if (formData.passport) fields.passport = formData.passport;
     if (formData.license_delivery_date) fields.license_delivery_date = formData.license_delivery_date;
-    if (formData.cin_expiry_date) fields.cin_expiry_date = formData.cin_expiry_date;
     return fields;
   };
 
@@ -255,7 +255,7 @@ const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadC
           <div className="space-y-2">
             <label className="text-sm font-medium">Nationalité *</label>
             <Select value={formData.nationality} onValueChange={(v) => {
-              updateForm({ nationality: v, cin: "", passport: "", cin_expiry_date: "" });
+              updateForm({ nationality: v, cin: "", passport: "" });
             }}>
               <SelectTrigger>
                 <div className="flex items-center gap-2">
@@ -271,24 +271,15 @@ const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadC
             </Select>
           </div>
 
-          {/* Conditional CIN / Passport */}
+          {/* Conditional CIN / Passport — NO CIN expiry */}
           {isMoroccan ? (
-            <>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">N° CIN *</label>
-                <div className="relative">
-                  <FileText size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <Input className="pl-9" value={formData.cin} onChange={(e) => updateForm({ cin: e.target.value })} placeholder="Ex: AB123456" />
-                </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">N° CIN *</label>
+              <div className="relative">
+                <FileText size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input className="pl-9" value={formData.cin} onChange={(e) => updateForm({ cin: e.target.value })} placeholder="Ex: AB123456" />
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Date d'expiration CIN</label>
-                <div className="relative">
-                  <CalendarDays size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <Input className="pl-9" type="date" value={formData.cin_expiry_date} onChange={(e) => updateForm({ cin_expiry_date: e.target.value })} />
-                </div>
-              </div>
-            </>
+            </div>
           ) : (
             <div className="space-y-2">
               <label className="text-sm font-medium">N° Passeport *</label>
@@ -308,17 +299,19 @@ const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadC
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Date de délivrance du permis</label>
-            <div className="relative">
-              <CalendarDays size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input className="pl-9" type="date" value={formData.license_delivery_date} onChange={(e) => updateForm({ license_delivery_date: e.target.value })} />
-            </div>
+            <DateInputField
+              value={formData.license_delivery_date}
+              onChange={(v) => updateForm({ license_delivery_date: v })}
+            />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Date de naissance</label>
-            <div className="relative">
-              <CalendarDays size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input className="pl-9" type="date" name="bday" autoComplete="bday" value={formData.dob} onChange={(e) => updateForm({ dob: e.target.value })} />
-            </div>
+            <DateInputField
+              value={formData.dob}
+              onChange={(v) => updateForm({ dob: v })}
+              showAge
+              maxDate={new Date()}
+            />
           </div>
         </div>
       </div>
@@ -373,7 +366,7 @@ const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadC
             <div className="space-y-2">
               <label className="text-sm font-medium">Nationalité *</label>
               <Select value={formData.additional_driver.nationality} onValueChange={(v) => {
-                updateAdditionalDriver({ nationality: v, cin: "", passport: "", cin_expiry_date: "" });
+                updateAdditionalDriver({ nationality: v, cin: "", passport: "" });
               }}>
                 <SelectTrigger>
                   <div className="flex items-center gap-2">
@@ -389,24 +382,15 @@ const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadC
               </Select>
             </div>
 
-            {/* Additional driver CIN / Passport */}
+            {/* Additional driver CIN / Passport — NO CIN expiry */}
             {addIsMoroccan ? (
-              <>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">N° CIN *</label>
-                  <div className="relative">
-                    <FileText size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <Input className="pl-9" value={formData.additional_driver.cin} onChange={(e) => updateAdditionalDriver({ cin: e.target.value })} placeholder="Ex: AB123456" />
-                  </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">N° CIN *</label>
+                <div className="relative">
+                  <FileText size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input className="pl-9" value={formData.additional_driver.cin} onChange={(e) => updateAdditionalDriver({ cin: e.target.value })} placeholder="Ex: AB123456" />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Date d'expiration CIN</label>
-                  <div className="relative">
-                    <CalendarDays size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <Input className="pl-9" type="date" value={formData.additional_driver.cin_expiry_date} onChange={(e) => updateAdditionalDriver({ cin_expiry_date: e.target.value })} />
-                  </div>
-                </div>
-              </>
+              </div>
             ) : (
               <div className="space-y-2">
                 <label className="text-sm font-medium">N° Passeport *</label>
@@ -426,17 +410,19 @@ const StepDriverInfo = ({ formData, updateForm, onNext, onBack, analytics, leadC
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Date de délivrance du permis</label>
-              <div className="relative">
-                <CalendarDays size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <Input className="pl-9" type="date" value={formData.additional_driver.license_delivery_date} onChange={(e) => updateAdditionalDriver({ license_delivery_date: e.target.value })} />
-              </div>
+              <DateInputField
+                value={formData.additional_driver.license_delivery_date}
+                onChange={(v) => updateAdditionalDriver({ license_delivery_date: v })}
+              />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Date de naissance</label>
-              <div className="relative">
-                <CalendarDays size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <Input className="pl-9" type="date" value={formData.additional_driver.dob} onChange={(e) => updateAdditionalDriver({ dob: e.target.value })} />
-              </div>
+              <DateInputField
+                value={formData.additional_driver.dob}
+                onChange={(v) => updateAdditionalDriver({ dob: v })}
+                showAge
+                maxDate={new Date()}
+              />
             </div>
           </div>
         )}

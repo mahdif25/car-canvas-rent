@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { DatePickerField } from "@/components/ui/date-picker-field";
+import { DateInputField } from "@/components/ui/date-input-field";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -82,7 +82,6 @@ export default function ManualReservationDialog({ open, onOpenChange, vehicles, 
     setForm(prev => ({ ...prev, [key]: value }));
   }, []);
 
-  // Persist draft
   useEffect(() => {
     localStorage.setItem(DRAFT_KEY, JSON.stringify(form));
   }, [form]);
@@ -139,8 +138,8 @@ export default function ManualReservationDialog({ open, onOpenChange, vehicles, 
   };
 
   const handleSubmit = async () => {
-    if (!form.vehicleId || !form.firstName || !form.lastName || !form.phone || !form.license || !form.pickupLocation) {
-      toast({ title: "Champs obligatoires manquants", description: "Véhicule, nom, prénom, téléphone, permis et lieu de prise en charge sont requis.", variant: "destructive" });
+    if (!form.vehicleId || !form.firstName || !form.lastName || !form.license || !form.pickupLocation) {
+      toast({ title: "Champs obligatoires manquants", description: "Véhicule, nom, prénom, permis et lieu de prise en charge sont requis.", variant: "destructive" });
       return;
     }
 
@@ -157,7 +156,7 @@ export default function ManualReservationDialog({ open, onOpenChange, vehicles, 
         customer_first_name: form.firstName,
         customer_last_name: form.lastName,
         customer_email: form.email || `manual-${Date.now()}@noemail.local`,
-        customer_phone: form.phone,
+        customer_phone: form.phone || "N/A",
         customer_license: form.license,
         customer_nationality: form.nationality || null,
         customer_dob: form.dob || null,
@@ -185,7 +184,6 @@ export default function ManualReservationDialog({ open, onOpenChange, vehicles, 
         );
       }
 
-      // Record coupon usage
       if (appliedCoupon && reservation) {
         await supabase.from("coupon_usages").insert({
           coupon_id: appliedCoupon.id,
@@ -211,7 +209,6 @@ export default function ManualReservationDialog({ open, onOpenChange, vehicles, 
         } as any);
       }
 
-      // Send confirmation + welcome emails if real email provided
       if (form.email && !form.email.endsWith("@noemail.local") && reservation) {
         const vehicle = vehicles.find((v: any) => v.id === form.vehicleId);
         const dateFmt = (d: string) => new Date(d).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
@@ -310,7 +307,6 @@ export default function ManualReservationDialog({ open, onOpenChange, vehicles, 
                 </Select>
               </div>
 
-              {/* Custom daily rate */}
               <div className="space-y-1">
                 <Label>Prix/jour personnalisé (MAD)</Label>
                 <Input
@@ -325,9 +321,9 @@ export default function ManualReservationDialog({ open, onOpenChange, vehicles, 
 
           {/* Dates & times */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1"><Label>Date départ *</Label><DatePickerField value={form.pickupDate} onChange={(v) => set("pickupDate", v)} /></div>
+            <div className="space-y-1"><Label>Date départ *</Label><DateInputField value={form.pickupDate} onChange={(v) => set("pickupDate", v)} /></div>
             <div className="space-y-1"><Label>Heure départ</Label><Input type="time" value={form.pickupTime} onChange={(e) => set("pickupTime", e.target.value)} /></div>
-            <div className="space-y-1"><Label>Date retour *</Label><DatePickerField value={form.returnDate} onChange={(v) => set("returnDate", v)} /></div>
+            <div className="space-y-1"><Label>Date retour *</Label><DateInputField value={form.returnDate} onChange={(v) => set("returnDate", v)} /></div>
             <div className="space-y-1"><Label>Heure retour</Label><Input type="time" value={form.returnTime} onChange={(e) => set("returnTime", e.target.value)} /></div>
           </div>
 
@@ -364,7 +360,7 @@ export default function ManualReservationDialog({ open, onOpenChange, vehicles, 
               <div className="space-y-1"><Label>Prénom *</Label><Input value={form.firstName} onChange={(e) => set("firstName", e.target.value)} /></div>
               <div className="space-y-1"><Label>Nom *</Label><Input value={form.lastName} onChange={(e) => set("lastName", e.target.value)} /></div>
               <div className="space-y-1"><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="Optionnel" /></div>
-              <div className="space-y-1"><Label>Téléphone *</Label><Input value={form.phone} onChange={(e) => set("phone", e.target.value)} /></div>
+              <div className="space-y-1"><Label>Téléphone</Label><Input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="Optionnel" /></div>
 
               <div className="space-y-1">
                 <Label>Nationalité</Label>
@@ -379,15 +375,15 @@ export default function ManualReservationDialog({ open, onOpenChange, vehicles, 
               {isMoroccan ? (
                 <>
                   <div className="space-y-1"><Label>N° CIN</Label><Input value={form.cin} onChange={(e) => set("cin", e.target.value)} placeholder="Ex: AB123456" /></div>
-                  <div className="space-y-1"><Label>Expiration CIN</Label><Input type="date" value={form.cinExpiryDate} onChange={(e) => set("cinExpiryDate", e.target.value)} /></div>
+                  <div className="space-y-1"><Label>Expiration CIN</Label><DateInputField value={form.cinExpiryDate} onChange={(v) => set("cinExpiryDate", v)} /></div>
                 </>
               ) : (
                 <div className="space-y-1"><Label>N° Passeport</Label><Input value={form.passport} onChange={(e) => set("passport", e.target.value)} /></div>
               )}
 
               <div className="space-y-1"><Label>N° Permis *</Label><Input value={form.license} onChange={(e) => set("license", e.target.value)} /></div>
-              <div className="space-y-1"><Label>Date délivrance permis</Label><Input type="date" value={form.licenseDeliveryDate} onChange={(e) => set("licenseDeliveryDate", e.target.value)} /></div>
-              <div className="space-y-1"><Label>Date de naissance</Label><Input type="date" value={form.dob} onChange={(e) => set("dob", e.target.value)} /></div>
+              <div className="space-y-1"><Label>Date délivrance permis</Label><DateInputField value={form.licenseDeliveryDate} onChange={(v) => set("licenseDeliveryDate", v)} /></div>
+              <div className="space-y-1"><Label>Date de naissance</Label><DateInputField value={form.dob} onChange={(v) => set("dob", v)} showAge maxDate={new Date()} /></div>
             </div>
           </div>
 
@@ -430,14 +426,14 @@ export default function ManualReservationDialog({ open, onOpenChange, vehicles, 
                 {addIsMoroccan ? (
                   <>
                     <div className="space-y-1"><Label>N° CIN</Label><Input value={form.addCin} onChange={(e) => set("addCin", e.target.value)} /></div>
-                    <div className="space-y-1"><Label>Expiration CIN</Label><Input type="date" value={form.addCinExpiryDate} onChange={(e) => set("addCinExpiryDate", e.target.value)} /></div>
+                    <div className="space-y-1"><Label>Expiration CIN</Label><DateInputField value={form.addCinExpiryDate} onChange={(v) => set("addCinExpiryDate", v)} /></div>
                   </>
                 ) : (
                   <div className="space-y-1"><Label>N° Passeport</Label><Input value={form.addPassport} onChange={(e) => set("addPassport", e.target.value)} /></div>
                 )}
                 <div className="space-y-1"><Label>N° Permis *</Label><Input value={form.addLicense} onChange={(e) => set("addLicense", e.target.value)} /></div>
-                <div className="space-y-1"><Label>Date délivrance permis</Label><Input type="date" value={form.addLicenseDeliveryDate} onChange={(e) => set("addLicenseDeliveryDate", e.target.value)} /></div>
-                <div className="space-y-1"><Label>Date de naissance</Label><Input type="date" value={form.addDob} onChange={(e) => set("addDob", e.target.value)} /></div>
+                <div className="space-y-1"><Label>Date délivrance permis</Label><DateInputField value={form.addLicenseDeliveryDate} onChange={(v) => set("addLicenseDeliveryDate", v)} /></div>
+                <div className="space-y-1"><Label>Date de naissance</Label><DateInputField value={form.addDob} onChange={(v) => set("addDob", v)} showAge maxDate={new Date()} /></div>
               </div>
             )}
           </div>

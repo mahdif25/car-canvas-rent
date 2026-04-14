@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Location } from "@/hooks/useLocations";
-import { DatePickerField } from "@/components/ui/date-picker-field";
+import { DateInputField } from "@/components/ui/date-input-field";
 import { MapPin, Calendar, Clock } from "lucide-react";
 
 interface Props {
@@ -92,10 +92,10 @@ const StepDates = ({ formData, updateForm, onNext, locations }: Props) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">Date de départ</label>
-            <DatePickerField
+            <DateInputField
               value={formData.pickup_date}
               onChange={(v) => updateForm({ pickup_date: v })}
-              placeholder="Choisir la date"
+              placeholder="JJ/MM/AAAA"
               minDate={new Date()}
             />
           </div>
@@ -110,10 +110,10 @@ const StepDates = ({ formData, updateForm, onNext, locations }: Props) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">Date de retour</label>
-            <DatePickerField
+            <DateInputField
               value={formData.return_date}
               onChange={(v) => updateForm({ return_date: v })}
-              placeholder="Choisir la date"
+              placeholder="JJ/MM/AAAA"
               minDate={formData.pickup_date ? new Date(formData.pickup_date) : new Date()}
             />
           </div>
