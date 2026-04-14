@@ -108,7 +108,7 @@ const LandingOffer = () => {
       if (form.phone) sessionStorage.setItem("fb_ph", form.phone);
       if (form.first_name) sessionStorage.setItem("fb_fn", form.first_name);
 
-      const leadPayload: Record<string, any> = {
+      const basePayload = {
         source: "facebook_landing" as const,
         first_name: form.first_name,
         phone: form.phone,
@@ -122,11 +122,10 @@ const LandingOffer = () => {
       };
 
       if (leadIdRef.current) {
-        await supabase.from("leads").update(leadPayload).eq("id", leadIdRef.current);
+        await supabase.from("leads").update(basePayload).eq("id", leadIdRef.current);
       } else {
         const newId = crypto.randomUUID();
-        leadPayload.id = newId;
-        await supabase.from("leads").insert(leadPayload);
+        await supabase.from("leads").insert({ ...basePayload, id: newId });
         leadIdRef.current = newId;
         sessionStorage.setItem("pending_lead_id", newId);
       }
@@ -162,7 +161,7 @@ const LandingOffer = () => {
   const handleBlur = async () => {
     if (!form.phone && !form.email) return;
     try {
-      const blurPayload: Record<string, any> = {
+      const baseBlur = {
         source: "facebook_landing" as const,
         first_name: form.first_name || null,
         phone: form.phone || null,
@@ -176,11 +175,10 @@ const LandingOffer = () => {
       };
 
       if (leadIdRef.current) {
-        await supabase.from("leads").update(blurPayload).eq("id", leadIdRef.current);
+        await supabase.from("leads").update(baseBlur).eq("id", leadIdRef.current);
       } else {
         const newId = crypto.randomUUID();
-        blurPayload.id = newId;
-        await supabase.from("leads").insert(blurPayload);
+        await supabase.from("leads").insert({ ...baseBlur, id: newId });
         leadIdRef.current = newId;
         sessionStorage.setItem("pending_lead_id", newId);
       }
