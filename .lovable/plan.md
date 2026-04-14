@@ -1,75 +1,44 @@
 
 
-# Reconstruct Color Variants Editor
+# Capture All Reservation Fields in Leads
 
 ## Problem
-The current color variant editor has two issues:
-1. **Duplication bug**: The "delete all + re-insert" save pattern silently fails on delete (RLS or timing), causing rows to accumulate with every save
-2. **Poor UX**: All 5 placements x 3 devices = 15 sliders crammed into a collapsible per color, making it hard to use especially on mobile
+Currently, leads only store: first_name, last_name, email, phone, license_number. Missing fields include: selected vehicle, dates, locations, nationality, DOB, CIN, passport, color, addons, and promo code. The admin Leads page cannot show which car a user was interested in.
 
-## New Design
+## Changes
 
-### Architecture: Extract to a dedicated component
-Extract the color variant editor into `src/components/admin/fleet/ColorVariantEditor.tsx`. This keeps `AdminFleet.tsx` manageable and isolates the color editing logic.
+### 1. Add columns to `leads` table (database migration)
+Add new nullable columns to capture reservation context:
+- `vehicle_id` (uuid) — the selected vehicle
+- `pickup_date` (text), `return_date` (text), `pickup_time` (text), `return_time` (text)
+- `pickup_location` (text), `return_location` (text)
+- `nationality` (text), `dob` (text)
+- `cin` (text), `passport` (text)
+- `license_delivery_date` (text), `cin_expiry_date` (text)
+- `selected_color_id` (uuid)
+- `selected_addons` (text[]) — array of addon IDs
+- `promo_code` (text)
 
-### UI Layout per Color Variant
-Each color variant card will have:
-- **Top row**: Color name input, hex picker, default toggle, delete button, image upload
-- **Bottom section** (always visible when image exists): A two-panel layout
-  - **Left panel**: Device selector tabs (Desktop / Tablet / Mobile) + Placement selector tabs (Accueil / Flotte / Détail / Réservation / Sidebar) + Zoom slider for the active combination
-  - **Right panel**: Live preview showing the image at the selected placement dimensions, scaled for the selected device
+### 2. Capture lead data at every step transition
+Currently `captureLeadField` is only called at step 3. Update to also capture at:
+- **Step 1 → 2**: Pass pickup/return dates, times, locations
+- **Step 2 → 3**: Pass vehicle_id and selected_color_id
+- **Step 3 → 4 (summary)**: Already captured, but expand `collectAllFields()` to include nationality, dob, cin, passport, license dates, and addons
 
-This means the admin selects ONE placement + ONE device at a time, adjusts the zoom, and sees the preview immediately. No more 15 sliders visible at once.
+This means adding `captureLeadField` calls in `Reservation.tsx` at each step transition, passing the relevant form data fields.
 
-### Fix the Duplication Bug
-Replace the "delete all then insert all" pattern with an **upsert** approach:
-1. For existing colors (those with a valid `id` from the DB), use `UPDATE`
-2. For new colors (no `id`), use `INSERT`
-3. For removed colors (IDs that were in the original set but no longer in the local state), use `DELETE` with specific IDs
-4. Track the original color IDs when entering edit mode to know which ones were removed
+### 3. Expand `collectAllFields()` in StepDriverInfo
+Add nationality, dob, cin, passport, license_delivery_date, cin_expiry_date to the fields object.
 
-### Save Flow
-```text
-editVehicle() → load colors from DB → store original IDs
-user edits/adds/removes colors
-save():
-  1. Compute removed IDs = original IDs - current IDs
-  2. DELETE only removed IDs
-  3. UPSERT remaining (insert new, update existing)
-  4. Re-fetch fresh colors into local state
-```
+### 4. Update AdminLeads page to show vehicle info
+- Join/lookup vehicle name from `vehicles` table
+- Show the selected vehicle column in the leads table
+- Show additional captured fields (dates, location, nationality, etc.) in the expanded detail view
 
 ## Files Modified
-- `src/components/admin/fleet/ColorVariantEditor.tsx` — **new** component with the redesigned per-color editor (placement/device selector, single slider, live preview)
-- `src/pages/admin/AdminFleet.tsx` — replace inline color variant code (lines 534-723) with `<ColorVariantEditor />`, change save logic from delete-all/insert-all to targeted upsert, track original color IDs
-
-## Technical Details
-
-### ColorVariantEditor Props
-```typescript
-interface Props {
-  colorVariants: ColorVariantState[];
-  onChange: (variants: ColorVariantState[]) => void;
-}
-```
-
-### Save mutation change (AdminFleet.tsx)
-```typescript
-// Instead of:
-await supabase.from("vehicle_colors").delete().eq("vehicle_id", vehicleId);
-await supabase.from("vehicle_colors").insert(colorInserts);
-
-// Do:
-const removedIds = originalColorIds.filter(id => !currentIds.includes(id));
-if (removedIds.length > 0) {
-  await supabase.from("vehicle_colors").delete().in("id", removedIds);
-}
-for (const color of validColors) {
-  if (color.id) {
-    await supabase.from("vehicle_colors").update({...}).eq("id", color.id);
-  } else {
-    await supabase.from("vehicle_colors").insert({...});
-  }
-}
-```
+- Database migration — add new columns to `leads` table
+- `src/hooks/useAnalytics.ts` — no changes needed (already accepts any fields via `Record<string, string>`)
+- `src/pages/Reservation.tsx` — add `captureLeadField` calls at step 1→2 and step 2→3 transitions
+- `src/components/reservation/StepDriverInfo.tsx` — expand `collectAllFields()` to include all driver fields
+- `src/pages/admin/AdminLeads.tsx` — add vehicle column, show new fields in expanded view
 
