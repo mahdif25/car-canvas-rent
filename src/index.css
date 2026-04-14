@@ -117,3 +117,7 @@
 .animate-hero-slide-left-delay { animation: hero-slide-left 0.8s ease-out 0.3s both; }
 .animate-hero-slide-right-delay { animation: hero-slide-right 0.8s ease-out 0.3s both; }
 .animate-hero-zoom-in-delay { animation: hero-zoom-in 0.8s ease-out 0.3s both; }
+
+/* Autofill detection */
+@keyframes onAutoFillStart { from {} to {} }
+input:-webkit-autofill { animation-name: onAutoFillStart; }
