@@ -108,11 +108,12 @@ const LandingOffer = () => {
       if (form.phone) sessionStorage.setItem("fb_ph", form.phone);
       if (form.first_name) sessionStorage.setItem("fb_fn", form.first_name);
 
-      const leadPayload = {
+      const basePayload = {
         source: "facebook_landing" as const,
         first_name: form.first_name,
         phone: form.phone,
         email: form.email || null,
+        vehicle_id: form.vehicle_id || null,
         visitor_id: stableVisitorId.current,
         session_id: `landing_${utmParams.utm_campaign || "direct"}`,
         last_reservation_step: 1,
@@ -121,11 +122,20 @@ const LandingOffer = () => {
       };
 
       if (leadIdRef.current) {
-        await supabase.from("leads").update(leadPayload).eq("id", leadIdRef.current);
+        await supabase.from("leads").update(basePayload).eq("id", leadIdRef.current);
       } else {
-        const { data } = await supabase.from("leads").insert(leadPayload).select("id").single();
-        if (data) leadIdRef.current = data.id;
+        const newId = crypto.randomUUID();
+        await supabase.from("leads").insert({ ...basePayload, id: newId });
+        leadIdRef.current = newId;
+        sessionStorage.setItem("pending_lead_id", newId);
       }
+
+      // Store contact data for reservation autofill
+      sessionStorage.setItem("landing_lead_data", JSON.stringify({
+        first_name: form.first_name,
+        phone: form.phone,
+        email: form.email || "",
+      }));
 
       // Fire Facebook Lead event via Pixel + CAPI
       trackFacebookEvent("Lead", {
@@ -151,11 +161,12 @@ const LandingOffer = () => {
   const handleBlur = async () => {
     if (!form.phone && !form.email) return;
     try {
-      const blurPayload = {
+      const baseBlur = {
         source: "facebook_landing" as const,
         first_name: form.first_name || null,
         phone: form.phone || null,
         email: form.email || null,
+        vehicle_id: form.vehicle_id || null,
         visitor_id: stableVisitorId.current,
         session_id: `landing_${utmParams.utm_campaign || "direct"}`,
         last_reservation_step: 0,
@@ -164,10 +175,12 @@ const LandingOffer = () => {
       };
 
       if (leadIdRef.current) {
-        await supabase.from("leads").update(blurPayload).eq("id", leadIdRef.current);
+        await supabase.from("leads").update(baseBlur).eq("id", leadIdRef.current);
       } else {
-        const { data } = await supabase.from("leads").insert(blurPayload).select("id").single();
-        if (data) leadIdRef.current = data.id;
+        const newId = crypto.randomUUID();
+        await supabase.from("leads").insert({ ...baseBlur, id: newId });
+        leadIdRef.current = newId;
+        sessionStorage.setItem("pending_lead_id", newId);
       }
     } catch {}
   };

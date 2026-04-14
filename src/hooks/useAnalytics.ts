@@ -154,7 +154,9 @@ export function useAnalytics() {
     trackPageView();
   }, [trackPageView]);
 
-  const leadIdRef = useRef<string | null>(null);
+  const leadIdRef = useRef<string | null>(
+    sessionStorage.getItem("pending_lead_id")
+  );
 
   const captureLeadField = useCallback(
     async (fields: Record<string, string>, step: number, capi_allowed: boolean = true) => {
@@ -170,20 +172,19 @@ export function useAnalytics() {
             })
             .eq("id", leadIdRef.current);
         } else {
-          const { data } = await supabase
+          const newId = crypto.randomUUID();
+          await supabase
             .from("leads")
             .insert({
+              id: newId,
               visitor_id: visitorId.current,
               session_id: sessionId.current,
               ...fields,
               last_reservation_step: step,
               capi_allowed,
-            })
-            .select("id")
-            .single();
-          if (data) {
-            leadIdRef.current = data.id;
-          }
+            });
+          leadIdRef.current = newId;
+          sessionStorage.setItem("pending_lead_id", newId);
         }
       } catch {
         // silent
