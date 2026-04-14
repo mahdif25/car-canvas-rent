@@ -111,7 +111,7 @@ export default function FacebookLeadAdsSetup({ form, setForm, save, isSaving }: 
   };
 
   const StepBadge = ({ index, done }: { index: number; done: boolean }) => (
-    <span className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold flex-shrink-0 ${
+    <span className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold shrink-0 ${
       done ? "bg-green-500 text-white" : "bg-muted text-muted-foreground"
     }`}>
       {done ? <Check size={14} /> : index + 1}
