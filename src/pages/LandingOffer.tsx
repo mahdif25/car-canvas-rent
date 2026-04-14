@@ -360,6 +360,7 @@ const LandingOffer = () => {
                 <div className="space-y-2">
                   <Label htmlFor="first_name">Prénom *</Label>
                   <Input
+                    ref={firstNameRef}
                     id="first_name"
                     name="fname"
                     autoComplete="given-name"
