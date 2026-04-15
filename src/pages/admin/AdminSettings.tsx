@@ -13,7 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Palette, BarChart3, Mail, MessageCircle, Star, Plus, Pencil, Trash2, FileText, Smartphone, Tablet, Monitor, Upload } from "lucide-react";
+import { Palette, BarChart3, Mail, MessageCircle, Star, Plus, Pencil, Trash2, FileText, Smartphone, Tablet, Monitor, Upload, RotateCcw } from "lucide-react";
+import { defaultPrivacyPolicyContent, defaultConditionsGeneralesContent, defaultCautionPolicyContent } from "@/lib/legal-content-defaults";
 import EmailHistoryDashboard from "@/components/admin/EmailHistoryDashboard";
 import logo from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
@@ -777,13 +778,28 @@ const AdminSettings = () => {
 
             {/* Conditions Générales */}
             <div className="bg-card rounded-xl p-4 md:p-6 space-y-5 border border-border">
-              <h2 className="font-semibold text-lg">Conditions Générales</h2>
-              <p className="text-xs text-muted-foreground">Contenu HTML affiché sur la page /conditions-generales. Laissez vide pour le contenu par défaut.</p>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <h2 className="font-semibold text-lg">Conditions Générales</h2>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-xs"
+                  onClick={() => {
+                    setForm({ ...form, conditions_generales_html: "" });
+                    updateMutation.mutate({ conditions_generales_html: "" } as any, {
+                      onSuccess: () => toast.success("Contenu réinitialisé au défaut"),
+                    });
+                  }}
+                >
+                  <RotateCcw size={12} /> Réinitialiser
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">Contenu HTML affiché sur la page /conditions-generales. Les variables <code>{`{{footer_email}}`}</code>, <code>{`{{footer_phone}}`}</code>, <code>{`{{footer_address}}`}</code> sont remplacées automatiquement par les champs du footer.</p>
               <Textarea
-                value={form.conditions_generales_html || ""}
+                value={form.conditions_generales_html || defaultConditionsGeneralesContent}
                 onChange={(e) => setForm({ ...form, conditions_generales_html: e.target.value })}
-                rows={10}
-                placeholder="<h2>1. Objet</h2><p>...</p>"
+                rows={12}
+                className="font-mono text-xs"
               />
               <Button className="w-full md:w-auto" onClick={() => save(["conditions_generales_html"])} disabled={updateMutation.isPending}>
                 Sauvegarder
@@ -792,13 +808,28 @@ const AdminSettings = () => {
 
             {/* Politique de Confidentialité */}
             <div className="bg-card rounded-xl p-4 md:p-6 space-y-5 border border-border">
-              <h2 className="font-semibold text-lg">Politique de Confidentialité</h2>
-              <p className="text-xs text-muted-foreground">Contenu HTML affiché sur la page /politique-confidentialite.</p>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <h2 className="font-semibold text-lg">Politique de Confidentialité</h2>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-xs"
+                  onClick={() => {
+                    setForm({ ...form, privacy_policy_html: "" });
+                    updateMutation.mutate({ privacy_policy_html: "" } as any, {
+                      onSuccess: () => toast.success("Contenu réinitialisé au défaut"),
+                    });
+                  }}
+                >
+                  <RotateCcw size={12} /> Réinitialiser
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">Contenu HTML affiché sur la page /politique-confidentialite. Les variables <code>{`{{footer_email}}`}</code>, <code>{`{{footer_phone}}`}</code>, <code>{`{{footer_address}}`}</code> sont remplacées automatiquement.</p>
               <Textarea
-                value={form.privacy_policy_html || ""}
+                value={form.privacy_policy_html || defaultPrivacyPolicyContent}
                 onChange={(e) => setForm({ ...form, privacy_policy_html: e.target.value })}
-                rows={10}
-                placeholder="<h2>Protection des données</h2><p>...</p>"
+                rows={12}
+                className="font-mono text-xs"
               />
               <Button className="w-full md:w-auto" onClick={() => save(["privacy_policy_html"])} disabled={updateMutation.isPending}>
                 Sauvegarder
@@ -807,13 +838,28 @@ const AdminSettings = () => {
 
             {/* Politique de Caution */}
             <div className="bg-card rounded-xl p-4 md:p-6 space-y-5 border border-border">
-              <h2 className="font-semibold text-lg">Politique de Caution</h2>
-              <p className="text-xs text-muted-foreground">Contenu HTML affiché sur la page /politique-caution.</p>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <h2 className="font-semibold text-lg">Politique de Caution</h2>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-xs"
+                  onClick={() => {
+                    setForm({ ...form, caution_policy_html: "" });
+                    updateMutation.mutate({ caution_policy_html: "" } as any, {
+                      onSuccess: () => toast.success("Contenu réinitialisé au défaut"),
+                    });
+                  }}
+                >
+                  <RotateCcw size={12} /> Réinitialiser
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">Contenu HTML affiché sur la page /politique-caution. Les variables <code>{`{{footer_email}}`}</code>, <code>{`{{footer_phone}}`}</code>, <code>{`{{footer_address}}`}</code> sont remplacées automatiquement.</p>
               <Textarea
-                value={form.caution_policy_html || ""}
+                value={form.caution_policy_html || defaultCautionPolicyContent}
                 onChange={(e) => setForm({ ...form, caution_policy_html: e.target.value })}
-                rows={10}
-                placeholder="<h2>Dépôt de garantie</h2><p>...</p>"
+                rows={12}
+                className="font-mono text-xs"
               />
               <Button className="w-full md:w-auto" onClick={() => save(["caution_policy_html"])} disabled={updateMutation.isPending}>
                 Sauvegarder
