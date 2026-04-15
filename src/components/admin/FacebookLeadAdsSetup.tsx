@@ -89,13 +89,18 @@ export default function FacebookLeadAdsSetup({ form, setForm, save, isSaving }: 
           }],
         }],
       };
-      const res = await fetch(WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(testPayload),
+      const { data, error } = await supabase.functions.invoke("facebook-leadads-webhook", {
+        body: testPayload,
+        headers: {
+          "x-lovable-test-webhook": "true",
+        },
       });
-      const json = await res.json();
-      if (json.success) {
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.success) {
         setTestLeadResult("success");
         toast.success("Lead test envoyé avec succès ! Vérifiez l'onglet Leads.");
       } else {
