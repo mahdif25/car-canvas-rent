@@ -5,6 +5,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const INTERNAL_TEST_HEADER = "x-lovable-test-webhook";
+
 async function verifySignature(payload: string, signature: string, appSecret: string): Promise<boolean> {
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
@@ -30,6 +32,48 @@ async function getSettings(supabase: ReturnType<typeof createClient>) {
     verifyToken: data?.fb_leadads_verify_token || Deno.env.get("FB_LEADADS_VERIFY_TOKEN") || "",
     pageAccessToken: data?.fb_leadads_page_access_token || Deno.env.get("FACEBOOK_PAGE_ACCESS_TOKEN") || "",
   };
+}
+
+function getBearerToken(req: Request): string | null {
+  const authorization = req.headers.get("authorization") || "";
+  if (!authorization.toLowerCase().startsWith("bearer ")) return null;
+  return authorization.slice(7).trim() || null;
+}
+
+async function isAuthorizedInternalTestRequest(
+  req: Request,
+  supabase: ReturnType<typeof createClient>
+): Promise<boolean> {
+  if (req.headers.get(INTERNAL_TEST_HEADER) !== "true") return false;
+
+  const token = getBearerToken(req);
+  if (!token) {
+    console.error("Missing bearer token for internal test request");
+    return false;
+  }
+
+  const authClient = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_ANON_KEY")!
+  );
+
+  const { data: authData, error: authError } = await authClient.auth.getUser(token);
+  if (authError || !authData.user) {
+    console.error("Invalid bearer token for internal test request", authError);
+    return false;
+  }
+
+  const { data: isAdmin, error: roleError } = await supabase.rpc("has_role", {
+    _user_id: authData.user.id,
+    _role: "admin",
+  });
+
+  if (roleError || !isAdmin) {
+    console.error("Unauthorized internal test request", roleError);
+    return false;
+  }
+
+  return true;
 }
 
 Deno.serve(async (req) => {
@@ -61,9 +105,10 @@ Deno.serve(async (req) => {
   // POST = incoming lead data
   if (req.method === "POST") {
     const body = await req.text();
+    const isInternalTest = await isAuthorizedInternalTestRequest(req, supabase);
 
     // Verify signature if app secret is set
-    if (secrets.appSecret) {
+    if (secrets.appSecret && !isInternalTest) {
       const signature = req.headers.get("x-hub-signature-256") || "";
       const valid = await verifySignature(body, signature, secrets.appSecret);
       if (!valid) {
@@ -88,6 +133,21 @@ Deno.serve(async (req) => {
         const pageId = change.value?.page_id;
 
         if (!leadgenId) continue;
+
+        if (isInternalTest) {
+          await supabase.from("leads").insert({
+            source: "facebook_lead_ad",
+            email: `test+${leadgenId}@internal.local`,
+            phone: "+212000000000",
+            first_name: "Test",
+            last_name: "Lead",
+            visitor_id: `fb_lead_${leadgenId}`,
+            session_id: `fb_page_${pageId}`,
+            last_reservation_step: 0,
+          });
+          console.log("Internal test lead inserted successfully");
+          continue;
+        }
 
         if (!secrets.pageAccessToken) {
           console.error("Page Access Token not set, storing minimal lead");
