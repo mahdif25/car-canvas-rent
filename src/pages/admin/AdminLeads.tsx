@@ -362,7 +362,69 @@ const AdminLeads = () => {
                               </span>
                             </div>
 
-                            {/* Contact info */}
+                            {/* Facebook Lead Ad metadata */}
+                            {entry.source === "facebook_lead_ad" && (
+                              <div className="border-t border-border pt-2 space-y-2">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  {entry.fb_lead_type === "real_user" && (
+                                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Utilisateur réel</span>
+                                  )}
+                                  {entry.fb_lead_type === "test_lead" && (
+                                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-secondary text-muted-foreground">Test Facebook</span>
+                                  )}
+                                  {entry.fb_lead_type === "facebook_bot" && (
+                                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700">Bot Facebook</span>
+                                  )}
+                                  {entry.fb_platform && (
+                                    <span className="px-2 py-0.5 rounded-full text-xs bg-secondary">{entry.fb_platform}</span>
+                                  )}
+                                  {entry.fb_is_organic && (
+                                    <span className="px-2 py-0.5 rounded-full text-xs bg-secondary">Organique</span>
+                                  )}
+                                  {entry.fb_created_time && (
+                                    <span className="text-xs text-muted-foreground">
+                                      FB: {new Date(entry.fb_created_time).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })}
+                                    </span>
+                                  )}
+                                </div>
+
+                                {(entry.fb_campaign_name || entry.fb_adset_name || entry.fb_ad_name || entry.fb_form_name) && (
+                                  <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-1">
+                                    {entry.fb_campaign_name && <span className="px-1.5 py-0.5 rounded bg-secondary">{entry.fb_campaign_name}</span>}
+                                    {entry.fb_adset_name && <><span>›</span><span className="px-1.5 py-0.5 rounded bg-secondary">{entry.fb_adset_name}</span></>}
+                                    {entry.fb_ad_name && <><span>›</span><span className="px-1.5 py-0.5 rounded bg-secondary">{entry.fb_ad_name}</span></>}
+                                    {entry.fb_form_name && <><span>›</span><span className="px-1.5 py-0.5 rounded bg-secondary font-medium">{entry.fb_form_name}</span></>}
+                                  </div>
+                                )}
+
+                                {(entry.fb_pixel_id || entry.fb_ad_account_id) && (
+                                  <div className="flex flex-wrap gap-2 text-xs">
+                                    {entry.fb_ad_account_id && (
+                                      <span className="px-2 py-0.5 rounded-full bg-secondary"><span className="text-muted-foreground">Ad Account:</span> {entry.fb_ad_account_id}</span>
+                                    )}
+                                    {entry.fb_pixel_id && (
+                                      <span className="px-2 py-0.5 rounded-full bg-secondary"><span className="text-muted-foreground">Pixel:</span> {entry.fb_pixel_id}</span>
+                                    )}
+                                  </div>
+                                )}
+
+                                {entry.fb_raw_field_data && entry.fb_raw_field_data.length > 0 && (
+                                  <div className="space-y-1">
+                                    <p className="text-xs font-medium text-muted-foreground">Champs soumis :</p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-xs">
+                                      {entry.fb_raw_field_data
+                                        .filter((fd) => fd.values && fd.values.some((v) => v))
+                                        .map((fd, i) => (
+                                          <div key={i} className="break-all">
+                                            <span className="text-muted-foreground">{fd.name}:</span> {fd.values.filter(Boolean).join(", ")}
+                                          </div>
+                                        ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-xs">
                               {entry.first_name && <div><span className="text-muted-foreground">Prénom:</span> {entry.first_name}</div>}
                               {entry.last_name && <div><span className="text-muted-foreground">Nom:</span> {entry.last_name}</div>}
