@@ -53,6 +53,25 @@ interface LeadRow {
   selected_color_id: string | null;
   selected_addons: string[] | null;
   promo_code: string | null;
+  // Facebook Lead Ads fields
+  fb_leadgen_id: string | null;
+  fb_page_id: string | null;
+  fb_form_id: string | null;
+  fb_form_name: string | null;
+  fb_ad_id: string | null;
+  fb_ad_name: string | null;
+  fb_adset_id: string | null;
+  fb_adset_name: string | null;
+  fb_campaign_id: string | null;
+  fb_campaign_name: string | null;
+  fb_ad_account_id: string | null;
+  fb_pixel_id: string | null;
+  fb_platform: string | null;
+  fb_is_organic: boolean | null;
+  fb_is_test_lead: boolean | null;
+  fb_lead_type: string | null;
+  fb_created_time: string | null;
+  fb_raw_field_data: Array<{ name: string; values: string[] }> | null;
 }
 
 interface GroupedLead {
