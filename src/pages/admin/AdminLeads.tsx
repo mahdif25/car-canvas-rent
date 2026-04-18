@@ -181,7 +181,16 @@ const AdminLeads = () => {
       result = result.filter((g) => g.status === statusFilter);
     }
     if (sourceFilter !== "all") {
-      result = result.filter((g) => g.latestSource === sourceFilter);
+      if (sourceFilter.startsWith("fb_")) {
+        const type = sourceFilter.slice(3); // real_user | test_lead | facebook_bot
+        result = result.filter(
+          (g) =>
+            g.latestSource === "facebook_lead_ad" &&
+            g.entries.some((e) => e.fb_lead_type === type)
+        );
+      } else {
+        result = result.filter((g) => g.latestSource === sourceFilter);
+      }
     }
     if (search.trim()) {
       const q = search.toLowerCase();
