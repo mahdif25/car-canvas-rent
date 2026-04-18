@@ -105,7 +105,7 @@ const AdminLeads = () => {
         .from("leads")
         .select("*")
         .order("created_at", { ascending: false });
-      return (data ?? []) as LeadRow[];
+      return ((data ?? []) as unknown) as LeadRow[];
     },
   });
 
@@ -251,11 +251,14 @@ const AdminLeads = () => {
             </SelectContent>
           </Select>
           <Select value={sourceFilter} onValueChange={setSourceFilter}>
-            <SelectTrigger className="w-full sm:w-40"><SelectValue placeholder="Source" /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-44"><SelectValue placeholder="Source" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Toutes sources</SelectItem>
               <SelectItem value="website">Site web</SelectItem>
-              <SelectItem value="facebook_lead_ad">FB Lead Ad</SelectItem>
+              <SelectItem value="facebook_lead_ad">FB Lead Ad (toutes)</SelectItem>
+              <SelectItem value="fb_real_user">FB Lead Ad – Réel</SelectItem>
+              <SelectItem value="fb_test_lead">FB Lead Ad – Test</SelectItem>
+              <SelectItem value="fb_facebook_bot">FB Lead Ad – Bot</SelectItem>
               <SelectItem value="facebook_landing">Landing Page</SelectItem>
             </SelectContent>
           </Select>
