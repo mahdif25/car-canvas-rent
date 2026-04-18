@@ -56,6 +56,8 @@ export interface SiteSettings {
   fb_leadads_app_secret: string;
   fb_leadads_verify_token: string;
   fb_leadads_page_access_token: string;
+  fb_ad_account_id: string;
+  fb_leadads_pixel_id: string;
   updated_at: string;
 }
 
