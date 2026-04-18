@@ -53,6 +53,25 @@ interface LeadRow {
   selected_color_id: string | null;
   selected_addons: string[] | null;
   promo_code: string | null;
+  // Facebook Lead Ads fields
+  fb_leadgen_id: string | null;
+  fb_page_id: string | null;
+  fb_form_id: string | null;
+  fb_form_name: string | null;
+  fb_ad_id: string | null;
+  fb_ad_name: string | null;
+  fb_adset_id: string | null;
+  fb_adset_name: string | null;
+  fb_campaign_id: string | null;
+  fb_campaign_name: string | null;
+  fb_ad_account_id: string | null;
+  fb_pixel_id: string | null;
+  fb_platform: string | null;
+  fb_is_organic: boolean | null;
+  fb_is_test_lead: boolean | null;
+  fb_lead_type: string | null;
+  fb_created_time: string | null;
+  fb_raw_field_data: Array<{ name: string; values: string[] }> | null;
 }
 
 interface GroupedLead {
@@ -86,7 +105,7 @@ const AdminLeads = () => {
         .from("leads")
         .select("*")
         .order("created_at", { ascending: false });
-      return (data ?? []) as LeadRow[];
+      return ((data ?? []) as unknown) as LeadRow[];
     },
   });
 
@@ -162,7 +181,16 @@ const AdminLeads = () => {
       result = result.filter((g) => g.status === statusFilter);
     }
     if (sourceFilter !== "all") {
-      result = result.filter((g) => g.latestSource === sourceFilter);
+      if (sourceFilter.startsWith("fb_")) {
+        const type = sourceFilter.slice(3); // real_user | test_lead | facebook_bot
+        result = result.filter(
+          (g) =>
+            g.latestSource === "facebook_lead_ad" &&
+            g.entries.some((e) => e.fb_lead_type === type)
+        );
+      } else {
+        result = result.filter((g) => g.latestSource === sourceFilter);
+      }
     }
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -232,11 +260,14 @@ const AdminLeads = () => {
             </SelectContent>
           </Select>
           <Select value={sourceFilter} onValueChange={setSourceFilter}>
-            <SelectTrigger className="w-full sm:w-40"><SelectValue placeholder="Source" /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-44"><SelectValue placeholder="Source" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Toutes sources</SelectItem>
               <SelectItem value="website">Site web</SelectItem>
-              <SelectItem value="facebook_lead_ad">FB Lead Ad</SelectItem>
+              <SelectItem value="facebook_lead_ad">FB Lead Ad (toutes)</SelectItem>
+              <SelectItem value="fb_real_user">FB Lead Ad – Réel</SelectItem>
+              <SelectItem value="fb_test_lead">FB Lead Ad – Test</SelectItem>
+              <SelectItem value="fb_facebook_bot">FB Lead Ad – Bot</SelectItem>
               <SelectItem value="facebook_landing">Landing Page</SelectItem>
             </SelectContent>
           </Select>
@@ -331,7 +362,69 @@ const AdminLeads = () => {
                               </span>
                             </div>
 
-                            {/* Contact info */}
+                            {/* Facebook Lead Ad metadata */}
+                            {entry.source === "facebook_lead_ad" && (
+                              <div className="border-t border-border pt-2 space-y-2">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  {entry.fb_lead_type === "real_user" && (
+                                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Utilisateur réel</span>
+                                  )}
+                                  {entry.fb_lead_type === "test_lead" && (
+                                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-secondary text-muted-foreground">Test Facebook</span>
+                                  )}
+                                  {entry.fb_lead_type === "facebook_bot" && (
+                                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700">Bot Facebook</span>
+                                  )}
+                                  {entry.fb_platform && (
+                                    <span className="px-2 py-0.5 rounded-full text-xs bg-secondary">{entry.fb_platform}</span>
+                                  )}
+                                  {entry.fb_is_organic && (
+                                    <span className="px-2 py-0.5 rounded-full text-xs bg-secondary">Organique</span>
+                                  )}
+                                  {entry.fb_created_time && (
+                                    <span className="text-xs text-muted-foreground">
+                                      FB: {new Date(entry.fb_created_time).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })}
+                                    </span>
+                                  )}
+                                </div>
+
+                                {(entry.fb_campaign_name || entry.fb_adset_name || entry.fb_ad_name || entry.fb_form_name) && (
+                                  <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-1">
+                                    {entry.fb_campaign_name && <span className="px-1.5 py-0.5 rounded bg-secondary">{entry.fb_campaign_name}</span>}
+                                    {entry.fb_adset_name && <><span>›</span><span className="px-1.5 py-0.5 rounded bg-secondary">{entry.fb_adset_name}</span></>}
+                                    {entry.fb_ad_name && <><span>›</span><span className="px-1.5 py-0.5 rounded bg-secondary">{entry.fb_ad_name}</span></>}
+                                    {entry.fb_form_name && <><span>›</span><span className="px-1.5 py-0.5 rounded bg-secondary font-medium">{entry.fb_form_name}</span></>}
+                                  </div>
+                                )}
+
+                                {(entry.fb_pixel_id || entry.fb_ad_account_id) && (
+                                  <div className="flex flex-wrap gap-2 text-xs">
+                                    {entry.fb_ad_account_id && (
+                                      <span className="px-2 py-0.5 rounded-full bg-secondary"><span className="text-muted-foreground">Ad Account:</span> {entry.fb_ad_account_id}</span>
+                                    )}
+                                    {entry.fb_pixel_id && (
+                                      <span className="px-2 py-0.5 rounded-full bg-secondary"><span className="text-muted-foreground">Pixel:</span> {entry.fb_pixel_id}</span>
+                                    )}
+                                  </div>
+                                )}
+
+                                {entry.fb_raw_field_data && entry.fb_raw_field_data.length > 0 && (
+                                  <div className="space-y-1">
+                                    <p className="text-xs font-medium text-muted-foreground">Champs soumis :</p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-xs">
+                                      {entry.fb_raw_field_data
+                                        .filter((fd) => fd.values && fd.values.some((v) => v))
+                                        .map((fd, i) => (
+                                          <div key={i} className="break-all">
+                                            <span className="text-muted-foreground">{fd.name}:</span> {fd.values.filter(Boolean).join(", ")}
+                                          </div>
+                                        ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-xs">
                               {entry.first_name && <div><span className="text-muted-foreground">Prénom:</span> {entry.first_name}</div>}
                               {entry.last_name && <div><span className="text-muted-foreground">Nom:</span> {entry.last_name}</div>}

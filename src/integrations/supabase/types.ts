@@ -575,6 +575,27 @@ export type Database = {
           created_at: string | null
           dob: string | null
           email: string | null
+          fb_ad_account_id: string | null
+          fb_ad_id: string | null
+          fb_ad_name: string | null
+          fb_adset_id: string | null
+          fb_adset_name: string | null
+          fb_campaign_id: string | null
+          fb_campaign_name: string | null
+          fb_created_time: string | null
+          fb_form_id: string | null
+          fb_form_name: string | null
+          fb_is_organic: boolean | null
+          fb_is_test_lead: boolean | null
+          fb_lead_type: string | null
+          fb_leadgen_id: string | null
+          fb_page_id: string | null
+          fb_partner_name: string | null
+          fb_pixel_id: string | null
+          fb_platform: string | null
+          fb_raw_field_data: Json | null
+          fb_raw_payload: Json | null
+          fb_user_agent: string | null
           first_name: string | null
           id: string
           last_name: string | null
@@ -608,6 +629,27 @@ export type Database = {
           created_at?: string | null
           dob?: string | null
           email?: string | null
+          fb_ad_account_id?: string | null
+          fb_ad_id?: string | null
+          fb_ad_name?: string | null
+          fb_adset_id?: string | null
+          fb_adset_name?: string | null
+          fb_campaign_id?: string | null
+          fb_campaign_name?: string | null
+          fb_created_time?: string | null
+          fb_form_id?: string | null
+          fb_form_name?: string | null
+          fb_is_organic?: boolean | null
+          fb_is_test_lead?: boolean | null
+          fb_lead_type?: string | null
+          fb_leadgen_id?: string | null
+          fb_page_id?: string | null
+          fb_partner_name?: string | null
+          fb_pixel_id?: string | null
+          fb_platform?: string | null
+          fb_raw_field_data?: Json | null
+          fb_raw_payload?: Json | null
+          fb_user_agent?: string | null
           first_name?: string | null
           id?: string
           last_name?: string | null
@@ -641,6 +683,27 @@ export type Database = {
           created_at?: string | null
           dob?: string | null
           email?: string | null
+          fb_ad_account_id?: string | null
+          fb_ad_id?: string | null
+          fb_ad_name?: string | null
+          fb_adset_id?: string | null
+          fb_adset_name?: string | null
+          fb_campaign_id?: string | null
+          fb_campaign_name?: string | null
+          fb_created_time?: string | null
+          fb_form_id?: string | null
+          fb_form_name?: string | null
+          fb_is_organic?: boolean | null
+          fb_is_test_lead?: boolean | null
+          fb_lead_type?: string | null
+          fb_leadgen_id?: string | null
+          fb_page_id?: string | null
+          fb_partner_name?: string | null
+          fb_pixel_id?: string | null
+          fb_platform?: string | null
+          fb_raw_field_data?: Json | null
+          fb_raw_payload?: Json | null
+          fb_user_agent?: string | null
           first_name?: string | null
           id?: string
           last_name?: string | null
@@ -929,8 +992,10 @@ export type Database = {
           conditions_generales_html: string
           facebook_capi_token: string | null
           facebook_pixel_id: string | null
+          fb_ad_account_id: string
           fb_leadads_app_secret: string
           fb_leadads_page_access_token: string
+          fb_leadads_pixel_id: string
           fb_leadads_verify_token: string
           footer_address: string
           footer_copyright: string
@@ -980,8 +1045,10 @@ export type Database = {
           conditions_generales_html?: string
           facebook_capi_token?: string | null
           facebook_pixel_id?: string | null
+          fb_ad_account_id?: string
           fb_leadads_app_secret?: string
           fb_leadads_page_access_token?: string
+          fb_leadads_pixel_id?: string
           fb_leadads_verify_token?: string
           footer_address?: string
           footer_copyright?: string
@@ -1031,8 +1098,10 @@ export type Database = {
           conditions_generales_html?: string
           facebook_capi_token?: string | null
           facebook_pixel_id?: string | null
+          fb_ad_account_id?: string
           fb_leadads_app_secret?: string
           fb_leadads_page_access_token?: string
+          fb_leadads_pixel_id?: string
           fb_leadads_verify_token?: string
           footer_address?: string
           footer_copyright?: string
