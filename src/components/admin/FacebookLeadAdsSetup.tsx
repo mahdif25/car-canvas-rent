@@ -320,10 +320,12 @@ export default function FacebookLeadAdsSetup({ form, setForm, save, isSaving }: 
                 <li>Sélectionnez votre app dans le menu en haut</li>
                 <li>Cliquez <strong>"Generate Access Token"</strong></li>
                 <li>
-                  Accordez les permissions : <code className="bg-muted px-1 rounded text-xs">pages_show_list</code>,{" "}
-                  <code className="bg-muted px-1 rounded text-xs">pages_manage_ads</code>,{" "}
-                  <code className="bg-muted px-1 rounded text-xs">leads_retrieval</code>,{" "}
-                  <code className="bg-muted px-1 rounded text-xs">pages_read_engagement</code>
+                  Accordez <strong>toutes</strong> ces permissions pour récupérer la totalité des données (formulaire, campagne, pixel) :
+                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+                    {["leads_retrieval", "pages_show_list", "pages_read_engagement", "pages_manage_metadata", "ads_read"].map((p) => (
+                      <code key={p} className="bg-muted px-1.5 py-0.5 rounded text-xs">{p}</code>
+                    ))}
+                  </div>
                 </li>
                 <li>Copiez le token utilisateur</li>
                 <li>
@@ -356,6 +358,51 @@ export default function FacebookLeadAdsSetup({ form, setForm, save, isSaving }: 
               {isSaving ? <Loader2 size={14} className="animate-spin" /> : <ShieldCheck size={14} />}
               Sauvegarder le Page Access Token
             </Button>
+
+            {/* Optional fallback IDs */}
+            <div className="border-t pt-4 space-y-3">
+              <p className="text-sm font-medium">Identifiants optionnels (fallback)</p>
+              <p className="text-xs text-muted-foreground">
+                Renseignez ces valeurs si l'API Graph ne renvoie pas l'Ad Account ou le Pixel (permission <code className="bg-muted px-1 rounded">ads_read</code> manquante). Elles seront affichées sur chaque lead Facebook.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Ad Account ID</Label>
+                  <Input
+                    value={form.fb_ad_account_id ?? ""}
+                    onChange={(e) => setForm((f) => ({ ...f, fb_ad_account_id: e.target.value }))}
+                    placeholder="act_123456789"
+                    className="font-mono text-xs"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Pixel ID (Lead Ads)</Label>
+                  <Input
+                    value={form.fb_leadads_pixel_id ?? ""}
+                    onChange={(e) => setForm((f) => ({ ...f, fb_leadads_pixel_id: e.target.value }))}
+                    placeholder="ID du pixel utilisé par cette pub"
+                    className="font-mono text-xs"
+                  />
+                  {form.fb_leadads_pixel_id && form.facebook_pixel_id && (
+                    form.fb_leadads_pixel_id === form.facebook_pixel_id ? (
+                      <p className="text-xs text-green-600 flex items-center gap-1"><Check size={12} /> Correspond au pixel du site</p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">⚠ Différent du pixel du site ({form.facebook_pixel_id})</p>
+                    )
+                  )}
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => save(["fb_ad_account_id", "fb_leadads_pixel_id"])}
+                disabled={isSaving}
+                className="gap-2"
+              >
+                {isSaving ? <Loader2 size={14} className="animate-spin" /> : <ShieldCheck size={14} />}
+                Sauvegarder les identifiants
+              </Button>
+            </div>
           </AccordionContent>
         </AccordionItem>
 
