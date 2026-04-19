@@ -583,7 +583,7 @@ function useCalc(edit: EditState, vehicles: any[], pricingTiers: any[], location
     const depositAmount = vehicle ? Number(vehicle.security_deposit) : 0;
     const totalPrice = vehicleTotal + addonsTotal + deliveryFee;
 
-    return { days, dailyRate, vehicleTotal, addonsTotal, deliveryFee, depositAmount, totalPrice };
+    return { days, dailyRate, tierRate, vehicleTotal, addonsTotal, deliveryFee, depositAmount, totalPrice };
   }, [edit, vehicles, pricingTiers, locations, allAddons]);
 }
 
@@ -840,8 +840,30 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
           )}
 
           {/* Live price preview */}
-          <div className="bg-background border rounded-lg p-4 space-y-1 text-sm">
+          <div className="bg-background border rounded-lg p-4 space-y-2 text-sm">
             <p className="font-medium text-base mb-2">Aperçu tarif</p>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <span className="text-muted-foreground">Prix par jour</span>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  value={edit.custom_daily_rate}
+                  onChange={(e) => onEdit({ custom_daily_rate: e.target.value })}
+                  placeholder={`Tarif auto: ${calc.tierRate.toLocaleString()}`}
+                  className="h-8 w-28 text-right"
+                />
+                <span className="text-xs text-muted-foreground whitespace-nowrap">MAD/jour</span>
+                {edit.custom_daily_rate.trim() !== "" && (
+                  <button
+                    type="button"
+                    onClick={() => onEdit({ custom_daily_rate: "" })}
+                    className="text-xs text-primary hover:underline whitespace-nowrap"
+                  >
+                    Réinitialiser
+                  </button>
+                )}
+              </div>
+            </div>
             <div className="flex justify-between"><span className="text-muted-foreground">Véhicule ({calc.days}j × {calc.dailyRate.toLocaleString()} MAD)</span><span>{calc.vehicleTotal.toLocaleString()} MAD</span></div>
             {calc.addonsTotal > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Options</span><span>{calc.addonsTotal.toLocaleString()} MAD</span></div>}
             {calc.deliveryFee > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Frais de livraison</span><span>{calc.deliveryFee.toLocaleString()} MAD</span></div>}
