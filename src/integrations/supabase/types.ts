@@ -821,6 +821,7 @@ export type Database = {
           assigned_plate_id: string | null
           coupon_id: string | null
           created_at: string
+          custom_daily_rate: number | null
           customer_cin: string | null
           customer_cin_expiry_date: string | null
           customer_dob: string | null
@@ -856,6 +857,7 @@ export type Database = {
           assigned_plate_id?: string | null
           coupon_id?: string | null
           created_at?: string
+          custom_daily_rate?: number | null
           customer_cin?: string | null
           customer_cin_expiry_date?: string | null
           customer_dob?: string | null
@@ -891,6 +893,7 @@ export type Database = {
           assigned_plate_id?: string | null
           coupon_id?: string | null
           created_at?: string
+          custom_daily_rate?: number | null
           customer_cin?: string | null
           customer_cin_expiry_date?: string | null
           customer_dob?: string | null

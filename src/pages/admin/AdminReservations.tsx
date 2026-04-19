@@ -50,6 +50,7 @@ interface EditState {
   pickup_location: string;
   return_location: string;
   addons: string[];
+  custom_daily_rate: string;
 }
 
 const AdminReservations = () => {
@@ -149,6 +150,7 @@ const AdminReservations = () => {
       pickup_location: r.pickup_location,
       return_location: r.return_location || r.pickup_location,
       addons: currentAddons,
+      custom_daily_rate: r.custom_daily_rate != null ? String(r.custom_daily_rate) : "",
     };
   };
 
@@ -204,6 +206,7 @@ const AdminReservations = () => {
 
   const saveReservation = useMutation({
     mutationFn: async ({ id, edit, calc }: { id: string; edit: EditState; calc: { totalPrice: number; deliveryFee: number; depositAmount: number } }) => {
+      const customRate = edit.custom_daily_rate.trim() === "" ? null : Number(edit.custom_daily_rate);
       const { error } = await supabase.from("reservations").update({
         vehicle_id: edit.vehicle_id,
         pickup_date: edit.pickup_date,
@@ -213,7 +216,8 @@ const AdminReservations = () => {
         total_price: calc.totalPrice,
         delivery_fee: calc.deliveryFee,
         deposit_amount: calc.depositAmount,
-      }).eq("id", id);
+        custom_daily_rate: customRate && customRate > 0 ? customRate : null,
+      } as any).eq("id", id);
       if (error) throw error;
 
       const { error: delErr } = await supabase.from("reservation_addons").delete().eq("reservation_id", id);
@@ -237,7 +241,8 @@ const AdminReservations = () => {
         const c = variables.calc;
         const days = Math.max(1, Math.ceil((new Date(ed.return_date).getTime() - new Date(ed.pickup_date).getTime()) / 86400000));
         const tiers = pricingTiers.filter((t: any) => t.vehicle_id === ed.vehicle_id);
-        const dailyRate = getDailyRateFromTiers(tiers, days);
+        const overrideRate = ed.custom_daily_rate.trim() !== "" ? Number(ed.custom_daily_rate) : NaN;
+        const dailyRate = !isNaN(overrideRate) && overrideRate > 0 ? overrideRate : getDailyRateFromTiers(tiers, days);
         const vehicle = vehicles.find((v: any) => v.id === ed.vehicle_id);
         const fmtDate = (d: string) => new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
         const addonDetails = ed.addons.map((aid: string) => {
@@ -563,7 +568,9 @@ function useCalc(edit: EditState, vehicles: any[], pricingTiers: any[], location
   return useMemo(() => {
     const days = Math.max(1, Math.ceil((new Date(edit.return_date).getTime() - new Date(edit.pickup_date).getTime()) / 86400000));
     const tiers = pricingTiers.filter((t: any) => t.vehicle_id === edit.vehicle_id);
-    const dailyRate = getDailyRateFromTiers(tiers, days);
+    const tierRate = getDailyRateFromTiers(tiers, days);
+    const overrideRate = edit.custom_daily_rate.trim() !== "" ? Number(edit.custom_daily_rate) : NaN;
+    const dailyRate = !isNaN(overrideRate) && overrideRate > 0 ? overrideRate : tierRate;
     const vehicleTotal = dailyRate * days;
 
     const addonsTotal = edit.addons.reduce((sum, aid) => {
@@ -576,7 +583,7 @@ function useCalc(edit: EditState, vehicles: any[], pricingTiers: any[], location
     const depositAmount = vehicle ? Number(vehicle.security_deposit) : 0;
     const totalPrice = vehicleTotal + addonsTotal + deliveryFee;
 
-    return { days, dailyRate, vehicleTotal, addonsTotal, deliveryFee, depositAmount, totalPrice };
+    return { days, dailyRate, tierRate, vehicleTotal, addonsTotal, deliveryFee, depositAmount, totalPrice };
   }, [edit, vehicles, pricingTiers, locations, allAddons]);
 }
 
@@ -833,8 +840,30 @@ const ReservationRow = ({ r, isExpanded, onToggle, edit, onEdit, vehicles, prici
           )}
 
           {/* Live price preview */}
-          <div className="bg-background border rounded-lg p-4 space-y-1 text-sm">
+          <div className="bg-background border rounded-lg p-4 space-y-2 text-sm">
             <p className="font-medium text-base mb-2">Aperçu tarif</p>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <span className="text-muted-foreground">Prix par jour</span>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  value={edit.custom_daily_rate}
+                  onChange={(e) => onEdit({ custom_daily_rate: e.target.value })}
+                  placeholder={`Tarif auto: ${calc.tierRate.toLocaleString()}`}
+                  className="h-8 w-28 text-right"
+                />
+                <span className="text-xs text-muted-foreground whitespace-nowrap">MAD/jour</span>
+                {edit.custom_daily_rate.trim() !== "" && (
+                  <button
+                    type="button"
+                    onClick={() => onEdit({ custom_daily_rate: "" })}
+                    className="text-xs text-primary hover:underline whitespace-nowrap"
+                  >
+                    Réinitialiser
+                  </button>
+                )}
+              </div>
+            </div>
             <div className="flex justify-between"><span className="text-muted-foreground">Véhicule ({calc.days}j × {calc.dailyRate.toLocaleString()} MAD)</span><span>{calc.vehicleTotal.toLocaleString()} MAD</span></div>
             {calc.addonsTotal > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Options</span><span>{calc.addonsTotal.toLocaleString()} MAD</span></div>}
             {calc.deliveryFee > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Frais de livraison</span><span>{calc.deliveryFee.toLocaleString()} MAD</span></div>}
