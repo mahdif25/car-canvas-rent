@@ -50,6 +50,7 @@ interface EditState {
   pickup_location: string;
   return_location: string;
   addons: string[];
+  custom_daily_rate: string;
 }
 
 const AdminReservations = () => {
@@ -149,6 +150,7 @@ const AdminReservations = () => {
       pickup_location: r.pickup_location,
       return_location: r.return_location || r.pickup_location,
       addons: currentAddons,
+      custom_daily_rate: r.custom_daily_rate != null ? String(r.custom_daily_rate) : "",
     };
   };
 
@@ -204,6 +206,7 @@ const AdminReservations = () => {
 
   const saveReservation = useMutation({
     mutationFn: async ({ id, edit, calc }: { id: string; edit: EditState; calc: { totalPrice: number; deliveryFee: number; depositAmount: number } }) => {
+      const customRate = edit.custom_daily_rate.trim() === "" ? null : Number(edit.custom_daily_rate);
       const { error } = await supabase.from("reservations").update({
         vehicle_id: edit.vehicle_id,
         pickup_date: edit.pickup_date,
@@ -213,7 +216,8 @@ const AdminReservations = () => {
         total_price: calc.totalPrice,
         delivery_fee: calc.deliveryFee,
         deposit_amount: calc.depositAmount,
-      }).eq("id", id);
+        custom_daily_rate: customRate && customRate > 0 ? customRate : null,
+      } as any).eq("id", id);
       if (error) throw error;
 
       const { error: delErr } = await supabase.from("reservation_addons").delete().eq("reservation_id", id);
@@ -237,7 +241,8 @@ const AdminReservations = () => {
         const c = variables.calc;
         const days = Math.max(1, Math.ceil((new Date(ed.return_date).getTime() - new Date(ed.pickup_date).getTime()) / 86400000));
         const tiers = pricingTiers.filter((t: any) => t.vehicle_id === ed.vehicle_id);
-        const dailyRate = getDailyRateFromTiers(tiers, days);
+        const overrideRate = ed.custom_daily_rate.trim() !== "" ? Number(ed.custom_daily_rate) : NaN;
+        const dailyRate = !isNaN(overrideRate) && overrideRate > 0 ? overrideRate : getDailyRateFromTiers(tiers, days);
         const vehicle = vehicles.find((v: any) => v.id === ed.vehicle_id);
         const fmtDate = (d: string) => new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
         const addonDetails = ed.addons.map((aid: string) => {
@@ -563,7 +568,9 @@ function useCalc(edit: EditState, vehicles: any[], pricingTiers: any[], location
   return useMemo(() => {
     const days = Math.max(1, Math.ceil((new Date(edit.return_date).getTime() - new Date(edit.pickup_date).getTime()) / 86400000));
     const tiers = pricingTiers.filter((t: any) => t.vehicle_id === edit.vehicle_id);
-    const dailyRate = getDailyRateFromTiers(tiers, days);
+    const tierRate = getDailyRateFromTiers(tiers, days);
+    const overrideRate = edit.custom_daily_rate.trim() !== "" ? Number(edit.custom_daily_rate) : NaN;
+    const dailyRate = !isNaN(overrideRate) && overrideRate > 0 ? overrideRate : tierRate;
     const vehicleTotal = dailyRate * days;
 
     const addonsTotal = edit.addons.reduce((sum, aid) => {
