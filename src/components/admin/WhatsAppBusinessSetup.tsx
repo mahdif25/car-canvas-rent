@@ -504,7 +504,7 @@ export default function WhatsAppBusinessSetup({ form, setForm }: Props) {
                 <Input
                   value={form.whatsapp_verify_token ?? ""}
                   onChange={(e) =>
-                    autoSave("whatsapp_verify_token", e.target.value)
+                    saveNow("whatsapp_verify_token", e.target.value)
                   }
                   placeholder="Cliquez Générer →"
                   className="font-mono text-xs flex-1"
@@ -518,15 +518,43 @@ export default function WhatsAppBusinessSetup({ form, setForm }: Props) {
                   <RefreshCw size={14} /> Générer
                 </Button>
               </div>
+              {form.whatsapp_verify_token && (
+                <div className="flex items-start gap-2 text-xs bg-secondary rounded-md p-2 border border-border">
+                  <CheckCircle2 size={14} className="text-primary mt-0.5 shrink-0" />
+                  <div className="break-all">
+                    <span className="text-muted-foreground">Valeur enregistrée à coller dans Meta : </span>
+                    <code className="font-mono">{form.whatsapp_verify_token}</code>
+                  </div>
+                </div>
+              )}
             </div>
+
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={testWebhookHandshake}
+                disabled={loadingHandshake || !form.whatsapp_verify_token}
+                className="gap-2"
+              >
+                {loadingHandshake ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <ShieldCheck size={14} />
+                )}
+                Tester la vérification
+              </Button>
+            </div>
+            <ResultLine result={handshakeCheck} />
 
             <div className="bg-secondary rounded-lg p-4 text-sm space-y-2">
               <p className="font-medium">Étapes dans Meta :</p>
               <ol className="list-decimal list-inside space-y-1.5 text-muted-foreground">
+                <li>Cliquez d'abord <strong>Tester la vérification</strong> ci-dessus → doit afficher ✅</li>
                 <li>Votre app → <strong>WhatsApp → Configuration</strong></li>
                 <li>Section <strong>Webhook</strong> → <strong>Modifier</strong></li>
                 <li>Collez l'<strong>URL du Webhook</strong> ci-dessus</li>
-                <li>Collez le <strong>Verify Token</strong> ci-dessus</li>
+                <li>Collez le <strong>Verify Token</strong> ci-dessus (exactement)</li>
                 <li>Cliquez <strong>Vérifier et enregistrer</strong></li>
                 <li>
                   Sous <strong>Webhook fields</strong> → abonnez-vous à{" "}
