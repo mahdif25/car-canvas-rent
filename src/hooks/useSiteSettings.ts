@@ -58,6 +58,12 @@ export interface SiteSettings {
   fb_leadads_page_access_token: string;
   fb_ad_account_id: string;
   fb_leadads_pixel_id: string;
+  whatsapp_business_account_id: string;
+  whatsapp_phone_number_id: string;
+  whatsapp_verify_token: string;
+  whatsapp_bot_enabled: boolean;
+  whatsapp_bot_welcome_message: string;
+  whatsapp_bot_handoff_keyword: string;
   updated_at: string;
 }
 

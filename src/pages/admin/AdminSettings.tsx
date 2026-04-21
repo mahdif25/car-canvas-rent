@@ -549,6 +549,8 @@ const AdminSettings = () => {
 
           {/* WhatsApp */}
           <TabsContent value="whatsapp" className="space-y-6">
+            <WhatsAppBusinessSetup form={form} setForm={setForm} />
+
             <div className="bg-card rounded-xl p-4 md:p-6 space-y-5 border border-border">
               <h2 className="font-semibold text-lg">Popup WhatsApp</h2>
               <div className="flex items-center justify-between">
