@@ -53,6 +53,8 @@ export default function WhatsAppBusinessSetup({ form, setForm }: Props) {
   const [loadingPhone, setLoadingPhone] = useState(false);
   const [loadingSub, setLoadingSub] = useState(false);
   const [loadingTest, setLoadingTest] = useState(false);
+  const [loadingHandshake, setLoadingHandshake] = useState(false);
+  const [handshakeCheck, setHandshakeCheck] = useState<CheckResult>(null);
 
   const [testNumber, setTestNumber] = useState("");
 
