@@ -1039,9 +1039,15 @@ export type Database = {
           show_reviews_section: boolean | null
           tiktok_pixel_id: string | null
           updated_at: string | null
+          whatsapp_bot_enabled: boolean
+          whatsapp_bot_handoff_keyword: string
+          whatsapp_bot_welcome_message: string
+          whatsapp_business_account_id: string
           whatsapp_enabled: boolean | null
           whatsapp_message: string | null
           whatsapp_number: string | null
+          whatsapp_phone_number_id: string
+          whatsapp_verify_token: string
         }
         Insert: {
           caution_policy_html?: string
@@ -1092,9 +1098,15 @@ export type Database = {
           show_reviews_section?: boolean | null
           tiktok_pixel_id?: string | null
           updated_at?: string | null
+          whatsapp_bot_enabled?: boolean
+          whatsapp_bot_handoff_keyword?: string
+          whatsapp_bot_welcome_message?: string
+          whatsapp_business_account_id?: string
           whatsapp_enabled?: boolean | null
           whatsapp_message?: string | null
           whatsapp_number?: string | null
+          whatsapp_phone_number_id?: string
+          whatsapp_verify_token?: string
         }
         Update: {
           caution_policy_html?: string
@@ -1145,9 +1157,15 @@ export type Database = {
           show_reviews_section?: boolean | null
           tiktok_pixel_id?: string | null
           updated_at?: string | null
+          whatsapp_bot_enabled?: boolean
+          whatsapp_bot_handoff_keyword?: string
+          whatsapp_bot_welcome_message?: string
+          whatsapp_business_account_id?: string
           whatsapp_enabled?: boolean | null
           whatsapp_message?: string | null
           whatsapp_number?: string | null
+          whatsapp_phone_number_id?: string
+          whatsapp_verify_token?: string
         }
         Relationships: []
       }
