@@ -1,77 +1,49 @@
 
 
-# WhatsApp Setup — Reuse Facebook App + Guided Wizard
+# Fix WhatsApp Webhook Verification
 
-## What you'll get
-The same Meta App you already use for Lead Ads will also handle WhatsApp. The same permanent System User token + the same App Secret are reused — no new credentials needed beyond what you already generated. A new **6-step guided wizard** in Admin Settings walks you through configuring WhatsApp, with **inline verification at each step** and **auto-save** so you never lose progress.
+## Root cause
+Meta verifies a webhook by sending a `GET` request to your URL with `hub.mode=subscribe&hub.verify_token=...&hub.challenge=...` and expects the `hub.challenge` value echoed back. Your URL `https://...supabase.co/functions/v1/whatsapp-webhook` returns **404** because the function doesn't exist yet — so both Meta's "Verify and save" and our "Vérifier l'abonnement" button fail.
 
-## How
+## What I'll build
 
-### 1. Reuse existing credentials (no duplication)
-- `WHATSAPP_ACCESS_TOKEN` secret = your existing permanent System User token (the one already used for Lead Ads). One value, one secret.
-- `WHATSAPP_APP_SECRET` secret = same App Secret already configured for Lead Ads webhook signature verification. We reuse it; no separate secret needed.
-- The Lead Ads webhook function and the new WhatsApp webhook function both read the same App Secret from env.
+### 1. New edge function `whatsapp-webhook`
+Deployed with `verify_jwt = false` (Meta calls it unauthenticated) at the URL the wizard already shows.
 
-We'll add the two secrets through the secret prompt (you paste them once, they're stored in Lovable Cloud).
+**On `GET`** (Meta verification handshake):
+- Read `hub.mode`, `hub.verify_token`, `hub.challenge` from query string
+- Load `whatsapp_verify_token` from `site_settings`
+- If `mode === "subscribe"` AND token matches → respond `200` with the raw `hub.challenge` value (plain text, no JSON wrap — Meta requires this exact format)
+- Otherwise → `403`
 
-### 2. New `WhatsAppSettings.tsx` — 6-step accordion wizard
+**On `POST`** (incoming messages — placeholder for now):
+- Verify `X-Hub-Signature-256` HMAC using `WHATSAPP_APP_SECRET`
+- Log payload to `whatsapp_webhook_events` (new lightweight log table) so you can see Meta's pings even before the chat UI is built
+- Return `200` immediately (Meta retries on non-200)
 
-Same pattern as your existing `FacebookLeadAdsSetup.tsx`. Each step has:
-- Plain-language explanation
-- **"Where to find this"** link to the exact Meta dashboard page
-- Input field that **auto-saves on blur** to `site_settings`
-- **Green "Vérifier" button** that calls a Graph API check and shows ✅ or ❌ with the exact error
-- Steps stay collapsed/expanded based on completion status (badge on each step header: `À configurer` / `Vérifié`)
+### 2. Tiny migration
+Add `whatsapp_webhook_events` table (id, payload jsonb, signature_valid bool, received_at) — admin-only RLS — so incoming events are captured from day one and visible later in the chat dashboard build.
 
-| Step | Field | Verification |
-|---|---|---|
-| 1. Reuse existing app | (info only — confirms `WHATSAPP_ACCESS_TOKEN` and `WHATSAPP_APP_SECRET` exist) | `GET /debug_token` to confirm token validity, expiry = "never", and required scopes present |
-| 2. WhatsApp Business Account ID | `whatsapp_business_account_id` | `GET /{waba-id}?fields=id,name,currency` |
-| 3. Phone Number ID | `whatsapp_phone_number_id` | `GET /{phone-id}?fields=display_phone_number,verified_name,quality_rating` — shows your number + quality |
-| 4. Webhook URL + Verify Token | `whatsapp_verify_token` (auto-generated UUID, regenerable) + read-only webhook URL with copy button | After you paste into Meta and subscribe to `messages` field, click **"Vérifier abonnement"** → calls `GET /{waba-id}/subscribed_apps` |
-| 5. Bot configuration | `whatsapp_bot_enabled`, `whatsapp_bot_welcome_message`, `whatsapp_bot_handoff_keyword` | Local validation + preview |
-| 6. Test message | Send a real WhatsApp message to a number you provide | Calls `whatsapp-send` with a template — shows ✅ "Message livré" or ❌ with reason |
+### 3. Wizard tweak — Step 4
+- Add a **"Tester la vérification"** button next to the existing copy button. It calls our own webhook with `?hub.mode=subscribe&hub.verify_token={current}&hub.challenge=test123` and shows ✅ if `test123` comes back, ❌ with the actual response otherwise. This lets you confirm the endpoint works **before** going to Meta.
+- Make the verify-token input save **immediately on change** (not only on blur) so what you paste into Meta always matches what's in the DB. Today's bug: if you typed in the field then jumped to Meta without blurring, Meta sees the old token.
+- Show the currently saved verify token in a read-only confirmation row above the Meta instructions, so there's zero ambiguity about which value to paste.
 
-### 3. Auto-save & persistence
-- Every input uses **debounced auto-save** (500ms) → writes to `site_settings` via `useUpdateSiteSettings`
-- A small "✓ Enregistré" indicator flashes next to the field after each save
-- Completion state of each step is derived from the saved values, so reloading the page re-opens at the right step
-- A top-of-wizard summary card always shows: token status, WABA ID, phone number, webhook subscription status, bot toggle — reflects current saved state on every render
-
-### 4. Step-by-step instructions inside each step
-Each step header expands to a **clear visual guide** (no jargon). Example for Step 2:
-
-> **Trouver votre WhatsApp Business Account ID**
-> 1. Ouvrez [business.facebook.com/wa/manage/home](https://business.facebook.com/wa/manage/home)
-> 2. Sélectionnez votre compte WhatsApp Business en haut
-> 3. Cliquez ⚙ **Paramètres** → **Informations sur le compte**
-> 4. Copiez le numéro affiché sous **"ID du compte WhatsApp Business"**
-> 5. Collez-le ci-dessous → cliquez **Vérifier**
-
-Same pattern for each step, with screenshots-style numbered lists and a direct link button **"Ouvrir dans Meta"** that opens the right Meta page in a new tab.
-
-### 5. New diagnostic endpoint
-`supabase/functions/whatsapp-diagnostic/index.ts` — admin-only, accepts `{ check: "token" | "waba" | "phone" | "subscription", ...ids }`, runs the matching Graph API call using the saved access token, returns `{ ok, message, details }`. The wizard's "Vérifier" buttons all call this single endpoint.
-
-### 6. Files
+### 4. Files
 
 | File | Change |
 |---|---|
-| Migration | Add `whatsapp_*` columns to `site_settings` (already in the approved WhatsApp plan — confirming) |
-| `supabase/functions/whatsapp-diagnostic/index.ts` | **New** — single endpoint for all "Vérifier" buttons |
-| `src/components/admin/WhatsAppSettings.tsx` | **New** — 6-step accordion wizard with auto-save and inline verification |
-| `src/pages/admin/AdminSettings.tsx` | Mount the new "WhatsApp Business" tab |
-| `src/hooks/useSiteSettings.ts` | Add the new typed fields |
-| Secret prompts | Request `WHATSAPP_ACCESS_TOKEN` + `WHATSAPP_APP_SECRET` (you paste your existing values) |
+| `supabase/functions/whatsapp-webhook/index.ts` | **New** — GET handshake + POST signature-verified ingest |
+| Migration | New `whatsapp_webhook_events` table + RLS |
+| `src/components/admin/WhatsAppBusinessSetup.tsx` | Add "Tester la vérification" button, immediate save on verify-token edit, saved-value confirmation row |
 
-### 7. Responsive
-Same accordion + card pattern as `FacebookLeadAdsSetup.tsx` — works on mobile (single column, full-width inputs, copy buttons stack), tablet (two-column instructions/input layout in each step), and desktop (sidebar summary card stays visible).
+## After this ships — your steps
+1. Open Admin → Settings → WhatsApp → Step 4
+2. Click **Tester la vérification** → must show ✅
+3. In Meta WhatsApp Configuration → paste the URL + verify token → click **Verify and save** → success
+4. Subscribe to `messages` field
+5. Back in the wizard → **Vérifier l'abonnement** → ✅
 
-### 8. After this wizard is done
-The actual WhatsApp **chat UI**, **bot engine**, and **webhook ingestion** (everything from the previously approved WhatsApp plan) are built next as planned — this wizard is just the configuration surface that makes the rest work.
-
-## Notes
-- The same App Secret powering your Lead Ads webhook will also verify WhatsApp webhook signatures (Meta uses the same HMAC-SHA256 scheme for both `leadgen` and `messages` events).
-- Token reuse is officially supported: a single System User token with both `leads_retrieval` and `whatsapp_business_messaging` scopes works for both products.
-- No new App Review needed if your existing app already has the WhatsApp permissions approved (or is in dev mode with you as a tester).
+## Responsive
+Step 4 changes are all inside the existing accordion card — copy/test/generate buttons stack vertically on mobile (`flex-col sm:flex-row`), full-width inputs everywhere, same pattern as current setup.
 
