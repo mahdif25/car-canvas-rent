@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import FacebookLeadAdsSetup from "@/components/admin/FacebookLeadAdsSetup";
+import WhatsAppBusinessSetup from "@/components/admin/WhatsAppBusinessSetup";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { useSiteSettings, useUpdateSiteSettings, SiteSettings } from "@/hooks/useSiteSettings";
 import { useReviews, useCreateReview, useUpdateReview, useDeleteReview, Review } from "@/hooks/useReviews";
