@@ -19,3 +19,5 @@ project_id = "mtcxliurdruvrzjtxful"
     verify_jwt = false
   [functions.facebook-leadads-webhook]
     verify_jwt = false
+  [functions.whatsapp-webhook]
+    verify_jwt = false
