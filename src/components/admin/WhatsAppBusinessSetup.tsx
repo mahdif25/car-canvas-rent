@@ -94,10 +94,76 @@ export default function WhatsAppBusinessSetup({ form, setForm }: Props) {
     toast.success("Copié !");
   };
 
-  const generateVerifyToken = () => {
+  // Immediate (non-debounced) save — used for the verify token so what you paste into Meta
+  // is guaranteed to be the value already stored in the DB.
+  const saveNow = async (field: keyof SiteSettings, value: any) => {
+    setForm((f) => ({ ...f, [field]: value }));
+    if (debounceTimers.current[field]) {
+      window.clearTimeout(debounceTimers.current[field]);
+    }
+    try {
+      await updateMutation.mutateAsync({ [field]: value } as Partial<SiteSettings>);
+      setSavingFlash((s) => ({ ...s, [field]: true }));
+      setTimeout(
+        () => setSavingFlash((s) => ({ ...s, [field]: false })),
+        1500,
+      );
+    } catch {
+      toast.error("Erreur de sauvegarde");
+    }
+  };
+
+  const generateVerifyToken = async () => {
     const t = crypto.randomUUID();
-    autoSave("whatsapp_verify_token", t);
+    await saveNow("whatsapp_verify_token", t);
     toast.info("Token généré et sauvegardé");
+  };
+
+  const testWebhookHandshake = async () => {
+    const token = (form.whatsapp_verify_token ?? "").trim();
+    if (!token) {
+      toast.error("Générez ou saisissez un Verify Token d'abord");
+      return;
+    }
+    setLoadingHandshake(true);
+    setHandshakeCheck(null);
+    const challenge = `test_${Date.now()}`;
+    try {
+      const res = await fetch(
+        `${WEBHOOK_URL}?hub.mode=subscribe&hub.verify_token=${encodeURIComponent(
+          token,
+        )}&hub.challenge=${challenge}`,
+      );
+      const body = await res.text();
+      if (res.status === 200 && body === challenge) {
+        setHandshakeCheck({
+          ok: true,
+          message: "Handshake réussi — Meta peut maintenant vérifier ce webhook.",
+        });
+        toast.success("Webhook prêt !");
+      } else if (res.status === 404) {
+        setHandshakeCheck({
+          ok: false,
+          message:
+            "Webhook introuvable (404). La fonction n'est pas encore déployée — réessayez dans quelques secondes.",
+        });
+        toast.error("Webhook 404");
+      } else {
+        setHandshakeCheck({
+          ok: false,
+          message: `Échec (HTTP ${res.status}) : ${body.slice(0, 150)}`,
+        });
+        toast.error("Échec du handshake");
+      }
+    } catch (e: any) {
+      setHandshakeCheck({
+        ok: false,
+        message: e?.message ?? "Erreur réseau",
+      });
+      toast.error("Erreur réseau");
+    } finally {
+      setLoadingHandshake(false);
+    }
   };
 
   const runDiagnostic = async (
