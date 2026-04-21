@@ -1493,6 +1493,27 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_webhook_events: {
+        Row: {
+          id: string
+          payload: Json
+          received_at: string
+          signature_valid: boolean
+        }
+        Insert: {
+          id?: string
+          payload?: Json
+          received_at?: string
+          signature_valid?: boolean
+        }
+        Update: {
+          id?: string
+          payload?: Json
+          received_at?: string
+          signature_valid?: boolean
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

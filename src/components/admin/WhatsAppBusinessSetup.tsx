@@ -53,6 +53,8 @@ export default function WhatsAppBusinessSetup({ form, setForm }: Props) {
   const [loadingPhone, setLoadingPhone] = useState(false);
   const [loadingSub, setLoadingSub] = useState(false);
   const [loadingTest, setLoadingTest] = useState(false);
+  const [loadingHandshake, setLoadingHandshake] = useState(false);
+  const [handshakeCheck, setHandshakeCheck] = useState<CheckResult>(null);
 
   const [testNumber, setTestNumber] = useState("");
 
@@ -92,10 +94,76 @@ export default function WhatsAppBusinessSetup({ form, setForm }: Props) {
     toast.success("Copié !");
   };
 
-  const generateVerifyToken = () => {
+  // Immediate (non-debounced) save — used for the verify token so what you paste into Meta
+  // is guaranteed to be the value already stored in the DB.
+  const saveNow = async (field: keyof SiteSettings, value: any) => {
+    setForm((f) => ({ ...f, [field]: value }));
+    if (debounceTimers.current[field]) {
+      window.clearTimeout(debounceTimers.current[field]);
+    }
+    try {
+      await updateMutation.mutateAsync({ [field]: value } as Partial<SiteSettings>);
+      setSavingFlash((s) => ({ ...s, [field]: true }));
+      setTimeout(
+        () => setSavingFlash((s) => ({ ...s, [field]: false })),
+        1500,
+      );
+    } catch {
+      toast.error("Erreur de sauvegarde");
+    }
+  };
+
+  const generateVerifyToken = async () => {
     const t = crypto.randomUUID();
-    autoSave("whatsapp_verify_token", t);
+    await saveNow("whatsapp_verify_token", t);
     toast.info("Token généré et sauvegardé");
+  };
+
+  const testWebhookHandshake = async () => {
+    const token = (form.whatsapp_verify_token ?? "").trim();
+    if (!token) {
+      toast.error("Générez ou saisissez un Verify Token d'abord");
+      return;
+    }
+    setLoadingHandshake(true);
+    setHandshakeCheck(null);
+    const challenge = `test_${Date.now()}`;
+    try {
+      const res = await fetch(
+        `${WEBHOOK_URL}?hub.mode=subscribe&hub.verify_token=${encodeURIComponent(
+          token,
+        )}&hub.challenge=${challenge}`,
+      );
+      const body = await res.text();
+      if (res.status === 200 && body === challenge) {
+        setHandshakeCheck({
+          ok: true,
+          message: "Handshake réussi — Meta peut maintenant vérifier ce webhook.",
+        });
+        toast.success("Webhook prêt !");
+      } else if (res.status === 404) {
+        setHandshakeCheck({
+          ok: false,
+          message:
+            "Webhook introuvable (404). La fonction n'est pas encore déployée — réessayez dans quelques secondes.",
+        });
+        toast.error("Webhook 404");
+      } else {
+        setHandshakeCheck({
+          ok: false,
+          message: `Échec (HTTP ${res.status}) : ${body.slice(0, 150)}`,
+        });
+        toast.error("Échec du handshake");
+      }
+    } catch (e: any) {
+      setHandshakeCheck({
+        ok: false,
+        message: e?.message ?? "Erreur réseau",
+      });
+      toast.error("Erreur réseau");
+    } finally {
+      setLoadingHandshake(false);
+    }
   };
 
   const runDiagnostic = async (
@@ -436,7 +504,7 @@ export default function WhatsAppBusinessSetup({ form, setForm }: Props) {
                 <Input
                   value={form.whatsapp_verify_token ?? ""}
                   onChange={(e) =>
-                    autoSave("whatsapp_verify_token", e.target.value)
+                    saveNow("whatsapp_verify_token", e.target.value)
                   }
                   placeholder="Cliquez Générer →"
                   className="font-mono text-xs flex-1"
@@ -450,15 +518,43 @@ export default function WhatsAppBusinessSetup({ form, setForm }: Props) {
                   <RefreshCw size={14} /> Générer
                 </Button>
               </div>
+              {form.whatsapp_verify_token && (
+                <div className="flex items-start gap-2 text-xs bg-secondary rounded-md p-2 border border-border">
+                  <CheckCircle2 size={14} className="text-primary mt-0.5 shrink-0" />
+                  <div className="break-all">
+                    <span className="text-muted-foreground">Valeur enregistrée à coller dans Meta : </span>
+                    <code className="font-mono">{form.whatsapp_verify_token}</code>
+                  </div>
+                </div>
+              )}
             </div>
+
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={testWebhookHandshake}
+                disabled={loadingHandshake || !form.whatsapp_verify_token}
+                className="gap-2"
+              >
+                {loadingHandshake ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <ShieldCheck size={14} />
+                )}
+                Tester la vérification
+              </Button>
+            </div>
+            <ResultLine result={handshakeCheck} />
 
             <div className="bg-secondary rounded-lg p-4 text-sm space-y-2">
               <p className="font-medium">Étapes dans Meta :</p>
               <ol className="list-decimal list-inside space-y-1.5 text-muted-foreground">
+                <li>Cliquez d'abord <strong>Tester la vérification</strong> ci-dessus → doit afficher ✅</li>
                 <li>Votre app → <strong>WhatsApp → Configuration</strong></li>
                 <li>Section <strong>Webhook</strong> → <strong>Modifier</strong></li>
                 <li>Collez l'<strong>URL du Webhook</strong> ci-dessus</li>
-                <li>Collez le <strong>Verify Token</strong> ci-dessus</li>
+                <li>Collez le <strong>Verify Token</strong> ci-dessus (exactement)</li>
                 <li>Cliquez <strong>Vérifier et enregistrer</strong></li>
                 <li>
                   Sous <strong>Webhook fields</strong> → abonnez-vous à{" "}
